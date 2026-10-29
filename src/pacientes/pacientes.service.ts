@@ -162,9 +162,11 @@ export class PacientesService {
   ) {
     await this.acceso.pacienteDeNutricionista(pacienteId, nutricionistaId);
     const { fecha, ...datos } = dto;
-    return this.prisma.medicion.create({
+    const creada = await this.prisma.medicion.create({
       data: { ...datos, pacienteId, fecha: aFecha(fecha ?? hoyIso()) },
     });
+    // Mismo contrato que el listado: la respuesta documentada incluye el IMC.
+    return { ...creada, imc: imc(creada.pesoKg, creada.tallaCm) };
   }
 
   async eliminarMedicion(medicionId: string, nutricionistaId: string) {

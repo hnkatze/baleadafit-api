@@ -125,11 +125,37 @@ describe('PacientesService', () => {
     });
 
     it('usa la fecha de hoy si no se envía', async () => {
+      prisma.medicion.create.mockResolvedValue({
+        pesoKg: 70,
+        tallaCm: 170,
+        fecha: new Date(),
+      });
       await svc.agregarMedicion('p1', 'n1', { pesoKg: 70, tallaCm: 170 });
       const { data } = prisma.medicion.create.mock.calls[0][0];
       expect(data.fecha.toISOString().slice(0, 10)).toBe(
         new Date().toISOString().slice(0, 10),
       );
+    });
+
+    it('devuelve el imc al registrar, igual que el listado', async () => {
+      prisma.medicion.create.mockResolvedValue({
+        id: 'm1',
+        pacienteId: 'p1',
+        fecha: new Date('2026-10-29T00:00:00Z'),
+        pesoKg: 73,
+        tallaCm: 160,
+        pctGrasa: null,
+        cinturaCm: null,
+        notas: null,
+        creadoEn: new Date('2026-10-29T00:00:00Z'),
+      });
+
+      const r = await svc.agregarMedicion('p1', 'n1', {
+        pesoKg: 73,
+        tallaCm: 160,
+      });
+
+      expect(r.imc).toBe(28.5);
     });
 
     it('no elimina mediciones de pacientes ajenos', async () => {
