@@ -1536,6 +1536,78 @@
         ]
       }
     },
+    "/alimentos/{id}/versiones": {
+      "get": {
+        "description": "Solo nutricionistas. Qué valores tuvo el alimento y desde/hasta cuándo estuvieron vigentes, de la versión más nueva a la más vieja.",
+        "operationId": "AlimentosController_versiones",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del alimento",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlimentoVersionEntity"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Historial de versiones de un alimento",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
     "/restricciones": {
       "get": {
         "description": "Sus `codigo` se usan al crear pacientes y en `excluir`.",
@@ -1712,7 +1784,7 @@
     },
     "/pacientes/{id}/planes/generar": {
       "post": {
-        "description": "Crea un plan en `BORRADOR`:\n1. Calcula kcal y macros con Mifflin-St Jeor (o usa `kcalObjetivo`).\n2. Filtra el catálogo por las restricciones del paciente.\n3. Si `usarIa` (por defecto), AWS Bedrock propone alimentos y porciones.\n4. El backend descarta alimentos inexistentes y ajusta porciones a ±10 % por tiempo de comida.\n5. Si la IA no está disponible usa reglas (`origen = REGLAS`).\n\nRequiere al menos una medición del paciente.",
+        "description": "Crea un plan en `BORRADOR`:\n1. Calcula kcal y macros con Mifflin-St Jeor (o usa `kcalObjetivo`).\n2. Filtra el catálogo por las restricciones del paciente.\n3. Si `usarIa` (por defecto), AWS Bedrock propone alimentos y porciones.\n4. El backend descarta alimentos inexistentes y ajusta porciones a ±10 % por tiempo de comida.\n5. Si la IA no está disponible usa reglas (`origen = REGLAS`).\n6. Cada ítem queda atado a la versión vigente del alimento, y los totales salen de ella.\n\nRequiere al menos una medición del paciente.",
         "operationId": "PlanesController_generar",
         "parameters": [
           {
@@ -1801,7 +1873,7 @@
     },
     "/planes/{id}": {
       "get": {
-        "description": "Tiempos de comida con alimentos, totales y desviación contra la meta.",
+        "description": "Tiempos de comida con alimentos, totales y desviación contra la meta. Cada ítem declara la versión del alimento que usó y los totales salen de esa versión: editar el alimento no cambia un plan existente.",
         "operationId": "PlanesController_detalle",
         "parameters": [
           {
@@ -2027,7 +2099,7 @@
     },
     "/planes/{id}/tiempos/{tipo}/items": {
       "put": {
-        "description": "Edición manual: reemplaza la lista completa del tiempo indicado.",
+        "description": "Edición manual: reemplaza la lista completa del tiempo indicado. Los ítems nuevos quedan atados a la versión vigente de cada alimento.",
         "operationId": "PlanesController_reemplazarItems",
         "parameters": [
           {
@@ -5894,6 +5966,110 @@
           }
         }
       },
+      "AlimentoVersionEntity": {
+        "type": "object",
+        "properties": {
+          "vigenteDesde": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-29"
+          },
+          "vigenteHasta": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "description": "Nulo en la versión vigente.",
+            "example": null
+          },
+          "version": {
+            "type": "number",
+            "description": "Consecutivo por alimento.",
+            "example": 2
+          },
+          "tabla": {
+            "type": "string",
+            "description": "Revisión de la tabla usada.",
+            "example": "INCAP 2026"
+          },
+          "fuente": {
+            "type": "string",
+            "nullable": true
+          },
+          "porcionDescripcion": {
+            "type": "string",
+            "example": "1 unidad"
+          },
+          "porcionGramos": {
+            "type": "number",
+            "example": 120
+          },
+          "kcal": {
+            "type": "number",
+            "description": "Por porción.",
+            "example": 330
+          },
+          "proteinaG": {
+            "type": "number",
+            "example": 11
+          },
+          "carbohidratoG": {
+            "type": "number",
+            "example": 42
+          },
+          "grasaG": {
+            "type": "number",
+            "example": 13
+          },
+          "fibraG": {
+            "type": "number",
+            "nullable": true
+          },
+          "sodioMg": {
+            "type": "number",
+            "nullable": true
+          },
+          "potasioMg": {
+            "type": "number",
+            "nullable": true
+          },
+          "fosforoMg": {
+            "type": "number",
+            "nullable": true
+          },
+          "azucaresG": {
+            "type": "number",
+            "nullable": true
+          },
+          "grasasSatG": {
+            "type": "number",
+            "nullable": true
+          },
+          "indiceGlucemico": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "vigenteDesde",
+          "vigenteHasta",
+          "version",
+          "tabla",
+          "fuente",
+          "porcionDescripcion",
+          "porcionGramos",
+          "kcal",
+          "proteinaG",
+          "carbohidratoG",
+          "grasaG",
+          "fibraG",
+          "sodioMg",
+          "potasioMg",
+          "fosforoMg",
+          "azucaresG",
+          "grasasSatG",
+          "indiceGlucemico"
+        ]
+      },
       "PlanEntity": {
         "type": "object",
         "properties": {
@@ -6083,6 +6259,21 @@
       "PlanItemEntity": {
         "type": "object",
         "properties": {
+          "alimentoVersionId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Versión de los valores nutricionales usada al crear el ítem. Los totales del\nplan salen de esta versión, así que editar el alimento no los cambia.\nNulo en los ítems anteriores al versionado: esos totalizan con el alimento actual."
+          },
+          "alimentoVersion": {
+            "nullable": true,
+            "description": "Valores con los que totaliza el ítem; nula en los ítems anteriores al versionado.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AlimentoVersionEntity"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -6102,6 +6293,8 @@
           }
         },
         "required": [
+          "alimentoVersionId",
+          "alimentoVersion",
           "id",
           "tiempoComidaId",
           "alimentoId",

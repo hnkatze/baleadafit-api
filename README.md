@@ -151,6 +151,18 @@ Los totales del plan (`GET /planes/:id`, `GET /me/hoy`, `GET /me/plan`) suman to
 
 El recomendador recibe estos valores por alimento en el catálogo del prompt, así que el agente puede razonar sobre sodio, potasio y carga glucémica al elegir los platos, además del perfil clínico del paciente.
 
+### Versiones del catálogo
+
+Los valores nutricionales son datos de referencia que cambian: revisiones del INCAP, leyes de fortificación (harina de trigo, sal yodada, azúcar con vitamina A), reformulación industrial y variedades nuevas. Por eso **no se editan en el pasado**: cada alimento tiene versiones.
+
+- `alimento` guarda la identidad (nombre, categoría, tiempos de comida, restricciones) y una copia de los valores vigentes, para que el catálogo y el prompt sigan siendo una lectura simple.
+- `alimento_version` guarda los valores con `version` (1, 2, 3…), `tabla` (por ejemplo `INCAP 2026`), `fuente`, `vigenteDesde` y `vigenteHasta`.
+- Editar un valor de porción o de nutrición abre la versión siguiente y cierra la anterior. Editar solo el nombre no versiona.
+- `GET /alimentos/:id/versiones` devuelve el historial, para ver qué cambió y cuándo.
+- La revisión de la tabla se toma de `TABLA_NUTRICIONAL` (por defecto `Inicial`).
+
+**Lo importante:** cada ítem de un plan (`plan_item.alimentoVersionId`) queda atado a la versión que usó. Los totales, la desviación y la ficha se calculan con esa versión, así que corregir un alimento **no cambia ningún plan existente**. Los ítems viejos sin versión siguen totalizando con el alimento actual (compatibilidad), por lo que conviene regenerar esos planes si su alimento se editó.
+
 ### Fechas y zonas horarias
 
 Todo se guarda y se serializa en **UTC**; el cliente formatea para mostrar. Hay dos tipos de fecha y se tratan distinto:
