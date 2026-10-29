@@ -71,12 +71,16 @@ export class CitasService {
     const fechaHora = dto.fechaHora ? new Date(dto.fechaHora) : cita.fechaHora;
     const duracionMin = dto.duracionMin ?? cita.duracionMin;
     const estado = dto.estado ?? cita.estado;
+    // La fecha llega como YYYY-MM-DD y en la base es un campo de solo fecha.
+    const proximaCitaSugerida = dto.proximaCitaSugerida
+      ? new Date(dto.proximaCitaSugerida)
+      : undefined;
     if (estado === 'PROGRAMADA' && (dto.fechaHora || dto.duracionMin)) {
       await this.verificarChoque(nutricionistaId, fechaHora, duracionMin, id);
     }
     return this.prisma.cita.update({
       where: { id },
-      data: { ...dto, fechaHora, duracionMin },
+      data: { ...dto, fechaHora, duracionMin, proximaCitaSugerida },
       include: INCLUDE_PACIENTE,
     });
   }

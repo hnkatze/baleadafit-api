@@ -99,5 +99,57 @@ describe('CitasService', () => {
         not: 'c1',
       });
     });
+
+    // S8 — notas SOAP y próxima cita sugerida.
+    it('registra las notas SOAP de la consulta', async () => {
+      prisma.cita.findFirst.mockResolvedValue(cita);
+      await svc.actualizar('c1', 'n1', {
+        subjetivo: 'Refiere hambre a media tarde.',
+        objetivo: 'Peso 78.4 kg, cintura 92 cm.',
+        analisis: 'Adherencia parcial al plan.',
+        plan: 'Ajustar merienda y control en 4 semanas.',
+      });
+      expect(prisma.cita.update.mock.calls[0][0].data).toMatchObject({
+        subjetivo: 'Refiere hambre a media tarde.',
+        objetivo: 'Peso 78.4 kg, cintura 92 cm.',
+        analisis: 'Adherencia parcial al plan.',
+        plan: 'Ajustar merienda y control en 4 semanas.',
+      });
+    });
+
+    it('persiste la fecha sugerida de la próxima cita como fecha', async () => {
+      prisma.cita.findFirst.mockResolvedValue(cita);
+      await svc.actualizar('c1', 'n1', { proximaCitaSugerida: '2030-12-01' });
+      expect(
+        prisma.cita.update.mock.calls[0][0].data.proximaCitaSugerida,
+      ).toEqual(new Date('2030-12-01'));
+    });
+
+    it('no registra el SOAP si el paciente es de otra nutricionista', async () => {
+      prisma.cita.findFirst.mockResolvedValue(cita);
+      prisma.paciente.findFirst.mockResolvedValue(null);
+      await expect(
+        svc.actualizar('c1', 'n1', {
+          pacienteId: 'p9',
+          subjetivo: 'Refiere hambre a media tarde.',
+        }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.cita.update).not.toHaveBeenCalled();
+    });
+
+    it('completa la cita con el SOAP y sin revisar choques', async () => {
+      prisma.cita.findFirst.mockResolvedValue(cita);
+      await svc.actualizar('c1', 'n1', {
+        estado: 'COMPLETADA',
+        subjetivo: 'Refiere hambre a media tarde.',
+        proximaCitaSugerida: '2030-12-01',
+      });
+      expect(prisma.cita.findMany).not.toHaveBeenCalled();
+      expect(prisma.cita.update.mock.calls[0][0].data).toMatchObject({
+        estado: 'COMPLETADA',
+        subjetivo: 'Refiere hambre a media tarde.',
+        proximaCitaSugerida: new Date('2030-12-01'),
+      });
+    });
   });
 });

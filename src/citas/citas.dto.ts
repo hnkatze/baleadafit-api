@@ -51,6 +51,50 @@ export class ActualizarCitaDto extends PartialType(CrearCitaDto) {
   @IsOptional()
   @IsEnum(EstadoCita)
   estado?: EstadoCita;
+
+  /**
+   * SOAP, S: lo que el paciente refiere.
+   * @example "Refiere hambre a media tarde y poca sed."
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  subjetivo?: string;
+
+  /**
+   * SOAP, O: lo medido y observado en la consulta.
+   * @example "Peso 78.4 kg, cintura 92 cm, presión 118/76."
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  objetivo?: string;
+
+  /**
+   * SOAP, A: interpretación del caso.
+   * @example "Adherencia parcial al plan; pérdida de 1.2 kg en 4 semanas."
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  analisis?: string;
+
+  /**
+   * SOAP, P: acuerdos y ajustes para el siguiente periodo.
+   * @example "Agregar merienda de fruta con yogur y control en 4 semanas."
+   */
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  plan?: string;
+
+  /**
+   * Fecha sugerida de la próxima cita, formato YYYY-MM-DD.
+   * @example "2026-12-01"
+   */
+  @IsOptional()
+  @IsDateString()
+  proximaCitaSugerida?: string;
 }
 
 export class BuscarCitasDto {
