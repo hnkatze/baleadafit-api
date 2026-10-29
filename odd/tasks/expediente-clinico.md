@@ -1,0 +1,32 @@
+# Expediente clínico completo
+
+El PPT de Semana 2 deja el expediente en pacientes + mediciones básicas. Un nutricionista en consulta necesita registrar objetivo, condiciones, medicación, hábitos, antropometría de composición corporal y notas de consulta. Este feature amplía el modelo y la API para cubrirlo, sin romper lo que el portal ya consume.
+
+## Specs
+
+- **S1** — Expediente, objetivo del paciente: peso objetivo en kg y fecha objetivo, además de `meta` (BAJAR / MANTENER / SUBIR) que ya existe.
+- **S2** — Expediente, condiciones clínicas: catálogo de condiciones con N:M por paciente (diabetes, HTA, ERC, hipotiroidismo, dislipidemia, embarazo, lactancia), igual que el patrón `restriccion` + `paciente_restriccion`.
+- **S3** — Expediente, estado fisiológico: `NINGUNO` / `EMBARAZO` / `LACTANCIA` en el paciente.
+- **S4** — Expediente, medicación: medicamentos por paciente con nombre, dosis, frecuencia y si sigue activo.
+- **S5** — Expediente, antecedentes y hábitos: cirugías, alergias declaradas (texto libre, complementa las restricciones del catálogo), suplementos, motivo de consulta, comidas al día, litros de agua, horas de sueño, frecuencia de alcohol y tabaco, quién cocina en casa y presupuesto.
+- **S6** — Antropometría: la medición suma masa muscular, masa grasa, grasa visceral, agua intracelular y extracelular, ángulo de fase, cuatro pliegues cutáneos, perímetros de brazo, cadera y muslo, y presión arterial sistólica y diastólica.
+- **S7** — Antropometría, trazabilidad: cada medición declara su `fuente` (`MANUAL`, `BASCULA`, `INBODY`, `OMRON`, `OTRO`) para distinguir lo medido de lo estimado.
+- **S8** — Consulta: la cita guarda notas SOAP (subjetivo, objetivo, análisis, plan) y la fecha sugerida de la próxima cita.
+- **S9** — La API expone todo lo anterior: actualizar el expediente y sus condiciones/medicamentos, registrar mediciones con composición corporal, y registrar SOAP al cerrar la cita.
+- **S10** — Nada de esto rompe lo existente: los endpoints del portal siguen respondiendo igual y `npm test`, `npm run lint` y `npm run build` quedan verdes en cada tarea.
+
+## Tasks
+
+- [ ] E1 — Modelo y migración: extender `paciente`, `medicion` y `cita`, agregar `condicion`, `paciente_condicion` y `medicamento`, y sembrar el catálogo de condiciones (S1-S8)
+- [ ] E2 — Expediente en la API: detalle con condiciones, medicamentos y hábitos, más los endpoints para actualizarlos (S2-S5, S9)
+- [ ] E3 — Mediciones con composición corporal y fuente en la API (S6, S7, S9)
+- [ ] E4 — SOAP y próxima cita en la API (S8, S9)
+- [ ] E5 — README y OpenAPI al día con los campos nuevos (S9)
+
+## Log
+
+- **L1** (pedido del dueño, verbatim): "clareo la data yo entiendo que alguna paresca basica, pero debe tener todo lo que un nutricionista necesita,"
+- **L2** (autorización, verbatim): "dale el refresh por el sdk entonces, y vamos con tus recomendacion, dale"
+- **L3** (decisión): queda dentro del alcance la lista de data clínica propuesta por el orquestador y aceptada en L2: expediente (objetivo, condiciones, medicamentos, antecedentes y hábitos), antropometría (composición corporal, pliegues, perímetros, presión y fuente del dato) y consulta (SOAP y próxima cita).
+- **L4** (fuera de alcance, para un feature aparte): versionado inmutable del plan aprobado y plantillas de plan reutilizables. Se registran como trabajo futuro y no entran en este feature.
+- **L5** (decisión técnica): las condiciones clínicas usan catálogo + N:M como `restriccion`, para que una condición se pueda describir una sola vez y filtrar por código; la medicación va en tabla propia con `activo` para conservar el historial de lo recetado.
