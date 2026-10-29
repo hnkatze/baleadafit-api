@@ -299,6 +299,20 @@ model Alimento {
   carbohidratoG      Float             @map("carbohidrato_g")
   grasaG             Float             @map("grasa_g")
   fibraG             Float?            @map("fibra_g")
+
+  // ─── Nutrientes clínicos por porción (estimados; verificar con INCAP) ──
+  /// Sodio en miligramos
+  sodioMg            Float?            @map("sodio_mg")
+  /// Potasio en miligramos
+  potasioMg          Float?            @map("potasio_mg")
+  /// Fósforo en miligramos
+  fosforoMg          Float?            @map("fosforo_mg")
+  /// Azúcares totales en gramos
+  azucaresG          Float?            @map("azucares_g")
+  /// Grasa saturada en gramos
+  grasasSatG         Float?            @map("grasas_sat_g")
+  /// Índice glucémico de la porción (0-110); nulo en alimentos sin carbohidratos
+  indiceGlucemico    Int?              @map("indice_glucemico")
   /// En qué tiempos de comida tiene sentido sugerirlo
   tiposComida        TipoComida[]      @map("tipos_comida")
   /// Etiquetas para filtrar restricciones (lactosa, gluten, cerdo…)
