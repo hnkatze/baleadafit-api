@@ -4,6 +4,7 @@ import { AlimentosModule } from './alimentos/alimentos.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CitasModule } from './citas/citas.module.js';
 import { ConfigModule } from '@nestjs/config';
+import { MiCuentaModule } from './mi-cuenta/mi-cuenta.controller.js';
 import { PacientesModule } from './pacientes/pacientes.module.js';
 import { PlanesModule } from './planes/planes.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -18,6 +19,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     AlimentosModule,
     PlanesModule,
     CitasModule,
+    MiCuentaModule,
   ],
 })
 export class AppModule {}
