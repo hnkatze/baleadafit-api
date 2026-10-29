@@ -1,7 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
+import { configurarSwagger } from './common/swagger.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,17 +19,7 @@ async function bootstrap() {
     }),
   );
 
-  const doc = new DocumentBuilder()
-    .setTitle('BaleadaFit API')
-    .setDescription(
-      'Nutrición clínica con comida hondureña — nutricionistas y pacientes.',
-    )
-    .setVersion('0.1.0')
-    .addBearerAuth()
-    .build();
-  SwaggerModule.setup('docs', app, () =>
-    SwaggerModule.createDocument(app, doc),
-  );
+  configurarSwagger(app);
 
   await app.listen(process.env.PORT ?? 3000);
 }
