@@ -133,6 +133,19 @@ Las tablas son `nutricionista`, `paciente`, `medicion`, `restriccion`, `paciente
 
 > Los valores nutricionales del seed son **aproximados** y sirven para desarrollo y demo. Antes de cualquier uso clínico hay que verificarlos contra la Tabla de Composición de Alimentos de Centroamérica (INCAP).
 
+### Fechas y zonas horarias
+
+Todo se guarda y se serializa en **UTC**; el cliente formatea para mostrar. Hay dos tipos de fecha y se tratan distinto:
+
+| Tipo | Columnas | Regla |
+|---|---|---|
+| Solo fecha (`DATE`) | `paciente.fechaNacimiento`, `paciente.fechaObjetivo`, `medicion.fecha`, `cita.proximaCitaSugerida`, `registro_comida.fecha` | Se guardan como **medianoche UTC del día que envía el cliente** (`aFecha()`), sin convertir a la zona del servidor |
+| Instante (`TIMESTAMP`) | `cita.fechaHora`, `creadoEn`, `actualizadoEn` | Instante UTC real; el cliente lo muestra en su zona (GMT-6 en Honduras) |
+
+Un ISO con zona conserva el día de calendario que eligió la persona: `"2026-12-01T20:00:00-06:00"` se guarda como `2026-12-01T00:00:00Z`, **no** como el 2 de diciembre. Por eso las fechas de calendario nunca pasan por `new Date(iso)` directo: se usa `aFecha()` de `src/common/fechas.ts`, que está cubierta por `src/common/fechas.spec.ts`.
+
+**Consecuencia a tener en cuenta:** la "fecha de hoy" del servidor es el día UTC, y en Honduras eso se adelanta a partir de las 18:00 (00:00 UTC). Para la pantalla "Hoy" y el registro de comidas, el cliente manda su fecha local en `GET /me/hoy?fecha=YYYY-MM-DD` y en `PUT /me/registros`; si no la manda, el API usa el día UTC. El Postgres del compose corre con `TZ=UTC` para que un `now()` no dependa del host.
+
 ## Pruebas
 
 ```bash
