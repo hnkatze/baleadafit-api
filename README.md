@@ -114,6 +114,7 @@ Un guard global verifica el ID token de Firebase y resuelve el rol:
 | sin perfil | `POST /auth/registro-nutricionista` | Crea el perfil de nutricionista |
 | nutricionista | `GET /dashboard` | Pacientes activos, borradores, citas de hoy |
 | nutricionista | `GET/POST /pacientes`, `GET/PATCH/DELETE /pacientes/:id` | Expediente (el DELETE es baja lógica); acepta `condiciones` y devuelve condiciones, medicación vigente y las últimas mediciones |
+| nutricionista | `GET /pacientes/:id/ficha` | Ficha completa en una llamada: cabecera con IMC clasificado, progreso contra el objetivo, situación clínica, requerimiento, adherencia de 30 días, alertas, evolución, consultas y planes |
 | nutricionista | `POST /pacientes/:id/medicamentos`, `PATCH/DELETE /medicamentos/:id` | Medicación declarada (el DELETE es baja lógica: conserva el historial) |
 | nutricionista | `GET/POST /pacientes/:id/mediciones`, `DELETE /mediciones/:id` | Peso, talla, % grasa, cintura (+ IMC) |
 | nutricionista | `GET /pacientes/:id/requerimiento` | kcal y macros calculados |
@@ -126,6 +127,19 @@ Un guard global verifica el ID token de Firebase y resuelve el rol:
 | nutricionista | `POST/PATCH /alimentos` | Mantener el catálogo |
 | paciente | `GET /me/hoy`, `GET /me/plan`, `GET /me/mediciones`, `GET /me/citas` | App del paciente |
 | paciente | `PUT /me/registros`, `GET /me/registros` | Marcar comidas cumplidas |
+
+### Ficha del paciente
+
+`GET /pacientes/:id/ficha` arma la pantalla del expediente en **una** llamada. Los indicadores y las alertas se calculan en el backend porque son lógica de dominio, no de presentación:
+
+- **Cabecera**: edad, IMC con clasificación de la OMS, y la composición corporal de la **última medición que la trae** (con su fecha), para que un control de peso sin bioimpedancia no borre el último % de grasa conocido. `masaMagraKg` sale del peso actual menos la masa grasa.
+- **Progreso**: peso inicial, peso actual, diferencia, ritmo semanal y proyección a la fecha objetivo. La proyección es una extrapolación lineal y así se documenta: no es una promesa.
+- **Situación clínica y hábitos**: condiciones, restricciones, medicación vigente, estado fisiológico, antecedentes y contexto de vida.
+- **Requerimiento y adherencia**: kcal objetivo, TMB, gasto total y el cumplimiento de los últimos 30 días.
+- **Alertas**: sin medición reciente (más de 30 días, grave después de 60), peso estancado (menos de 0.5 kg en las últimas tres mediciones, solo si la meta no es mantener), sin plan activo, plan activo con más de 90 días y adherencia por debajo del 50 % con al menos 10 registros.
+- **Evolución, consultas y planes**: todas las mediciones con IMC, consultas pasadas con su SOAP y las próximas, y los planes con las tablas nutricionales con las que se calcularon.
+
+Las alertas de nutrientes (sodio, carga glucémica) todavía no están: dependen de los umbrales por condición, que se definen como configuración clínica y no como constante escondida en el código.
 
 ## Base de datos
 

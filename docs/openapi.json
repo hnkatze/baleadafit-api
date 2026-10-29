@@ -325,6 +325,75 @@
         ]
       }
     },
+    "/pacientes/{id}/ficha": {
+      "get": {
+        "description": "Todo lo que muestra la pantalla del expediente en una sola llamada: cabecera con IMC clasificado y masa magra, progreso contra el objetivo, situación clínica, hábitos, requerimiento, adherencia de los últimos 30 días, alertas calculadas por el sistema, evolución completa, consultas (pasadas con SOAP y próximas) y planes con la tabla con la que se calcularon.",
+        "operationId": "PacientesController_ficha",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaPacienteEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ficha del paciente",
+        "tags": [
+          "pacientes"
+        ]
+      }
+    },
     "/pacientes/{id}": {
       "get": {
         "description": "Datos clínicos y hábitos, restricciones, condiciones, medicación vigente, últimas 10 mediciones, próximas citas y planes.",
@@ -4238,6 +4307,616 @@
           "actualizadoEn"
         ]
       },
+      "PacienteEntity": {
+        "type": "object",
+        "properties": {
+          "sexo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sexo"
+              }
+            ]
+          },
+          "nivelActividad": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NivelActividad"
+              }
+            ]
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              }
+            ]
+          },
+          "estadoFisiologico": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoFisiologico"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "nutricionistaId": {
+            "type": "string"
+          },
+          "firebaseUid": {
+            "type": "string",
+            "nullable": true,
+            "description": "UID de Firebase; null hasta que el paciente inicia sesión en la app."
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Ana"
+          },
+          "apellido": {
+            "type": "string",
+            "example": "López"
+          },
+          "correo": {
+            "type": "string",
+            "nullable": true,
+            "example": "ana@correo.hn"
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true,
+            "example": "+504 9999-0000"
+          },
+          "fechaNacimiento": {
+            "format": "date-time",
+            "type": "string",
+            "example": "1995-04-10T00:00:00.000Z"
+          },
+          "pesoObjetivoKg": {
+            "type": "number",
+            "nullable": true,
+            "description": "Peso objetivo pactado con el paciente, en kg.",
+            "example": 68
+          },
+          "fechaObjetivo": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "example": "2027-03-01T00:00:00.000Z"
+          },
+          "motivoConsulta": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bajar de peso sin perder masa muscular"
+          },
+          "alergias": {
+            "type": "string",
+            "nullable": true,
+            "description": "Texto libre; complementa las restricciones del catálogo."
+          },
+          "cirugias": {
+            "type": "string",
+            "nullable": true,
+            "example": "Apendicectomía en 2018"
+          },
+          "suplementos": {
+            "type": "string",
+            "nullable": true,
+            "example": "Vitamina D 1000 UI diaria"
+          },
+          "comidasAlDia": {
+            "type": "number",
+            "nullable": true,
+            "example": 5
+          },
+          "aguaLitros": {
+            "type": "number",
+            "nullable": true,
+            "example": 2
+          },
+          "horasSueno": {
+            "type": "number",
+            "nullable": true,
+            "example": 7
+          },
+          "alcohol": {
+            "type": "string",
+            "nullable": true,
+            "example": "1 cerveza los fines de semana"
+          },
+          "tabaco": {
+            "type": "string",
+            "nullable": true,
+            "example": "No fuma"
+          },
+          "quienCocina": {
+            "type": "string",
+            "nullable": true,
+            "example": "La mamá"
+          },
+          "presupuesto": {
+            "type": "string",
+            "nullable": true,
+            "example": "L 1,500 semanales"
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "actualizadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sexo",
+          "nivelActividad",
+          "meta",
+          "estadoFisiologico",
+          "id",
+          "nutricionistaId",
+          "firebaseUid",
+          "nombre",
+          "apellido",
+          "correo",
+          "telefono",
+          "fechaNacimiento",
+          "pesoObjetivoKg",
+          "fechaObjetivo",
+          "motivoConsulta",
+          "alergias",
+          "cirugias",
+          "suplementos",
+          "comidasAlDia",
+          "aguaLitros",
+          "horasSueno",
+          "alcohol",
+          "tabaco",
+          "quienCocina",
+          "presupuesto",
+          "notas",
+          "activo",
+          "creadoEn",
+          "actualizadoEn"
+        ]
+      },
+      "CabeceraFichaEntity": {
+        "type": "object",
+        "properties": {
+          "edad": {
+            "type": "number",
+            "example": 31
+          },
+          "imc": {
+            "type": "number",
+            "nullable": true,
+            "example": 28.7
+          },
+          "clasificacionImc": {
+            "type": "string",
+            "nullable": true,
+            "description": "BAJO_PESO | NORMAL | SOBREPESO | OBESIDAD_I | OBESIDAD_II | OBESIDAD_III",
+            "example": "SOBREPESO"
+          },
+          "pctGrasa": {
+            "type": "number",
+            "nullable": true,
+            "description": "Sale de la última medición que trae composición.",
+            "example": 33.5
+          },
+          "masaGrasaKg": {
+            "type": "number",
+            "nullable": true,
+            "example": 24.5
+          },
+          "masaMuscularKg": {
+            "type": "number",
+            "nullable": true,
+            "example": 24.8
+          },
+          "grasaVisceral": {
+            "type": "number",
+            "nullable": true,
+            "example": 8
+          },
+          "composicionFecha": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Fecha de la medición de la que salió la composición."
+          },
+          "masaMagraKg": {
+            "type": "number",
+            "nullable": true,
+            "description": "Peso de la última medición menos masa grasa.",
+            "example": 48.6
+          },
+          "ultimaMedicion": {
+            "type": "object",
+            "properties": {
+              "fecha": {
+                "format": "date-time",
+                "type": "string"
+              }
+            },
+            "required": [
+              "fecha"
+            ]
+          },
+          "objetivo": {
+            "type": "object",
+            "properties": {
+              "pesoKg": {
+                "type": "number",
+                "nullable": true
+              },
+              "fecha": {
+                "format": "date-time",
+                "type": "string",
+                "nullable": true
+              },
+              "meta": {
+                "enum": [
+                  "BAJAR",
+                  "MANTENER",
+                  "SUBIR"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "pesoKg",
+              "fecha",
+              "meta"
+            ]
+          }
+        },
+        "required": [
+          "edad",
+          "imc",
+          "clasificacionImc",
+          "pctGrasa",
+          "masaGrasaKg",
+          "masaMuscularKg",
+          "grasaVisceral",
+          "composicionFecha",
+          "masaMagraKg",
+          "ultimaMedicion",
+          "objetivo"
+        ]
+      },
+      "ProgresoPesoEntity": {
+        "type": "object",
+        "properties": {
+          "pesoInicial": {
+            "type": "number",
+            "nullable": true,
+            "example": 76
+          },
+          "pesoActual": {
+            "type": "number",
+            "nullable": true,
+            "example": 73.4
+          },
+          "deltaKg": {
+            "type": "number",
+            "nullable": true,
+            "example": -2.6
+          },
+          "ritmoKgSemana": {
+            "type": "number",
+            "nullable": true,
+            "description": "Ritmo semanal; negativo si está bajando.",
+            "example": -0.4
+          },
+          "proyeccionKg": {
+            "type": "number",
+            "nullable": true,
+            "description": "Extrapolación lineal al objetivo; es una proyección, no una promesa.",
+            "example": 68.1
+          }
+        },
+        "required": [
+          "pesoInicial",
+          "pesoActual",
+          "deltaKg",
+          "ritmoKgSemana",
+          "proyeccionKg"
+        ]
+      },
+      "MedicamentoEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Metformina"
+          },
+          "dosis": {
+            "type": "string",
+            "nullable": true,
+            "example": "500 mg"
+          },
+          "frecuencia": {
+            "type": "string",
+            "nullable": true,
+            "example": "Cada 12 horas con comida"
+          },
+          "activo": {
+            "type": "boolean",
+            "description": "`false` cuando se dio de baja lógica; el historial se conserva."
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "pacienteId",
+          "nombre",
+          "dosis",
+          "frecuencia",
+          "activo",
+          "creadoEn"
+        ]
+      },
+      "SituacionFichaEntity": {
+        "type": "object",
+        "properties": {
+          "estadoFisiologico": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoFisiologico"
+              }
+            ]
+          },
+          "condiciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PacienteCondicionEntity"
+            }
+          },
+          "restricciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PacienteRestriccionEntity"
+            }
+          },
+          "medicacion": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicamentoEntity"
+            }
+          },
+          "alergias": {
+            "type": "string",
+            "nullable": true
+          },
+          "cirugias": {
+            "type": "string",
+            "nullable": true
+          },
+          "suplementos": {
+            "type": "string",
+            "nullable": true
+          },
+          "motivoConsulta": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "estadoFisiologico",
+          "condiciones",
+          "restricciones",
+          "medicacion",
+          "alergias",
+          "cirugias",
+          "suplementos",
+          "motivoConsulta"
+        ]
+      },
+      "HabitosFichaEntity": {
+        "type": "object",
+        "properties": {
+          "comidasAlDia": {
+            "type": "number",
+            "nullable": true
+          },
+          "aguaLitros": {
+            "type": "number",
+            "nullable": true
+          },
+          "horasSueno": {
+            "type": "number",
+            "nullable": true
+          },
+          "alcohol": {
+            "type": "string",
+            "nullable": true
+          },
+          "tabaco": {
+            "type": "string",
+            "nullable": true
+          },
+          "quienCocina": {
+            "type": "string",
+            "nullable": true
+          },
+          "presupuesto": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "comidasAlDia",
+          "aguaLitros",
+          "horasSueno",
+          "alcohol",
+          "tabaco",
+          "quienCocina",
+          "presupuesto"
+        ]
+      },
+      "DistribucionMacrosEntity": {
+        "type": "object",
+        "properties": {
+          "proteina": {
+            "type": "number",
+            "example": 0.25
+          },
+          "carbohidrato": {
+            "type": "number",
+            "example": 0.5
+          },
+          "grasa": {
+            "type": "number",
+            "example": 0.25
+          }
+        },
+        "required": [
+          "proteina",
+          "carbohidrato",
+          "grasa"
+        ]
+      },
+      "RequerimientoEntity": {
+        "type": "object",
+        "properties": {
+          "medicion": {
+            "description": "Medición usada para el cálculo (la más reciente).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MedicionEntity"
+              }
+            ]
+          },
+          "edad": {
+            "type": "number",
+            "example": 31
+          },
+          "tmb": {
+            "type": "number",
+            "description": "Tasa metabólica basal (Mifflin-St Jeor), kcal.",
+            "example": 1404
+          },
+          "factorActividad": {
+            "type": "number",
+            "example": 1.375
+          },
+          "gastoTotal": {
+            "type": "number",
+            "description": "TMB × factor de actividad, kcal.",
+            "example": 1931
+          },
+          "ajusteMeta": {
+            "type": "number",
+            "description": "Ajuste por meta: −500 bajar, 0 mantener, +300 subir.",
+            "example": -500
+          },
+          "kcalObjetivo": {
+            "type": "number",
+            "example": 1430
+          },
+          "proteinaG": {
+            "type": "number",
+            "example": 89.4
+          },
+          "carbohidratoG": {
+            "type": "number",
+            "example": 178.8
+          },
+          "grasaG": {
+            "type": "number",
+            "example": 39.7
+          },
+          "distribucionMacros": {
+            "$ref": "#/components/schemas/DistribucionMacrosEntity"
+          }
+        },
+        "required": [
+          "medicion",
+          "edad",
+          "tmb",
+          "factorActividad",
+          "gastoTotal",
+          "ajusteMeta",
+          "kcalObjetivo",
+          "proteinaG",
+          "carbohidratoG",
+          "grasaG",
+          "distribucionMacros"
+        ]
+      },
+      "AdherenciaFichaEntity": {
+        "type": "object",
+        "properties": {
+          "desde": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "hasta": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "porcentaje": {
+            "type": "number",
+            "nullable": true,
+            "description": "Entre 0 y 1.",
+            "example": 0.72
+          },
+          "cumplidos": {
+            "type": "number",
+            "example": 18
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "desde",
+          "hasta",
+          "porcentaje",
+          "cumplidos",
+          "total"
+        ]
+      },
+      "AlertaFichaEntity": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "description": "SIN_MEDICION | PESO_ESTANCADO | SIN_PLAN_ACTIVO | PLAN_VIEJO | ADHERENCIA_BAJA",
+            "example": "SIN_MEDICION"
+          },
+          "severidad": {
+            "type": "string",
+            "example": "media"
+          },
+          "detalle": {
+            "type": "string",
+            "example": "Última medición hace 45 días."
+          }
+        },
+        "required": [
+          "tipo",
+          "severidad",
+          "detalle"
+        ]
+      },
       "MedicionConImcEntity": {
         "type": "object",
         "properties": {
@@ -4396,48 +5075,6 @@
           "imc"
         ]
       },
-      "MedicamentoEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "pacienteId": {
-            "type": "string"
-          },
-          "nombre": {
-            "type": "string",
-            "example": "Metformina"
-          },
-          "dosis": {
-            "type": "string",
-            "nullable": true,
-            "example": "500 mg"
-          },
-          "frecuencia": {
-            "type": "string",
-            "nullable": true,
-            "example": "Cada 12 horas con comida"
-          },
-          "activo": {
-            "type": "boolean",
-            "description": "`false` cuando se dio de baja lógica; el historial se conserva."
-          },
-          "creadoEn": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "pacienteId",
-          "nombre",
-          "dosis",
-          "frecuencia",
-          "activo",
-          "creadoEn"
-        ]
-      },
       "CitaBasicaEntity": {
         "type": "object",
         "properties": {
@@ -4527,12 +5164,145 @@
           "motivo"
         ]
       },
+      "ConsultasFichaEntity": {
+        "type": "object",
+        "properties": {
+          "proximas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CitaBasicaEntity"
+            }
+          },
+          "pasadas": {
+            "description": "Consultas ya ocurridas, con su SOAP.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CitaBasicaEntity"
+            }
+          }
+        },
+        "required": [
+          "proximas",
+          "pasadas"
+        ]
+      },
       "EstadoPlan": {
         "type": "string",
         "enum": [
           "BORRADOR",
           "ACTIVO",
           "ARCHIVADO"
+        ]
+      },
+      "PlanEnFichaEntity": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoPlan"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "kcalObjetivo": {
+            "type": "number"
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "aprobadoEn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "tablas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "estado",
+          "id",
+          "nombre",
+          "kcalObjetivo",
+          "creadoEn",
+          "aprobadoEn",
+          "tablas"
+        ]
+      },
+      "FichaPacienteEntity": {
+        "type": "object",
+        "properties": {
+          "paciente": {
+            "$ref": "#/components/schemas/PacienteEntity"
+          },
+          "cabecera": {
+            "$ref": "#/components/schemas/CabeceraFichaEntity"
+          },
+          "progreso": {
+            "$ref": "#/components/schemas/ProgresoPesoEntity"
+          },
+          "situacion": {
+            "$ref": "#/components/schemas/SituacionFichaEntity"
+          },
+          "habitos": {
+            "$ref": "#/components/schemas/HabitosFichaEntity"
+          },
+          "requerimiento": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RequerimientoEntity"
+              }
+            ]
+          },
+          "adherencia30d": {
+            "$ref": "#/components/schemas/AdherenciaFichaEntity"
+          },
+          "alertas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertaFichaEntity"
+            }
+          },
+          "evolucion": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicionConImcEntity"
+            }
+          },
+          "consultas": {
+            "$ref": "#/components/schemas/ConsultasFichaEntity"
+          },
+          "planes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanEnFichaEntity"
+            }
+          }
+        },
+        "required": [
+          "paciente",
+          "cabecera",
+          "progreso",
+          "situacion",
+          "habitos",
+          "requerimiento",
+          "adherencia30d",
+          "alertas",
+          "evolucion",
+          "consultas",
+          "planes"
         ]
       },
       "OrigenPlan": {
@@ -5031,186 +5801,6 @@
           }
         }
       },
-      "PacienteEntity": {
-        "type": "object",
-        "properties": {
-          "sexo": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Sexo"
-              }
-            ]
-          },
-          "nivelActividad": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NivelActividad"
-              }
-            ]
-          },
-          "meta": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Meta"
-              }
-            ]
-          },
-          "estadoFisiologico": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EstadoFisiologico"
-              }
-            ]
-          },
-          "id": {
-            "type": "string"
-          },
-          "nutricionistaId": {
-            "type": "string"
-          },
-          "firebaseUid": {
-            "type": "string",
-            "nullable": true,
-            "description": "UID de Firebase; null hasta que el paciente inicia sesión en la app."
-          },
-          "nombre": {
-            "type": "string",
-            "example": "Ana"
-          },
-          "apellido": {
-            "type": "string",
-            "example": "López"
-          },
-          "correo": {
-            "type": "string",
-            "nullable": true,
-            "example": "ana@correo.hn"
-          },
-          "telefono": {
-            "type": "string",
-            "nullable": true,
-            "example": "+504 9999-0000"
-          },
-          "fechaNacimiento": {
-            "format": "date-time",
-            "type": "string",
-            "example": "1995-04-10T00:00:00.000Z"
-          },
-          "pesoObjetivoKg": {
-            "type": "number",
-            "nullable": true,
-            "description": "Peso objetivo pactado con el paciente, en kg.",
-            "example": 68
-          },
-          "fechaObjetivo": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true,
-            "example": "2027-03-01T00:00:00.000Z"
-          },
-          "motivoConsulta": {
-            "type": "string",
-            "nullable": true,
-            "example": "Bajar de peso sin perder masa muscular"
-          },
-          "alergias": {
-            "type": "string",
-            "nullable": true,
-            "description": "Texto libre; complementa las restricciones del catálogo."
-          },
-          "cirugias": {
-            "type": "string",
-            "nullable": true,
-            "example": "Apendicectomía en 2018"
-          },
-          "suplementos": {
-            "type": "string",
-            "nullable": true,
-            "example": "Vitamina D 1000 UI diaria"
-          },
-          "comidasAlDia": {
-            "type": "number",
-            "nullable": true,
-            "example": 5
-          },
-          "aguaLitros": {
-            "type": "number",
-            "nullable": true,
-            "example": 2
-          },
-          "horasSueno": {
-            "type": "number",
-            "nullable": true,
-            "example": 7
-          },
-          "alcohol": {
-            "type": "string",
-            "nullable": true,
-            "example": "1 cerveza los fines de semana"
-          },
-          "tabaco": {
-            "type": "string",
-            "nullable": true,
-            "example": "No fuma"
-          },
-          "quienCocina": {
-            "type": "string",
-            "nullable": true,
-            "example": "La mamá"
-          },
-          "presupuesto": {
-            "type": "string",
-            "nullable": true,
-            "example": "L 1,500 semanales"
-          },
-          "notas": {
-            "type": "string",
-            "nullable": true
-          },
-          "activo": {
-            "type": "boolean"
-          },
-          "creadoEn": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "actualizadoEn": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "sexo",
-          "nivelActividad",
-          "meta",
-          "estadoFisiologico",
-          "id",
-          "nutricionistaId",
-          "firebaseUid",
-          "nombre",
-          "apellido",
-          "correo",
-          "telefono",
-          "fechaNacimiento",
-          "pesoObjetivoKg",
-          "fechaObjetivo",
-          "motivoConsulta",
-          "alergias",
-          "cirugias",
-          "suplementos",
-          "comidasAlDia",
-          "aguaLitros",
-          "horasSueno",
-          "alcohol",
-          "tabaco",
-          "quienCocina",
-          "presupuesto",
-          "notas",
-          "activo",
-          "creadoEn",
-          "actualizadoEn"
-        ]
-      },
       "CrearMedicionDto": {
         "type": "object",
         "properties": {
@@ -5354,96 +5944,6 @@
         "required": [
           "pesoKg",
           "tallaCm"
-        ]
-      },
-      "DistribucionMacrosEntity": {
-        "type": "object",
-        "properties": {
-          "proteina": {
-            "type": "number",
-            "example": 0.25
-          },
-          "carbohidrato": {
-            "type": "number",
-            "example": 0.5
-          },
-          "grasa": {
-            "type": "number",
-            "example": 0.25
-          }
-        },
-        "required": [
-          "proteina",
-          "carbohidrato",
-          "grasa"
-        ]
-      },
-      "RequerimientoEntity": {
-        "type": "object",
-        "properties": {
-          "medicion": {
-            "description": "Medición usada para el cálculo (la más reciente).",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/MedicionEntity"
-              }
-            ]
-          },
-          "edad": {
-            "type": "number",
-            "example": 31
-          },
-          "tmb": {
-            "type": "number",
-            "description": "Tasa metabólica basal (Mifflin-St Jeor), kcal.",
-            "example": 1404
-          },
-          "factorActividad": {
-            "type": "number",
-            "example": 1.375
-          },
-          "gastoTotal": {
-            "type": "number",
-            "description": "TMB × factor de actividad, kcal.",
-            "example": 1931
-          },
-          "ajusteMeta": {
-            "type": "number",
-            "description": "Ajuste por meta: −500 bajar, 0 mantener, +300 subir.",
-            "example": -500
-          },
-          "kcalObjetivo": {
-            "type": "number",
-            "example": 1430
-          },
-          "proteinaG": {
-            "type": "number",
-            "example": 89.4
-          },
-          "carbohidratoG": {
-            "type": "number",
-            "example": 178.8
-          },
-          "grasaG": {
-            "type": "number",
-            "example": 39.7
-          },
-          "distribucionMacros": {
-            "$ref": "#/components/schemas/DistribucionMacrosEntity"
-          }
-        },
-        "required": [
-          "medicion",
-          "edad",
-          "tmb",
-          "factorActividad",
-          "gastoTotal",
-          "ajusteMeta",
-          "kcalObjetivo",
-          "proteinaG",
-          "carbohidratoG",
-          "grasaG",
-          "distribucionMacros"
         ]
       },
       "TipoComida": {
