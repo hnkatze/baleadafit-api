@@ -6,28 +6,19 @@ import {
   Get,
   Post,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { ApiErrores } from '../common/swagger.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { RegistroNutricionistaDto } from './auth.dto.js';
+import { MeEntity, NutricionistaEntity } from './auth.entity.js';
 import type { UsuarioActual } from './auth.types.js';
 import { UsuarioAct } from './decorators.js';
-
-export class RegistroNutricionistaDto {
-  @IsString()
-  @MinLength(3)
-  @MaxLength(120)
-  nombre: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(40)
-  colegiado?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(30)
-  telefono?: string;
-}
 
 @ApiTags('auth')
 @ApiBearerAuth()
@@ -35,8 +26,14 @@ export class RegistroNutricionistaDto {
 export class AuthController {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Devuelve el rol y el perfil del usuario autenticado. La app decide qué navegación mostrar según `rol`. */
   @Get('me')
+  @ApiOperation({
+    summary: 'Rol y perfil del usuario',
+    description:
+      'Primera llamada de la app después del login. Según `rol` muestra la navegación de nutricionista, la del paciente o el registro (`sin_perfil`).',
+  })
+  @ApiOkResponse({ type: MeEntity })
+  @ApiErrores(401)
   async me(@UsuarioAct() u: UsuarioActual) {
     if (u.rol === 'nutricionista') {
       const perfil = await this.prisma.nutricionista.findUnique({
@@ -57,8 +54,14 @@ export class AuthController {
     return { rol: u.rol, perfil: null };
   }
 
-  /** Crea el perfil de nutricionista para una cuenta de Firebase recién registrada. */
   @Post('registro-nutricionista')
+  @ApiOperation({
+    summary: 'Registrar nutricionista',
+    description:
+      'Crea el perfil de nutricionista para una cuenta de Firebase sin perfil. Usa el correo del token.',
+  })
+  @ApiCreatedResponse({ type: NutricionistaEntity })
+  @ApiErrores(400, 401, 409)
   async registrarNutricionista(
     @UsuarioAct() u: UsuarioActual,
     @Body() dto: RegistroNutricionistaDto,

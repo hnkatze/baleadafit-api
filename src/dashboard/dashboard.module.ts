@@ -1,25 +1,44 @@
 import { Controller, Get, Module } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { UsuarioActual } from '../auth/auth.types.js';
 import { Public, Roles, UsuarioAct } from '../auth/decorators.js';
 import { aFecha, hoyIso, sumarDias } from '../common/fechas.js';
+import { ApiErrores } from '../common/swagger.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { DashboardEntity, SaludEntity } from './dashboard.entity.js';
 
-@ApiTags('dashboard')
 @Controller()
 export class DashboardController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Public()
   @Get()
+  @ApiTags('salud')
+  @ApiOperation({
+    summary: 'Estado del servicio',
+    description: 'No requiere token.',
+  })
+  @ApiOkResponse({ type: SaludEntity })
   salud() {
     return { servicio: 'baleadafit-api', estado: 'ok' };
   }
 
-  /** Resumen para la pantalla de inicio de la nutricionista. */
+  @ApiTags('dashboard')
   @ApiBearerAuth()
   @Roles('nutricionista')
   @Get('dashboard')
+  @ApiOperation({
+    summary: 'Resumen de inicio',
+    description:
+      'Pacientes activos, planes en borrador y citas de hoy (sin canceladas).',
+  })
+  @ApiOkResponse({ type: DashboardEntity })
+  @ApiErrores()
   async resumen(@UsuarioAct() u: UsuarioActual) {
     const nutricionistaId = u.nutricionistaId!;
     const inicioDia = aFecha(hoyIso());
@@ -37,7 +56,9 @@ export class DashboardController {
         },
         orderBy: { fechaHora: 'asc' },
         include: {
-          paciente: { select: { id: true, nombre: true, apellido: true } },
+          paciente: {
+            select: { id: true, nombre: true, apellido: true, telefono: true },
+          },
         },
       }),
     ]);
