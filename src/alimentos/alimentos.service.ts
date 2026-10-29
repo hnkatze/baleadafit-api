@@ -3,8 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { aFecha, hoyIso } from '../common/fechas.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { cambianValores, datosVersion } from './alimento-version.js';
 import type {
   ActualizarAlimentoDto,
   BuscarAlimentosDto,
@@ -50,7 +52,16 @@ export class AlimentosService {
 
   async crear(dto: CrearAlimentoDto) {
     try {
-      return await this.prisma.alimento.create({ data: dto });
+      return await this.prisma.$transaction(async (tx) => {
+        const alimento = await tx.alimento.create({ data: dto });
+        await tx.alimentoVersion.create({
+          data: {
+            alimentoId: alimento.id,
+            ...datosVersion(alimento, 1, aFecha(hoyIso())),
+          },
+        });
+        return alimento;
+      });
     } catch (e) {
       if ((e as { code?: string }).code === 'P2002')
         throw new ConflictException('Ya existe un alimento con ese nombre.');
@@ -58,9 +69,70 @@ export class AlimentosService {
     }
   }
 
+  /**
+   * Editar los valores nutricionales abre una versión nueva y cierra la
+   * anterior: los planes ya armados siguen apuntando a la versión que usaron.
+   * Editar solo la identidad (nombre, categoría, etiquetas) no versiona.
+   */
   async actualizar(id: string, dto: ActualizarAlimentoDto) {
-    await this.detalle(id);
-    return this.prisma.alimento.update({ where: { id }, data: dto });
+    const actual = await this.detalle(id);
+    if (!cambianValores(actual, dto))
+      return this.prisma.alimento.update({ where: { id }, data: dto });
+
+    const hoy = aFecha(hoyIso());
+    return this.prisma.$transaction(async (tx) => {
+      const ultima = await tx.alimentoVersion.findFirst({
+        where: { alimentoId: id },
+        orderBy: { version: 'desc' },
+      });
+      if (ultima) {
+        await tx.alimentoVersion.update({
+          where: { id: ultima.id },
+          data: { vigenteHasta: hoy },
+        });
+      }
+      const alimento = await tx.alimento.update({ where: { id }, data: dto });
+      await tx.alimentoVersion.create({
+        data: {
+          alimentoId: id,
+          ...datosVersion(alimento, (ultima?.version ?? 0) + 1, hoy),
+        },
+      });
+      return alimento;
+    });
+  }
+
+  /** Historial de valores del alimento: de la versión más nueva a la más vieja. */
+  async versiones(alimentoId: string) {
+    const alimento = await this.prisma.alimento.findUnique({
+      where: { id: alimentoId },
+      select: { id: true },
+    });
+    if (!alimento) throw new NotFoundException('Alimento no encontrado.');
+    return this.prisma.alimentoVersion.findMany({
+      where: { alimentoId },
+      orderBy: { version: 'desc' },
+      select: {
+        version: true,
+        tabla: true,
+        fuente: true,
+        vigenteDesde: true,
+        vigenteHasta: true,
+        porcionDescripcion: true,
+        porcionGramos: true,
+        kcal: true,
+        proteinaG: true,
+        carbohidratoG: true,
+        grasaG: true,
+        fibraG: true,
+        sodioMg: true,
+        potasioMg: true,
+        fosforoMg: true,
+        azucaresG: true,
+        grasasSatG: true,
+        indiceGlucemico: true,
+      },
+    });
   }
 
   restricciones() {

@@ -27,7 +27,7 @@ import {
   BuscarAlimentosDto,
   CrearAlimentoDto,
 } from './alimentos.dto.js';
-import { AlimentoEntity } from './alimentos.entity.js';
+import { AlimentoEntity, AlimentoVersionEntity } from './alimentos.entity.js';
 import { AlimentosService } from './alimentos.service.js';
 
 const ID_ALIMENTO = ApiParam({
@@ -92,6 +92,20 @@ export class AlimentosController {
     @Body() dto: ActualizarAlimentoDto,
   ) {
     return this.service.actualizar(id, dto);
+  }
+
+  @Roles('nutricionista')
+  @Get('alimentos/:id/versiones')
+  @ID_ALIMENTO
+  @ApiOperation({
+    summary: 'Historial de versiones de un alimento',
+    description:
+      'Solo nutricionistas. Qué valores tuvo el alimento y desde/hasta cuándo estuvieron vigentes, de la versión más nueva a la más vieja.',
+  })
+  @ApiOkResponse({ type: [AlimentoVersionEntity] })
+  @ApiErrores(404)
+  versiones(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.versiones(id);
   }
 
   @Get('restricciones')
