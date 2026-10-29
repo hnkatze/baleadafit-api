@@ -5654,6 +5654,47 @@
             "type": "number",
             "minimum": 0
           },
+          "sodioMg": {
+            "type": "number",
+            "description": "Sodio en miligramos por porción. Estimado: verificar con INCAP.",
+            "example": 420,
+            "minimum": 0,
+            "maximum": 2000
+          },
+          "potasioMg": {
+            "type": "number",
+            "description": "Potasio en miligramos por porción.",
+            "example": 610,
+            "minimum": 0,
+            "maximum": 2000
+          },
+          "fosforoMg": {
+            "type": "number",
+            "description": "Fósforo en miligramos por porción.",
+            "example": 180,
+            "minimum": 0,
+            "maximum": 800
+          },
+          "azucaresG": {
+            "type": "number",
+            "description": "Azúcares totales en gramos por porción (incluye los naturales).",
+            "example": 6,
+            "minimum": 0
+          },
+          "grasasSatG": {
+            "type": "number",
+            "description": "Grasa saturada en gramos por porción.",
+            "example": 3.5,
+            "minimum": 0
+          },
+          "indiceGlucemico": {
+            "type": "number",
+            "nullable": true,
+            "description": "Índice glucémico de la porción (0-110). Nulo en alimentos sin carbohidratos.",
+            "example": 55,
+            "minimum": 0,
+            "maximum": 110
+          },
           "tiposComida": {
             "type": "array",
             "description": "Tiempos de comida en los que se puede sugerir.",
@@ -5766,6 +5807,47 @@
           "fibraG": {
             "type": "number",
             "minimum": 0
+          },
+          "sodioMg": {
+            "type": "number",
+            "description": "Sodio en miligramos por porción. Estimado: verificar con INCAP.",
+            "example": 420,
+            "minimum": 0,
+            "maximum": 2000
+          },
+          "potasioMg": {
+            "type": "number",
+            "description": "Potasio en miligramos por porción.",
+            "example": 610,
+            "minimum": 0,
+            "maximum": 2000
+          },
+          "fosforoMg": {
+            "type": "number",
+            "description": "Fósforo en miligramos por porción.",
+            "example": 180,
+            "minimum": 0,
+            "maximum": 800
+          },
+          "azucaresG": {
+            "type": "number",
+            "description": "Azúcares totales en gramos por porción (incluye los naturales).",
+            "example": 6,
+            "minimum": 0
+          },
+          "grasasSatG": {
+            "type": "number",
+            "description": "Grasa saturada en gramos por porción.",
+            "example": 3.5,
+            "minimum": 0
+          },
+          "indiceGlucemico": {
+            "type": "number",
+            "nullable": true,
+            "description": "Índice glucémico de la porción (0-110). Nulo en alimentos sin carbohidratos.",
+            "example": 55,
+            "minimum": 0,
+            "maximum": 110
           },
           "tiposComida": {
             "type": "array",
@@ -6045,13 +6127,48 @@
           "grasaG": {
             "type": "number",
             "example": 45.7
+          },
+          "fibraG": {
+            "type": "number",
+            "example": 12.4
+          },
+          "sodioMg": {
+            "type": "number",
+            "example": 1480
+          },
+          "potasioMg": {
+            "type": "number",
+            "example": 2650
+          },
+          "fosforoMg": {
+            "type": "number",
+            "example": 980
+          },
+          "azucaresG": {
+            "type": "number",
+            "example": 24.6
+          },
+          "grasasSatG": {
+            "type": "number",
+            "example": 14.2
+          },
+          "cargaGlucemica": {
+            "type": "number",
+            "example": 62.5
           }
         },
         "required": [
           "kcal",
           "proteinaG",
           "carbohidratoG",
-          "grasaG"
+          "grasaG",
+          "fibraG",
+          "sodioMg",
+          "potasioMg",
+          "fosforoMg",
+          "azucaresG",
+          "grasasSatG",
+          "cargaGlucemica"
         ]
       },
       "TiempoComidaEntity": {

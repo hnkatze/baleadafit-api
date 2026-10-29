@@ -129,9 +129,27 @@ Un guard global verifica el ID token de Firebase y resuelve el rol:
 
 ## Base de datos
 
-Las tablas son `nutricionista`, `paciente`, `medicion`, `restriccion`, `paciente_restriccion` (N:M), `cita`, `alimento`, `plan_alimenticio`, `tiempo_comida`, `plan_item` (N:M tiempo ↔ alimento con porciones) y `registro_comida`. Ver `prisma/schema.prisma`.
+Las tablas son `nutricionista`, `paciente`, `medicion`, `restriccion`, `paciente_restriccion` (N:M), `condicion`, `paciente_condicion` (N:M), `medicamento`, `cita`, `alimento`, `plan_alimenticio`, `tiempo_comida`, `plan_item` (N:M tiempo ↔ alimento con porciones) y `registro_comida`. Ver `prisma/schema.prisma`.
 
 > Los valores nutricionales del seed son **aproximados** y sirven para desarrollo y demo. Antes de cualquier uso clínico hay que verificarlos contra la Tabla de Composición de Alimentos de Centroamérica (INCAP).
+
+### Nutrientes clínicos
+
+Cada alimento declara, **por porción** (igual que kcal y macros), además de `kcal`, `proteinaG`, `carbohidratoG` y `grasaG`:
+
+| Campo | Unidad | Nota |
+|---|---|---|
+| `fibraG` | g | Sostiene las recomendaciones en prediabetes y dislipidemia |
+| `azucaresG` | g | Incluye los azúcares naturales; nunca supera los carbohidratos |
+| `grasasSatG` | g | Nunca supera la grasa total |
+| `sodioMg` | mg | Clave en hipertensión |
+| `potasioMg` | mg | Clave en enfermedad renal crónica |
+| `fosforoMg` | mg | Clave en enfermedad renal crónica |
+| `indiceGlucemico` | 0-110 | Nulo cuando la porción aporta menos de 2 g de carbohidratos |
+
+Los totales del plan (`GET /planes/:id`, `GET /me/hoy`, `GET /me/plan`) suman todos esos nutrientes por tiempo de comida y por día, más la **carga glucémica** (índice glucémico × carbohidratos / 100 por alimento). Un nutriente sin dato aporta 0, así que el total es un **piso de lo conocido**, no una promesa: si un alimento no tiene el dato cargado, el total subestima.
+
+El recomendador recibe estos valores por alimento en el catálogo del prompt, así que el agente puede razonar sobre sodio, potasio y carga glucémica al elegir los platos, además del perfil clínico del paciente.
 
 ### Fechas y zonas horarias
 
