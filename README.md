@@ -99,13 +99,33 @@ Las tablas son `nutricionista`, `paciente`, `medicion`, `restriccion`, `paciente
 
 > Los valores nutricionales del seed son **aproximados** y sirven para desarrollo y demo. Antes de cualquier uso clínico hay que verificarlos contra la Tabla de Composición de Alimentos de Centroamérica (INCAP).
 
+## Pruebas
+
+```bash
+npm test          # unitarias (vitest)
+npm run test:e2e  # arranque, Swagger y rutas protegidas
+npm run test:cov  # cobertura de la lógica
+```
+
+Ninguna requiere base de datos: los servicios se prueban con `crearPrismaMock()` (`src/testing/prisma-mock.ts`), que simula cualquier `prisma.<modelo>.<método>`.
+
+| Área | Qué se prueba |
+|---|---|
+| Nutrición | Mifflin-St Jeor, piso calórico, macros, IMC, generador por reglas y ajuste de porciones |
+| Recomendador | Propuesta de la IA, descarte de alimentos inventados y respaldo por reglas |
+| Auth | Resolución de rol, vinculación por correo verificado, `@Roles()` y modo de desarrollo |
+| Pacientes | Búsqueda, restricciones, duplicados, aislamiento entre nutricionistas, requerimiento y adherencia |
+| Planes | Totales y desviación, generación, edición, activación y archivado |
+| Citas | Choques de horario, reprogramación y cancelación |
+| App del paciente | Pantalla Hoy, plan activo y registro diario |
+
 ## Scripts
 
 | Script | Acción |
 |---|---|
 | `npm run start:dev` | Desarrollo con recarga |
 | `npm run build` / `npm run start:prod` | Compilar y correr |
-| `npm test` / `npm run test:e2e` | Pruebas unitarias / e2e (no requieren BD) |
+| `npm test` / `npm run test:e2e` / `npm run test:cov` | Pruebas unitarias, e2e y cobertura (no requieren BD) |
 | `npm run db:migrate` / `db:deploy` / `db:seed` / `db:studio` | Prisma |
 | `npm run openapi` | Exporta `docs/openapi.json` (después de `build`) |
 
