@@ -72,6 +72,7 @@ export class PlanesController {
       '3. Si `usarIa` (por defecto), AWS Bedrock propone alimentos y porciones.',
       '4. El backend descarta alimentos inexistentes y ajusta porciones a ±10 % por tiempo de comida.',
       '5. Si la IA no está disponible usa reglas (`origen = REGLAS`).',
+      '6. Cada ítem queda atado a la versión vigente del alimento, y los totales salen de ella.',
       '',
       'Requiere al menos una medición del paciente.',
     ].join('\n'),
@@ -91,7 +92,7 @@ export class PlanesController {
   @ApiOperation({
     summary: 'Detalle del plan',
     description:
-      'Tiempos de comida con alimentos, totales y desviación contra la meta.',
+      'Tiempos de comida con alimentos, totales y desviación contra la meta. Cada ítem declara la versión del alimento que usó y los totales salen de esa versión: editar el alimento no cambia un plan existente.',
   })
   @ApiOkResponse({ type: PlanDetalleEntity })
   @ApiErrores(404)
@@ -125,7 +126,7 @@ export class PlanesController {
   @ApiOperation({
     summary: 'Reemplazar alimentos de un tiempo de comida',
     description:
-      'Edición manual: reemplaza la lista completa del tiempo indicado.',
+      'Edición manual: reemplaza la lista completa del tiempo indicado. Los ítems nuevos quedan atados a la versión vigente de cada alimento.',
   })
   @ApiOkResponse({ type: PlanDetalleEntity })
   @ApiErrores(400, 404)

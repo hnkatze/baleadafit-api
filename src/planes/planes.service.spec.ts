@@ -13,6 +13,13 @@ const alimento = (kcal: number) => ({
   grasaG: 5,
 });
 
+const versionNutrientes = (kcal: number) => ({
+  kcal,
+  proteinaG: 8,
+  carbohidratoG: 3,
+  grasaG: 2,
+});
+
 const planGuardado = {
   id: 'plan1',
   kcalObjetivo: 2000,
@@ -95,6 +102,7 @@ describe('PlanesService', () => {
     );
     prisma.paciente.findFirst.mockResolvedValue({ id: 'p1', meta: 'BAJAR' });
     prisma.planAlimenticio.findUnique.mockResolvedValue(planGuardado);
+    prisma.alimentoVersion.findMany.mockResolvedValue([]);
     prisma.planAlimenticio.create.mockResolvedValue({ id: 'plan1' });
   });
 
@@ -105,6 +113,88 @@ describe('PlanesService', () => {
     expect(plan.tiempos[1].desviacion).toBe(-0.2);
     expect(plan.totales.kcal).toBe(1800);
     expect(plan.desviacion).toBe(-0.1);
+  });
+
+  it('totaliza con la versión atada al ítem, no con los valores actuales del alimento', async () => {
+    // El alimento se editó después de crear el plan: sus valores actuales no mandan.
+    prisma.planAlimenticio.findUnique.mockResolvedValue({
+      id: 'plan1',
+      kcalObjetivo: 2000,
+      tiempos: [
+        {
+          id: 't1',
+          tipo: 'DESAYUNO',
+          pctKcal: 0.5,
+          orden: 0,
+          items: [
+            {
+              porciones: 2,
+              alimento: alimento(500),
+              alimentoVersion: versionNutrientes(100),
+            },
+          ],
+        },
+        {
+          id: 't2',
+          tipo: 'CENA',
+          pctKcal: 0.5,
+          orden: 4,
+          items: [
+            {
+              porciones: 1,
+              alimento: alimento(800),
+              alimentoVersion: versionNutrientes(300),
+            },
+          ],
+        },
+      ],
+    });
+
+    const plan = await svc.detalleConTotales('plan1');
+
+    // 100 kcal × 2 porciones, no 500 × 2.
+    expect(plan.tiempos[0].totales.kcal).toBe(200);
+    expect(plan.tiempos[1].totales.kcal).toBe(300);
+    expect(plan.tiempos[0].desviacion).toBe(-0.8);
+    expect(plan.totales.kcal).toBe(500);
+    expect(plan.desviacion).toBe(-0.75);
+  });
+
+  it('trae la versión en el detalle y usa el alimento si el ítem no tiene versión', async () => {
+    prisma.planAlimenticio.findUnique.mockResolvedValue({
+      id: 'plan1',
+      kcalObjetivo: 2000,
+      tiempos: [
+        {
+          id: 't1',
+          tipo: 'DESAYUNO',
+          pctKcal: 0.5,
+          orden: 0,
+          items: [
+            {
+              porciones: 1,
+              alimento: alimento(500),
+              alimentoVersion: versionNutrientes(100),
+            },
+            // Ítem viejo, anterior al versionado: sigue totalizando con el alimento.
+            { porciones: 1, alimento: alimento(100), alimentoVersion: null },
+          ],
+        },
+      ],
+    });
+
+    const plan = await svc.detalleConTotales('plan1');
+
+    expect(
+      prisma.planAlimenticio.findUnique.mock.calls[0][0].include,
+    ).toMatchObject({
+      tiempos: {
+        include: { items: { include: { alimentoVersion: true } } },
+      },
+    });
+    expect(plan.tiempos[0].totales.kcal).toBe(200);
+    expect(plan.tiempos[0].desviacion).toBe(-0.8);
+    expect(plan.totales.kcal).toBe(200);
   });
 
   it('responde 404 si el plan no existe', async () => {
@@ -147,6 +237,40 @@ describe('PlanesService', () => {
         ['ALMUERZO', 2],
         ['DESAYUNO', 0],
       ]);
+    });
+
+    it('ata cada ítem a la versión vigente de su alimento', async () => {
+      prisma.alimentoVersion.findMany.mockResolvedValue([
+        // La versión vigente es la de mayor `version`, sin `vigenteHasta`.
+        { id: 'v1a', alimentoId: 'a1', version: 2 },
+        { id: 'v0a', alimentoId: 'a1', version: 1 },
+        { id: 'v1b', alimentoId: 'a2', version: 1 },
+      ]);
+
+      await svc.generar('p1', 'n1', { nombre: 'Plan A' });
+
+      expect(prisma.alimentoVersion.findMany).toHaveBeenCalledWith({
+        where: { alimentoId: { in: ['a1', 'a2'] }, vigenteHasta: null },
+        orderBy: { version: 'desc' },
+      });
+      const { data } = prisma.planAlimenticio.create.mock.calls[0][0];
+      expect(
+        data.tiempos.create.map(
+          (t: { items: { create: { alimentoVersionId: string | null }[] } }) =>
+            t.items.create.map((i) => i.alimentoVersionId),
+        ),
+      ).toEqual([['v1a'], ['v1b']]);
+    });
+
+    it('deja el ítem sin versión si el alimento no tiene ninguna', async () => {
+      await svc.generar('p1', 'n1', { nombre: 'Plan A' });
+      const { data } = prisma.planAlimenticio.create.mock.calls[0][0];
+      expect(
+        data.tiempos.create.map(
+          (t: { items: { create: { alimentoVersionId: string | null }[] } }) =>
+            t.items.create.map((i) => i.alimentoVersionId),
+        ),
+      ).toEqual([[null], [null]]);
     });
 
     it('recalcula macros si se sobrescriben las kcal', async () => {
@@ -210,7 +334,50 @@ describe('PlanesService', () => {
         where: { tiempoComidaId: 't1' },
       });
       expect(prisma.planItem.createMany).toHaveBeenCalledWith({
-        data: [{ alimentoId: 'a1', porciones: 1.5, tiempoComidaId: 't1' }],
+        data: [
+          {
+            alimentoId: 'a1',
+            porciones: 1.5,
+            tiempoComidaId: 't1',
+            alimentoVersionId: null,
+          },
+        ],
+      });
+    });
+
+    it('ata los ítems nuevos a la versión vigente del alimento', async () => {
+      prisma.tiempoComida.findUnique.mockResolvedValue({ id: 't1' });
+      prisma.alimento.count.mockResolvedValue(2);
+      prisma.alimentoVersion.findMany.mockResolvedValue([
+        { id: 'v1a', alimentoId: 'a1', version: 3 },
+      ]);
+
+      await svc.reemplazarItems('plan1', 'DESAYUNO', 'n1', {
+        items: [
+          { alimentoId: 'a1', porciones: 1 },
+          { alimentoId: 'a2', porciones: 2 },
+        ],
+      });
+
+      expect(prisma.alimentoVersion.findMany).toHaveBeenCalledWith({
+        where: { alimentoId: { in: ['a1', 'a2'] }, vigenteHasta: null },
+        orderBy: { version: 'desc' },
+      });
+      expect(prisma.planItem.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            alimentoId: 'a1',
+            porciones: 1,
+            tiempoComidaId: 't1',
+            alimentoVersionId: 'v1a',
+          },
+          {
+            alimentoId: 'a2',
+            porciones: 2,
+            tiempoComidaId: 't1',
+            alimentoVersionId: null,
+          },
+        ],
       });
     });
 

@@ -1,6 +1,9 @@
 /* Modelos de respuesta para la documentación de Swagger (no se instancian). */
 import { ApiProperty } from '@nestjs/swagger';
-import { AlimentoEntity } from '../alimentos/alimentos.entity.js';
+import {
+  AlimentoEntity,
+  AlimentoVersionEntity,
+} from '../alimentos/alimentos.entity.js';
 import {
   EstadoPlan,
   OrigenPlan,
@@ -32,6 +35,10 @@ export class TotalesEntity {
   cargaGlucemica: number;
 }
 
+/**
+ * Valores nutricionales de la versión del alimento que usó el ítem.
+ * Se documenta acá mientras el catálogo no exponga su propia entidad de versión.
+ */
 export class PlanItemEntity {
   id: string;
   tiempoComidaId: string;
@@ -41,7 +48,19 @@ export class PlanItemEntity {
    * @example 1.5
    */
   porciones: number;
+  /**
+   * Versión de los valores nutricionales usada al crear el ítem. Los totales del
+   * plan salen de esta versión, así que editar el alimento no los cambia.
+   * Nulo en los ítems anteriores al versionado: esos totalizan con el alimento actual.
+   */
+  @ApiProperty({ type: String, nullable: true })
+  alimentoVersionId: string | null;
   alimento: AlimentoEntity;
+  /**
+   * Valores con los que totaliza el ítem; nula en los ítems anteriores al versionado.
+   */
+  @ApiProperty({ type: () => AlimentoVersionEntity, nullable: true })
+  alimentoVersion: AlimentoVersionEntity | null;
 }
 
 export class TiempoComidaEntity {

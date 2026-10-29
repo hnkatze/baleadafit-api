@@ -13,6 +13,7 @@ import {
   macrosDesdeKcal,
   sumarNutrientes,
   validarDistribucion,
+  type NutrientesPorPorcion,
 } from '../nutricion/nutricion.util.js';
 import { PacientesService } from '../pacientes/pacientes.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -26,9 +27,32 @@ import { RecomendadorService } from './recomendador.service.js';
 const INCLUDE_DETALLE = {
   tiempos: {
     orderBy: { orden: 'asc' as const },
-    include: { items: { include: { alimento: true } } },
+    include: {
+      items: { include: { alimento: true, alimentoVersion: true } },
+    },
   },
 };
+
+/** Ítem de plan con los valores de la versión que usó y, si es viejo, los del alimento. */
+interface ItemConVersion {
+  porciones: number;
+  alimento: NutrientesPorPorcion;
+  alimentoVersion?: NutrientesPorPorcion | null;
+}
+
+/**
+ * Nutrientes con los que se totaliza un ítem: los de la versión atada al crearlo.
+ * Los ítems anteriores al versionado no tienen versión y usan el alimento actual.
+ */
+function nutrientesDelItem(item: ItemConVersion): {
+  porciones: number;
+  alimento: NutrientesPorPorcion;
+} {
+  return {
+    porciones: item.porciones,
+    alimento: item.alimentoVersion ?? item.alimento,
+  };
+}
 
 @Injectable()
 export class PlanesService {
@@ -62,7 +86,7 @@ export class PlanesService {
     if (!plan) throw new NotFoundException('Plan no encontrado.');
 
     const tiempos = plan.tiempos.map((t) => {
-      const totales = sumarNutrientes(t.items);
+      const totales = sumarNutrientes(t.items.map(nutrientesDelItem));
       const kcalMeta = Math.round(plan.kcalObjetivo * t.pctKcal);
       return {
         ...t,
@@ -71,7 +95,9 @@ export class PlanesService {
         desviacion: desviacion(totales.kcal, kcalMeta),
       };
     });
-    const totales = sumarNutrientes(plan.tiempos.flatMap((t) => t.items));
+    const totales = sumarNutrientes(
+      plan.tiempos.flatMap((t) => t.items.map(nutrientesDelItem)),
+    );
     return {
       ...plan,
       tiempos,
@@ -136,6 +162,10 @@ export class PlanesService {
       semilla: Date.now() % 1000,
     });
 
+    const versiones = await this.versionesVigentes(
+      resultado.tiempos.flatMap((t) => t.items.map((i) => i.alimentoId)),
+    );
+
     const plan = await this.prisma.planAlimenticio.create({
       data: {
         pacienteId,
@@ -151,7 +181,9 @@ export class PlanesService {
             tipo: t.tipo,
             pctKcal: t.pctKcal,
             orden: ORDEN_TIEMPOS.indexOf(t.tipo),
-            items: { create: t.items },
+            items: {
+              create: t.items.map((i) => this.itemConVersion(i, versiones)),
+            },
           })),
         },
       },
@@ -196,10 +228,14 @@ export class PlanesService {
         'Hay alimentos que no existen o están inactivos.',
       );
 
+    const versiones = await this.versionesVigentes(ids);
     await this.prisma.$transaction([
       this.prisma.planItem.deleteMany({ where: { tiempoComidaId: tiempo.id } }),
       this.prisma.planItem.createMany({
-        data: dto.items.map((i) => ({ ...i, tiempoComidaId: tiempo.id })),
+        data: dto.items.map((i) => ({
+          ...this.itemConVersion(i, versiones),
+          tiempoComidaId: tiempo.id,
+        })),
       }),
     ]);
     return this.detalleConTotales(planId);
@@ -237,5 +273,37 @@ export class PlanesService {
   private asegurarEditable(estado: string) {
     if (estado === 'ARCHIVADO')
       throw new BadRequestException('El plan está archivado.');
+  }
+
+  /**
+   * Versión vigente de cada alimento, por id: la de mayor `version` sin `vigenteHasta`.
+   * Un alimento sin versión (dato viejo) queda fuera del mapa y su ítem se guarda sin versión.
+   */
+  private async versionesVigentes(
+    alimentoIds: string[],
+  ): Promise<Map<string, string>> {
+    const versiones = await this.prisma.alimentoVersion.findMany({
+      where: {
+        alimentoId: { in: [...new Set(alimentoIds)] },
+        vigenteHasta: null,
+      },
+      orderBy: { version: 'desc' },
+    });
+    const porAlimento = new Map<string, string>();
+    for (const v of versiones) {
+      if (!porAlimento.has(v.alimentoId)) porAlimento.set(v.alimentoId, v.id);
+    }
+    return porAlimento;
+  }
+
+  /** Ítem de plan atado a la versión vigente del alimento al momento de crearlo. */
+  private itemConVersion(
+    item: { alimentoId: string; porciones: number },
+    versiones: Map<string, string>,
+  ) {
+    return {
+      ...item,
+      alimentoVersionId: versiones.get(item.alimentoId) ?? null,
+    };
   }
 }
