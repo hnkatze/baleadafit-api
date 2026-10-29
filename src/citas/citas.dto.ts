@@ -94,7 +94,7 @@ export class ActualizarCitaDto extends PartialType(CrearCitaDto) {
    */
   @IsOptional()
   @IsDateString()
-  proximaCitaSugerida?: string;
+  proximaCitaSugerida?: string | null;
 }
 
 export class BuscarCitasDto {

@@ -116,7 +116,10 @@ export class PacientesService {
         data: {
           ...datos,
           fechaNacimiento: aFecha(fechaNacimiento),
-          ...(fechaObjetivo ? { fechaObjetivo: aFecha(fechaObjetivo) } : {}),
+          // Un `null` explícito borra el objetivo; `undefined` lo deja como está.
+          ...(fechaObjetivo === undefined
+            ? {}
+            : { fechaObjetivo: fechaObjetivo ? aFecha(fechaObjetivo) : null }),
           nutricionistaId,
           restricciones: {
             create: restriccionIds.map((restriccionId) => ({ restriccionId })),
@@ -174,7 +177,10 @@ export class PacientesService {
           ...(fechaNacimiento
             ? { fechaNacimiento: aFecha(fechaNacimiento) }
             : {}),
-          ...(fechaObjetivo ? { fechaObjetivo: aFecha(fechaObjetivo) } : {}),
+          // Un `null` explícito borra el objetivo; `undefined` lo deja como está.
+          ...(fechaObjetivo === undefined
+            ? {}
+            : { fechaObjetivo: fechaObjetivo ? aFecha(fechaObjetivo) : null }),
         },
         include: {
           restricciones: { include: { restriccion: true } },

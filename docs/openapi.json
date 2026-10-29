@@ -3180,39 +3180,52 @@
           "paciente": {
             "$ref": "#/components/schemas/PacienteDeCitaEntity"
           },
+          "pacienteId": {
+            "type": "string"
+          },
+          "nutricionistaId": {
+            "type": "string"
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
           "subjetivo": {
             "type": "string",
             "nullable": true,
+            "description": "SOAP de la consulta: lo que el paciente refiere.",
             "example": "Refiere hambre a media tarde y poca sed."
           },
           "objetivo": {
             "type": "string",
             "nullable": true,
+            "description": "SOAP: lo medido y observado en la consulta.",
             "example": "Peso 78.4 kg, cintura 92 cm, presión 118/76."
           },
           "analisis": {
             "type": "string",
             "nullable": true,
+            "description": "SOAP: interpretación del caso.",
             "example": "Adherencia parcial al plan; pérdida de 1.2 kg en 4 semanas."
           },
           "plan": {
             "type": "string",
             "nullable": true,
+            "description": "SOAP: conducta y próxima indicación.",
             "example": "Agregar merienda de fruta con yogur y control en 4 semanas."
           },
           "proximaCitaSugerida": {
             "format": "date-time",
             "type": "string",
             "nullable": true,
+            "description": "Fecha sugerida de la próxima cita (solo fecha).",
             "example": "2026-12-01T00:00:00.000Z"
           },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
           "id": {
-            "type": "string"
-          },
-          "pacienteId": {
-            "type": "string"
-          },
-          "nutricionistaId": {
             "type": "string"
           },
           "fechaHora": {
@@ -3227,32 +3240,24 @@
             "type": "string",
             "nullable": true,
             "example": "Control mensual"
-          },
-          "notas": {
-            "type": "string",
-            "nullable": true
-          },
-          "creadoEn": {
-            "format": "date-time",
-            "type": "string"
           }
         },
         "required": [
           "estado",
           "paciente",
+          "pacienteId",
+          "nutricionistaId",
+          "notas",
           "subjetivo",
           "objetivo",
           "analisis",
           "plan",
           "proximaCitaSugerida",
+          "creadoEn",
           "id",
-          "pacienteId",
-          "nutricionistaId",
           "fechaHora",
           "duracionMin",
-          "motivo",
-          "notas",
-          "creadoEn"
+          "motivo"
         ]
       },
       "DashboardEntity": {
@@ -3774,6 +3779,7 @@
           },
           "fechaObjetivo": {
             "type": "string",
+            "nullable": true,
             "description": "Formato YYYY-MM-DD.",
             "example": "2027-03-01"
           },
@@ -4370,13 +4376,52 @@
               }
             ]
           },
-          "id": {
-            "type": "string"
-          },
           "pacienteId": {
             "type": "string"
           },
           "nutricionistaId": {
+            "type": "string"
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "subjetivo": {
+            "type": "string",
+            "nullable": true,
+            "description": "SOAP de la consulta: lo que el paciente refiere.",
+            "example": "Refiere hambre a media tarde y poca sed."
+          },
+          "objetivo": {
+            "type": "string",
+            "nullable": true,
+            "description": "SOAP: lo medido y observado en la consulta.",
+            "example": "Peso 78.4 kg, cintura 92 cm, presión 118/76."
+          },
+          "analisis": {
+            "type": "string",
+            "nullable": true,
+            "description": "SOAP: interpretación del caso.",
+            "example": "Adherencia parcial al plan; pérdida de 1.2 kg en 4 semanas."
+          },
+          "plan": {
+            "type": "string",
+            "nullable": true,
+            "description": "SOAP: conducta y próxima indicación.",
+            "example": "Agregar merienda de fruta con yogur y control en 4 semanas."
+          },
+          "proximaCitaSugerida": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Fecha sugerida de la próxima cita (solo fecha).",
+            "example": "2026-12-01T00:00:00.000Z"
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
             "type": "string"
           },
           "fechaHora": {
@@ -4391,26 +4436,23 @@
             "type": "string",
             "nullable": true,
             "example": "Control mensual"
-          },
-          "notas": {
-            "type": "string",
-            "nullable": true
-          },
-          "creadoEn": {
-            "format": "date-time",
-            "type": "string"
           }
         },
         "required": [
           "estado",
-          "id",
           "pacienteId",
           "nutricionistaId",
+          "notas",
+          "subjetivo",
+          "objetivo",
+          "analisis",
+          "plan",
+          "proximaCitaSugerida",
+          "creadoEn",
+          "id",
           "fechaHora",
           "duracionMin",
-          "motivo",
-          "notas",
-          "creadoEn"
+          "motivo"
         ]
       },
       "EstadoPlan": {
@@ -4780,6 +4822,7 @@
           },
           "fechaObjetivo": {
             "type": "string",
+            "nullable": true,
             "description": "Formato YYYY-MM-DD.",
             "example": "2027-03-01"
           },
@@ -5216,7 +5259,7 @@
           "presionDiastolica": {
             "type": "number",
             "example": 80,
-            "minimum": 60,
+            "minimum": 40,
             "maximum": 250
           },
           "fuente": {
@@ -6411,6 +6454,7 @@
           },
           "proximaCitaSugerida": {
             "type": "string",
+            "nullable": true,
             "description": "Fecha sugerida de la próxima cita, formato YYYY-MM-DD.",
             "example": "2026-12-01"
           }
@@ -6550,6 +6594,41 @@
           "registro"
         ]
       },
+      "CitaAgendaEntity": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoCita"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "fechaHora": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "duracionMin": {
+            "type": "number",
+            "example": 45
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true,
+            "example": "Control mensual"
+          }
+        },
+        "required": [
+          "estado",
+          "id",
+          "fechaHora",
+          "duracionMin",
+          "motivo"
+        ]
+      },
       "HoyEntity": {
         "type": "object",
         "properties": {
@@ -6582,7 +6661,7 @@
             "type": "object",
             "allOf": [
               {
-                "$ref": "#/components/schemas/CitaBasicaEntity"
+                "$ref": "#/components/schemas/CitaAgendaEntity"
               }
             ]
           }
@@ -6620,12 +6699,6 @@
           "id": {
             "type": "string"
           },
-          "pacienteId": {
-            "type": "string"
-          },
-          "nutricionistaId": {
-            "type": "string"
-          },
           "fechaHora": {
             "format": "date-time",
             "type": "string"
@@ -6639,14 +6712,6 @@
             "nullable": true,
             "example": "Control mensual"
           },
-          "notas": {
-            "type": "string",
-            "nullable": true
-          },
-          "creadoEn": {
-            "format": "date-time",
-            "type": "string"
-          },
           "nutricionista": {
             "$ref": "#/components/schemas/NutricionistaDeCitaEntity"
           }
@@ -6654,13 +6719,9 @@
         "required": [
           "estado",
           "id",
-          "pacienteId",
-          "nutricionistaId",
           "fechaHora",
           "duracionMin",
           "motivo",
-          "notas",
-          "creadoEn",
           "nutricionista"
         ]
       },

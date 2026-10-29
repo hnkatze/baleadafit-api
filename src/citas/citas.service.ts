@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { AccesoService } from '../common/acceso.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
+import { aFecha } from '../common/fechas.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type {
   ActualizarCitaDto,
@@ -71,10 +72,15 @@ export class CitasService {
     const fechaHora = dto.fechaHora ? new Date(dto.fechaHora) : cita.fechaHora;
     const duracionMin = dto.duracionMin ?? cita.duracionMin;
     const estado = dto.estado ?? cita.estado;
-    // La fecha llega como YYYY-MM-DD y en la base es un campo de solo fecha.
-    const proximaCitaSugerida = dto.proximaCitaSugerida
-      ? new Date(dto.proximaCitaSugerida)
-      : undefined;
+    // La columna es de solo fecha: `aFecha` se queda con la fecha local del ISO,
+    // así un "2026-12-01T20:00:00-06:00" no se corre al 2 de diciembre. Un `null`
+    // explícito borra la fecha.
+    const proximaCitaSugerida =
+      dto.proximaCitaSugerida === undefined
+        ? undefined
+        : dto.proximaCitaSugerida
+          ? aFecha(dto.proximaCitaSugerida)
+          : null;
     if (estado === 'PROGRAMADA' && (dto.fechaHora || dto.duracionMin)) {
       await this.verificarChoque(nutricionistaId, fechaHora, duracionMin, id);
     }

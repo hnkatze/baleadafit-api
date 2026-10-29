@@ -125,6 +125,25 @@ describe('CitasService', () => {
       ).toEqual(new Date('2030-12-01'));
     });
 
+    it('no corre la fecha cuando llega con zona horaria', async () => {
+      prisma.cita.findFirst.mockResolvedValue(cita);
+      // 1 de diciembre, 8 de la noche en Honduras (GMT-6) = 2 de diciembre UTC.
+      await svc.actualizar('c1', 'n1', {
+        proximaCitaSugerida: '2030-12-01T20:00:00-06:00',
+      });
+      expect(
+        prisma.cita.update.mock.calls[0][0].data.proximaCitaSugerida,
+      ).toEqual(new Date('2030-12-01T00:00:00.000Z'));
+    });
+
+    it('permite borrar la próxima cita sugerida con null', async () => {
+      prisma.cita.findFirst.mockResolvedValue(cita);
+      await svc.actualizar('c1', 'n1', { proximaCitaSugerida: null });
+      expect(
+        prisma.cita.update.mock.calls[0][0].data.proximaCitaSugerida,
+      ).toBeNull();
+    });
+
     it('no registra el SOAP si el paciente es de otra nutricionista', async () => {
       prisma.cita.findFirst.mockResolvedValue(cita);
       prisma.paciente.findFirst.mockResolvedValue(null);

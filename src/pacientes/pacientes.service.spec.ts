@@ -186,6 +186,15 @@ describe('PacientesService', () => {
     });
   });
 
+  it('permite borrar la fecha objetivo con null', async () => {
+    prisma.paciente.update.mockResolvedValue({ id: 'p1' });
+
+    await svc.actualizar('p1', 'n1', { fechaObjetivo: null });
+
+    const { data } = prisma.paciente.update.mock.calls[0][0];
+    expect(data.fechaObjetivo).toBeNull();
+  });
+
   it('actualizar sigue reemplazando el set de restricciones', async () => {
     prisma.restriccion.findMany.mockResolvedValue([
       { id: 'r1', codigo: 'lactosa' },

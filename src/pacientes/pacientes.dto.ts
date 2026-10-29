@@ -115,7 +115,7 @@ export class CrearPacienteDto {
    */
   @IsOptional()
   @IsDateString()
-  fechaObjetivo?: string;
+  fechaObjetivo?: string | null;
 
   /**
    * Cambia el requerimiento y las recomendaciones.
@@ -369,7 +369,7 @@ export class CrearMedicionDto {
   /** @example 80 */
   @IsOptional()
   @IsInt()
-  @Min(60)
+  @Min(40)
   @Max(250)
   presionDiastolica?: number;
 
