@@ -122,4 +122,54 @@ describe('RecomendadorService', () => {
     expect(r.origen).toBe('REGLAS');
     expect(bedrock.generarJson).not.toHaveBeenCalled();
   });
+
+  it('manda el perfil clínico del paciente a la IA', async () => {
+    const generar = vi.fn(async () => ({ tiempos: [] }));
+    const svc = new RecomendadorService({
+      generarJson: generar,
+    } as unknown as BedrockService);
+
+    await svc.generar({
+      ...entrada(),
+      perfilClinico: {
+        edad: 31,
+        sexo: 'F',
+        pesoKg: 73.4,
+        tallaCm: 160,
+        imc: 28.7,
+        pctGrasa: 33.5,
+        masaMuscularKg: 24.8,
+        grasaVisceral: 8,
+        estadoFisiologico: 'LACTANCIA',
+        condiciones: [
+          {
+            nombre: 'Hipertensión arterial',
+            descripcion:
+              'Menos sodio: limitar embutidos, quesos salados y caldos concentrados.',
+          },
+        ],
+        alergias: 'Penicilina',
+        medicamentos: ['Metformina 850 mg cada 12 horas'],
+        habitos: {
+          comidasAlDia: 4,
+          aguaLitros: 1.8,
+          horasSueno: 6.5,
+          alcohol: 'Social',
+          tabaco: 'No',
+          quienCocina: 'Ella misma',
+          presupuesto: 'Medio',
+        },
+        objetivo: { pesoKg: 65, fecha: '2027-03-01', meta: 'BAJAR' },
+      },
+    });
+
+    const mensaje = generar.mock.calls[0][1] as string;
+    expect(mensaje).toMatch(/Hipertensión arterial/);
+    expect(mensaje).toMatch(/Menos sodio/);
+    expect(mensaje).toMatch(/lactancia/i);
+    expect(mensaje).toMatch(/Penicilina/);
+    expect(mensaje).toMatch(/Metformina/);
+    expect(mensaje).toMatch(/Presupuesto: Medio/);
+    expect(mensaje).toMatch(/6\.5 h/);
+  });
 });

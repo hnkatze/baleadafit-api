@@ -36,7 +36,10 @@ const planGuardado = {
 
 describe('PlanesService', () => {
   let prisma: PrismaMock;
-  let pacientes: { requerimiento: ReturnType<typeof vi.fn> };
+  let pacientes: {
+    requerimiento: ReturnType<typeof vi.fn>;
+    contextoClinico: ReturnType<typeof vi.fn>;
+  };
   let alimentos: { catalogoParaPaciente: ReturnType<typeof vi.fn> };
   let recomendador: { generar: ReturnType<typeof vi.fn> };
   let svc: PlanesService;
@@ -50,6 +53,13 @@ describe('PlanesService', () => {
         carbohidratoG: 225,
         grasaG: 50,
         distribucionMacros: { proteina: 0.25, carbohidrato: 0.5, grasa: 0.25 },
+      }),
+      contextoClinico: vi.fn().mockResolvedValue({
+        edad: 31,
+        condiciones: [
+          { nombre: 'Hipertensión arterial', descripcion: 'Menos sodio.' },
+        ],
+        habitos: { presupuesto: 'Medio' },
       }),
     };
     alimentos = {
@@ -113,6 +123,13 @@ describe('PlanesService', () => {
         restricciones: ['lactosa'],
         meta: 'BAJAR',
         usarIa: true,
+        // El expediente viaja al recomendador: la IA recomienda con el contexto.
+        perfilClinico: {
+          edad: 31,
+          condiciones: [
+            { nombre: 'Hipertensión arterial', descripcion: 'Menos sodio.' },
+          ],
+        },
       });
       const { data } = prisma.planAlimenticio.create.mock.calls[0][0];
       expect(data).toMatchObject({

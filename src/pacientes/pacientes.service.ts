@@ -7,7 +7,11 @@ import {
 import { AccesoService } from '../common/acceso.service.js';
 import { aFecha, hoyIso, sumarDias } from '../common/fechas.js';
 import type { Prisma } from '../generated/prisma/client.js';
-import { calcularRequerimiento, imc } from '../nutricion/nutricion.util.js';
+import {
+  calcularEdad,
+  calcularRequerimiento,
+  imc,
+} from '../nutricion/nutricion.util.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type {
   ActualizarMedicamentoDto,
@@ -17,6 +21,7 @@ import type {
   CrearMedicionDto,
   CrearPacienteDto,
 } from './pacientes.dto.js';
+import type { PerfilClinico } from './perfil-clinico.js';
 
 @Injectable()
 export class PacientesService {
@@ -298,6 +303,71 @@ export class PacientesService {
         nivelActividad: paciente.nivelActividad,
         meta: paciente.meta,
       }),
+    };
+  }
+
+  /**
+   * Contexto del expediente para el recomendador. Solo lo que existe: lo que el
+   * paciente no tiene cargado no viaja (la IA no debe inventarlo).
+   */
+  async contextoClinico(
+    pacienteId: string,
+    nutricionistaId: string,
+  ): Promise<PerfilClinico> {
+    const paciente = await this.acceso.pacienteDeNutricionista(
+      pacienteId,
+      nutricionistaId,
+    );
+    const [condiciones, medicamentos, medicion] = await Promise.all([
+      this.prisma.pacienteCondicion.findMany({
+        where: { pacienteId },
+        include: { condicion: { select: { nombre: true, descripcion: true } } },
+      }),
+      this.prisma.medicamento.findMany({
+        where: { pacienteId, activo: true },
+        select: { nombre: true, dosis: true, frecuencia: true },
+        orderBy: { creadoEn: 'desc' },
+      }),
+      this.prisma.medicion.findFirst({
+        where: { pacienteId },
+        orderBy: [{ fecha: 'desc' }, { creadoEn: 'desc' }],
+      }),
+    ]);
+
+    return {
+      edad: calcularEdad(paciente.fechaNacimiento),
+      sexo: paciente.sexo,
+      pesoKg: medicion?.pesoKg,
+      tallaCm: medicion?.tallaCm,
+      imc: medicion ? imc(medicion.pesoKg, medicion.tallaCm) : undefined,
+      pctGrasa: medicion?.pctGrasa ?? null,
+      masaMuscularKg: medicion?.masaMuscularKg ?? null,
+      grasaVisceral: medicion?.grasaVisceral ?? null,
+      estadoFisiologico: paciente.estadoFisiologico,
+      condiciones: condiciones.map((c) => ({
+        nombre: c.condicion.nombre,
+        descripcion: c.condicion.descripcion,
+      })),
+      alergias: paciente.alergias,
+      medicamentos: medicamentos.map((m) =>
+        [m.nombre, m.dosis, m.frecuencia].filter(Boolean).join(' '),
+      ),
+      habitos: {
+        comidasAlDia: paciente.comidasAlDia,
+        aguaLitros: paciente.aguaLitros,
+        horasSueno: paciente.horasSueno,
+        alcohol: paciente.alcohol,
+        tabaco: paciente.tabaco,
+        quienCocina: paciente.quienCocina,
+        presupuesto: paciente.presupuesto,
+      },
+      objetivo: {
+        pesoKg: paciente.pesoObjetivoKg,
+        fecha: paciente.fechaObjetivo
+          ? paciente.fechaObjetivo.toISOString().slice(0, 10)
+          : null,
+        meta: paciente.meta,
+      },
     };
   }
 

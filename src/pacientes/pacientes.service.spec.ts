@@ -195,6 +195,66 @@ describe('PacientesService', () => {
     expect(data.fechaObjetivo).toBeNull();
   });
 
+  describe('contexto clínico para el recomendador', () => {
+    it('arma el perfil con condiciones, medicación vigente, hábitos y composición', async () => {
+      prisma.paciente.findFirst.mockResolvedValue({
+        ...paciente,
+        estadoFisiologico: 'LACTANCIA',
+        alergias: 'Penicilina',
+        comidasAlDia: 4,
+        aguaLitros: 1.8,
+        horasSueno: 6.5,
+        alcohol: 'Social',
+        tabaco: 'No',
+        quienCocina: 'Ella misma',
+        presupuesto: 'Medio',
+        pesoObjetivoKg: 65,
+        fechaObjetivo: new Date('2027-03-01T00:00:00.000Z'),
+      });
+      prisma.pacienteCondicion.findMany.mockResolvedValue([
+        {
+          condicion: {
+            nombre: 'Hipertensión arterial',
+            descripcion: 'Menos sodio: limitar embutidos.',
+          },
+        },
+      ]);
+      prisma.medicamento.findMany.mockResolvedValue([
+        { nombre: 'Metformina', dosis: '850 mg', frecuencia: 'Cada 12 horas' },
+      ]);
+      prisma.medicion.findFirst.mockResolvedValue({
+        pesoKg: 73.4,
+        tallaCm: 160,
+        pctGrasa: 33.5,
+        masaMuscularKg: 24.8,
+        grasaVisceral: 8,
+      });
+
+      const r = await svc.contextoClinico('p1', 'n1');
+
+      expect(r).toMatchObject({
+        edad: 31,
+        estadoFisiologico: 'LACTANCIA',
+        alergias: 'Penicilina',
+        imc: 28.7,
+        condiciones: [
+          {
+            nombre: 'Hipertensión arterial',
+            descripcion: 'Menos sodio: limitar embutidos.',
+          },
+        ],
+        medicamentos: ['Metformina 850 mg Cada 12 horas'],
+        habitos: { comidasAlDia: 4, presupuesto: 'Medio' },
+        objetivo: { pesoKg: 65, fecha: '2027-03-01' },
+      });
+      // Solo la medicación vigente entra al contexto.
+      expect(prisma.medicamento.findMany.mock.calls[0][0].where).toEqual({
+        pacienteId: 'p1',
+        activo: true,
+      });
+    });
+  });
+
   it('actualizar sigue reemplazando el set de restricciones', async () => {
     prisma.restriccion.findMany.mockResolvedValue([
       { id: 'r1', codigo: 'lactosa' },

@@ -11,9 +11,14 @@ import {
   ORDEN_TIEMPOS,
   type DistribucionTiempos,
 } from '../nutricion/nutricion.util.js';
+import type { PerfilClinico } from '../pacientes/perfil-clinico.js';
+
+export type { PerfilClinico };
 
 export interface EntradaRecomendador {
   catalogo: AlimentoCatalogo[];
+  /** Contexto del expediente: condiciones, hábitos, composición y objetivo. */
+  perfilClinico?: PerfilClinico;
   kcalObjetivo: number;
   proteinaG: number;
   carbohidratoG: number;
@@ -171,10 +176,81 @@ export class RecomendadorService {
       'Eres un asistente de nutricionistas clínicos en Honduras.',
       'Armas planes alimenticios de un día usando EXCLUSIVAMENTE alimentos del catálogo que recibes (por su id).',
       'Prioriza comida hondureña, variedad, saciedad y combinaciones culturalmente normales.',
+      'Si recibes el perfil clínico, respétalo: las condiciones, el estado fisiológico, las alergias y los hábitos mandan sobre la preferencia cultural.',
       'No inventes alimentos, ids ni valores nutricionales. Las porciones son múltiplos de 0.25 de la porción indicada.',
       'Responde SOLO con JSON válido, sin texto adicional, con esta forma:',
       '{"resumen": string, "tiempos": [{"tipo": "DESAYUNO|MERIENDA_AM|ALMUERZO|MERIENDA_PM|CENA", "items": [{"alimentoId": string, "porciones": number}], "justificacion": string}]}',
     ].join('\n');
+  }
+
+  /**
+   * Bloque legible con el expediente del paciente. Solo incluye lo que existe:
+   * la IA no debe inventar datos que no recibió.
+   */
+  private bloquePerfil(p: PerfilClinico): string {
+    const lineas: string[] = [];
+    const antropometria = [
+      p.edad !== undefined ? `${p.edad} años` : '',
+      p.sexo === 'F' ? 'mujer' : p.sexo === 'M' ? 'hombre' : '',
+      p.pesoKg !== undefined ? `${p.pesoKg} kg` : '',
+      p.tallaCm !== undefined ? `${p.tallaCm} cm` : '',
+      p.imc !== undefined ? `IMC ${p.imc}` : '',
+      p.pctGrasa != null ? `${p.pctGrasa} % de grasa` : '',
+      p.masaMuscularKg != null ? `${p.masaMuscularKg} kg de masa muscular` : '',
+      p.grasaVisceral != null ? `grasa visceral ${p.grasaVisceral}` : '',
+    ].filter(Boolean);
+    if (antropometria.length)
+      lineas.push(`- Antropometría: ${antropometria.join(', ')}.`);
+
+    if (p.estadoFisiologico && p.estadoFisiologico !== 'NINGUNO') {
+      const etapa =
+        p.estadoFisiologico === 'EMBARAZO' ? 'embarazo' : 'lactancia';
+      lineas.push(
+        `- Estado fisiológico: ${etapa}. No plantees déficit agresivo y cuida hierro, folato y calcio.`,
+      );
+    }
+
+    if (p.condiciones?.length) {
+      lineas.push('- Condiciones clínicas y qué implican en el plan:');
+      for (const c of p.condiciones)
+        lineas.push(
+          `  · ${c.nombre}${c.descripcion ? `: ${c.descripcion}` : ''}`,
+        );
+      lineas.push(
+        '- Si un alimento choca con una condición, elige otro del catálogo en lugar de recortar el tiempo de comida.',
+      );
+    }
+
+    if (p.alergias) lineas.push(`- Alergias declaradas: ${p.alergias}.`);
+    if (p.medicamentos?.length)
+      lineas.push(`- Medicación vigente: ${p.medicamentos.join('; ')}.`);
+
+    const h = p.habitos;
+    if (h) {
+      const habitos = [
+        h.comidasAlDia != null ? `${h.comidasAlDia} comidas al día` : '',
+        h.aguaLitros != null ? `${h.aguaLitros} L de agua` : '',
+        h.horasSueno != null ? `${h.horasSueno} h de sueño` : '',
+        h.alcohol ? `alcohol: ${h.alcohol}` : '',
+        h.tabaco ? `tabaco: ${h.tabaco}` : '',
+        h.quienCocina ? `cocina: ${h.quienCocina}` : '',
+        h.presupuesto ? `Presupuesto: ${h.presupuesto}` : '',
+      ].filter(Boolean);
+      if (habitos.length)
+        lineas.push(`- Hábitos y contexto: ${habitos.join(', ')}.`);
+    }
+
+    if (p.objetivo && (p.objetivo.pesoKg != null || p.objetivo.fecha)) {
+      const objetivo = [
+        p.objetivo.pesoKg != null ? `peso objetivo ${p.objetivo.pesoKg} kg` : '',
+        p.objetivo.fecha ? `para el ${p.objetivo.fecha}` : '',
+      ].filter(Boolean);
+      lineas.push(`- Objetivo pactado: ${objetivo.join(' ')}.`);
+    }
+
+    return lineas.length
+      ? ['Perfil clínico del paciente:', ...lineas].join('\n')
+      : '';
   }
 
   private promptUsuario(e: EntradaRecomendador, tipos: TipoComida[]): string {
@@ -204,6 +280,7 @@ export class RecomendadorService {
       e.restricciones.length
         ? `Restricciones (ya excluidas del catálogo): ${e.restricciones.join(', ')}.`
         : 'Sin restricciones.',
+      e.perfilClinico ? this.bloquePerfil(e.perfilClinico) : '',
       e.indicaciones
         ? `Indicaciones de la nutricionista: ${e.indicaciones}`
         : '',

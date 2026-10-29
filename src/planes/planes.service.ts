@@ -122,6 +122,10 @@ export class PlanesService {
 
     const resultado = await this.recomendador.generar({
       catalogo: alimentos,
+      perfilClinico: await this.pacientes.contextoClinico(
+        pacienteId,
+        nutricionistaId,
+      ),
       kcalObjetivo,
       ...macros,
       distribucion,
