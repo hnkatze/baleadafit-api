@@ -2,7 +2,11 @@ import type {
   CategoriaAlimento,
   TipoComida,
 } from '../generated/prisma/enums.js';
-import { ORDEN_TIEMPOS, type DistribucionTiempos } from './nutricion.util.js';
+import {
+  ORDEN_TIEMPOS,
+  TOLERANCIA_KCAL,
+  type DistribucionTiempos,
+} from './nutricion.util.js';
 
 export interface AlimentoCatalogo {
   id: string;
@@ -90,6 +94,16 @@ export function ajustarPorciones(
     }
   }
 
+  // Si la escala proporcional ya cae dentro de la tolerancia, no se toca: mover
+  // porciones solo para clavar la meta alteraría el reparto de macros sin que
+  // haga falta.
+  if (Math.abs(total() - kcalMeta) <= kcalMeta * TOLERANCIA_KCAL) {
+    return conAlimento.map(({ alimentoId, porciones }) => ({
+      alimentoId,
+      porciones,
+    }));
+  }
+
   // Ajuste fino: se prueban las combinaciones de cuartos de los alimentos
   // escalables y se devuelve la que deja el tiempo de comida más cerca de la
   // meta (desempate: la más próxima a la escala proporcional). Antes se sumaba
@@ -134,6 +148,32 @@ export function ajustarPorciones(
       escalables.forEach((i, k) => {
         i.porciones = mejor[k];
       });
+    } else {
+      // Con demasiados alimentos escalables (la IA no tiene tope de ítems) la
+      // búsqueda exhaustiva no cabe: se ajusta de a ¼ aceptando solo los pasos
+      // que acercan a la meta, lo que no puede oscilar y siempre termina.
+      for (let intento = 0; intento < 200; intento++) {
+        const diff = total() - kcalMeta;
+        if (Math.abs(diff) <= kcalMeta * TOLERANCIA_KCAL) break;
+        const candidatos = escalables
+          .filter((i) =>
+            diff > 0
+              ? i.porciones - PASO >= PORCION_MIN
+              : i.porciones + PASO <= PORCION_MAX,
+          )
+          .sort((x, y) => y.a.kcal - x.a.kcal);
+        let aplicado = false;
+        for (const candidato of candidatos) {
+          const antes = candidato.porciones;
+          candidato.porciones = antes + (diff > 0 ? -PASO : PASO);
+          if (Math.abs(total() - kcalMeta) < Math.abs(diff)) {
+            aplicado = true;
+            break;
+          }
+          candidato.porciones = antes;
+        }
+        if (!aplicado) break;
+      }
     }
   }
 

@@ -119,6 +119,51 @@ describe('generador por reglas', () => {
     }
   });
 
+  it('no cambia las porciones proporcionales cuando ya quedan dentro de ±10 %', () => {
+    // La escala proporcional deja 534.75 kcal sobre una meta de 520 (+2.8 %):
+    // ya cumple, así que el reparto de macros no se debe alterar.
+    const arroz = a('Arroz', 'CEREAL_TUBERCULO', 130, ['ALMUERZO']);
+    const pollo = a('Pollo', 'PROTEINA', 165, ['ALMUERZO']);
+    const aceite = a('Aceite', 'GRASA', 120, ['ALMUERZO']);
+    const lechuga = a('Lechuga', 'VERDURA', 8, ['ALMUERZO']);
+    const local = new Map(
+      [arroz, pollo, aceite, lechuga].map((x) => [x.id, x]),
+    );
+
+    const items = ajustarPorciones(
+      [
+        { alimentoId: arroz.id, porciones: 1 },
+        { alimentoId: pollo.id, porciones: 1 },
+        { alimentoId: aceite.id, porciones: 1 },
+        { alimentoId: lechuga.id, porciones: 2 },
+      ],
+      local,
+      520,
+    );
+
+    expect(items.map((i) => i.porciones)).toEqual([1.25, 1.25, 1.25, 2]);
+  });
+
+  it('converge con más de cinco alimentos escalables, como los que propone la IA', () => {
+    const grasas = [0, 1, 2, 3, 4, 5].map((i) =>
+      a(`Grasa ${i}`, 'GRASA', 170, ['ALMUERZO']),
+    );
+    const local = new Map(grasas.map((x) => [x.id, x]));
+
+    const items = ajustarPorciones(
+      grasas.map((g) => ({ alimentoId: g.id, porciones: 1 })),
+      local,
+      620,
+    );
+
+    const kcal = items.reduce(
+      (s, i) => s + local.get(i.alimentoId)!.kcal * i.porciones,
+      0,
+    );
+    expect(kcal).toBeGreaterThanOrEqual(620 * (1 - TOLERANCIA_KCAL));
+    expect(kcal).toBeLessThanOrEqual(620 * (1 + TOLERANCIA_KCAL));
+  });
+
   it('omite tiempos con 0 % en la distribución', () => {
     const plan = generarPlanPorReglas(catalogo, 1800, {
       DESAYUNO: 0.3,
