@@ -17,11 +17,11 @@ El PPT de Semana 2 deja el expediente en pacientes + mediciones básicas. Un nut
 
 ## Tasks
 
-- [ ] E1 — Modelo y migración: extender `paciente`, `medicion` y `cita`, agregar `condicion`, `paciente_condicion` y `medicamento`, y sembrar el catálogo de condiciones (S1-S8)
-- [ ] E2 — Expediente en la API: detalle con condiciones, medicamentos y hábitos, más los endpoints para actualizarlos (S2-S5, S9)
-- [ ] E3 — Mediciones con composición corporal y fuente en la API (S6, S7, S9)
-- [ ] E4 — SOAP y próxima cita en la API (S8, S9)
-- [ ] E5 — README y OpenAPI al día con los campos nuevos (S9)
+- [x] E1 — Modelo y migración: extender `paciente`, `medicion` y `cita`, agregar `condicion`, `paciente_condicion` y `medicamento`, y sembrar el catálogo de condiciones (S1-S8) — commit `e96eaa0`
+- [x] E2 — Expediente en la API: detalle con condiciones, medicamentos y hábitos, más los endpoints para actualizarlos (S2-S5, S9) — worker `mvtu5bnr-4-ddlr`, revisado por el orquestador
+- [x] E3 — Mediciones con composición corporal y fuente en la API (S6, S7, S9) — mismo worker
+- [x] E4 — SOAP y próxima cita en la API (S8, S9) — worker `mvtu5bnx-5-rqpb`, commit `2afa627`
+- [x] E5 — README y OpenAPI al día con los campos nuevos (S9)
 
 ## Log
 
@@ -30,3 +30,7 @@ El PPT de Semana 2 deja el expediente en pacientes + mediciones básicas. Un nut
 - **L3** (decisión): queda dentro del alcance la lista de data clínica propuesta por el orquestador y aceptada en L2: expediente (objetivo, condiciones, medicamentos, antecedentes y hábitos), antropometría (composición corporal, pliegues, perímetros, presión y fuente del dato) y consulta (SOAP y próxima cita).
 - **L4** (fuera de alcance, para un feature aparte): versionado inmutable del plan aprobado y plantillas de plan reutilizables. Se registran como trabajo futuro y no entran en este feature.
 - **L5** (decisión técnica): las condiciones clínicas usan catálogo + N:M como `restriccion`, para que una condición se pueda describir una sola vez y filtrar por código; la medicación va en tabla propia con `activo` para conservar el historial de lo recetado.
+- **L6** (defecto encontrado al revisar el trabajo del worker): el detalle del paciente devolvía las mediciones sin `imc` (el resto de la API siempre lo incluye) y ordenaba solo por `fecha`, así que dos mediciones del mismo día quedaban en orden arbitrario y el portal podía mostrar como "última" la más vieja. Corregido con `orderBy: [{fecha:'desc'},{creadoEn:'desc'}]` y cálculo de `imc`; el OpenAPI del detalle pasó a `MedicionConImcEntity`.
+- **L7** (evidencia contra la API viva): `GET /condiciones` devuelve 20 condiciones; el PATCH del expediente persiste objetivo, hábitos y `condiciones: [prediabetes, hta]`; un código inexistente da 400 con los códigos faltantes; la medicación se crea, se edita y la baja lógica la deja fuera de `medicamentos` (historial intacto); la medición con composición devuelve `imc` y `fuente`; y el detalle muestra como última la medición más reciente del día con su IMC.
+- **L8** (aislamiento verificado con una segunda nutricionista registrada): `GET /pacientes/:id` de un paciente ajeno da 404 y `POST /pacientes/:id/medicamentos` sobre un paciente ajeno también da 404 (un 403 anterior era solo falta de rol de la cuenta de prueba).
+- **L9** (incidente de entorno): detener el servidor de desarrollo no siempre mata el proceso hijo de `nest start --watch`; el puerto 3000 queda tomado por el build viejo y las pruebas en vivo responden con código anterior (EADDRINUSE en el log). Verificar el puerto y matar el PID huérfano antes de reiniciar. Además, correr `npm run build` con el watcher activo vuelve a romper `dist/`.
