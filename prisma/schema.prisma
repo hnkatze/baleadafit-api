@@ -302,29 +302,69 @@ model Alimento {
 
   // ─── Nutrientes clínicos por porción (estimados; verificar con INCAP) ──
   /// Sodio en miligramos
-  sodioMg            Float?            @map("sodio_mg")
+  sodioMg         Float?       @map("sodio_mg")
   /// Potasio en miligramos
-  potasioMg          Float?            @map("potasio_mg")
+  potasioMg       Float?       @map("potasio_mg")
   /// Fósforo en miligramos
-  fosforoMg          Float?            @map("fosforo_mg")
+  fosforoMg       Float?       @map("fosforo_mg")
   /// Azúcares totales en gramos
-  azucaresG          Float?            @map("azucares_g")
+  azucaresG       Float?       @map("azucares_g")
   /// Grasa saturada en gramos
-  grasasSatG         Float?            @map("grasas_sat_g")
+  grasasSatG      Float?       @map("grasas_sat_g")
   /// Índice glucémico de la porción (0-110); nulo en alimentos sin carbohidratos
-  indiceGlucemico    Int?              @map("indice_glucemico")
+  indiceGlucemico Int?         @map("indice_glucemico")
   /// En qué tiempos de comida tiene sentido sugerirlo
-  tiposComida        TipoComida[]      @map("tipos_comida")
+  tiposComida     TipoComida[] @map("tipos_comida")
   /// Etiquetas para filtrar restricciones (lactosa, gluten, cerdo…)
-  contiene           String[]          @default([])
-  esTipicoHn         Boolean           @default(false) @map("es_tipico_hn")
-  fuente             String?
-  activo             Boolean           @default(true)
+  contiene        String[]     @default([])
+  esTipicoHn      Boolean      @default(false) @map("es_tipico_hn")
+  fuente          String?
+  activo          Boolean      @default(true)
 
   items PlanItem[]
 
+  versiones AlimentoVersion[]
+
   @@index([categoria])
   @@map("alimento")
+}
+
+///
+/// Valores nutricionales de un alimento en una revisión concreta de la tabla.
+/// Editar un alimento crea una versión nueva en lugar de reescribir el pasado.
+model AlimentoVersion {
+  id           String    @id @default(uuid()) @db.Uuid
+  alimentoId   String    @map("alimento_id") @db.Uuid
+  /// Consecutivo por alimento (1, 2, 3…)
+  version      Int
+  /// Revisión de la tabla usada, ej. "INCAP 2026"
+  tabla        String
+  fuente       String?
+  vigenteDesde DateTime  @map("vigente_desde") @db.Date
+  /// Nulo en la versión que está vigente
+  vigenteHasta DateTime? @map("vigente_hasta") @db.Date
+
+  porcionDescripcion String   @map("porcion_descripcion")
+  porcionGramos      Float    @map("porcion_gramos")
+  kcal               Float
+  proteinaG          Float    @map("proteina_g")
+  carbohidratoG      Float    @map("carbohidrato_g")
+  grasaG             Float    @map("grasa_g")
+  fibraG             Float?   @map("fibra_g")
+  sodioMg            Float?   @map("sodio_mg")
+  potasioMg          Float?   @map("potasio_mg")
+  fosforoMg          Float?   @map("fosforo_mg")
+  azucaresG          Float?   @map("azucares_g")
+  grasasSatG         Float?   @map("grasas_sat_g")
+  indiceGlucemico    Int?     @map("indice_glucemico")
+  creadoEn           DateTime @default(now()) @map("creado_en")
+
+  alimento Alimento   @relation(fields: [alimentoId], references: [id], onDelete: Cascade)
+  items    PlanItem[]
+
+  @@unique([alimentoId, version])
+  @@index([alimentoId, vigenteHasta])
+  @@map("alimento_version")
 }
 
 // ─── Plan alimenticio ─────────────────────────────────────────────────────
@@ -371,13 +411,16 @@ model TiempoComida {
 
 /// Resuelve la relación N:M tiempo_comida ↔ alimento con la cantidad de porciones
 model PlanItem {
-  id             String @id @default(uuid()) @db.Uuid
-  tiempoComidaId String @map("tiempo_comida_id") @db.Uuid
-  alimentoId     String @map("alimento_id") @db.Uuid
-  porciones      Float
+  id                String  @id @default(uuid()) @db.Uuid
+  tiempoComidaId    String  @map("tiempo_comida_id") @db.Uuid
+  alimentoId        String  @map("alimento_id") @db.Uuid
+  /// Versión de los valores nutricionales usada al crear el ítem.
+  alimentoVersionId String? @map("alimento_version_id") @db.Uuid
+  porciones         Float
 
-  tiempoComida TiempoComida @relation(fields: [tiempoComidaId], references: [id], onDelete: Cascade)
-  alimento     Alimento     @relation(fields: [alimentoId], references: [id])
+  tiempoComida    TiempoComida     @relation(fields: [tiempoComidaId], references: [id], onDelete: Cascade)
+  alimento        Alimento         @relation(fields: [alimentoId], references: [id])
+  alimentoVersion AlimentoVersion? @relation(fields: [alimentoVersionId], references: [id])
 
   @@map("plan_item")
 }
