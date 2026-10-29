@@ -1,0 +1,281 @@
+// BaleadaFit — esquema de base de datos (PostgreSQL)
+// Convención: modelos en PascalCase, tablas y columnas en snake_case.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────
+
+enum Sexo {
+  M
+  F
+}
+
+/// Factor de actividad para el gasto energético total
+enum NivelActividad {
+  SEDENTARIO // 1.2
+  LIGERO // 1.375
+  MODERADO // 1.55
+  INTENSO // 1.725
+  MUY_INTENSO // 1.9
+}
+
+enum Meta {
+  BAJAR
+  MANTENER
+  SUBIR
+}
+
+enum TipoComida {
+  DESAYUNO
+  MERIENDA_AM
+  ALMUERZO
+  MERIENDA_PM
+  CENA
+}
+
+enum CategoriaAlimento {
+  PLATO_TIPICO
+  PROTEINA
+  CEREAL_TUBERCULO
+  LEGUMINOSA
+  LACTEO
+  FRUTA
+  VERDURA
+  GRASA
+  BEBIDA
+}
+
+enum EstadoPlan {
+  BORRADOR
+  ACTIVO
+  ARCHIVADO
+}
+
+enum OrigenPlan {
+  MANUAL
+  REGLAS
+  IA
+}
+
+enum EstadoCita {
+  PROGRAMADA
+  COMPLETADA
+  CANCELADA
+}
+
+// ─── Expediente ───────────────────────────────────────────────────────────
+
+model Nutricionista {
+  id          String   @id @default(uuid()) @db.Uuid
+  firebaseUid String   @unique @map("firebase_uid")
+  nombre      String
+  correo      String   @unique
+  colegiado   String?
+  telefono    String?
+  creadoEn    DateTime @default(now()) @map("creado_en")
+
+  pacientes Paciente[]
+  citas     Cita[]
+  planes    PlanAlimenticio[]
+
+  @@map("nutricionista")
+}
+
+model Paciente {
+  id               String         @id @default(uuid()) @db.Uuid
+  nutricionistaId  String         @map("nutricionista_id") @db.Uuid
+  /// Se vincula cuando el paciente inicia sesión en la app con el mismo correo
+  firebaseUid      String?        @unique @map("firebase_uid")
+  nombre           String
+  apellido         String
+  correo           String?
+  telefono         String?
+  sexo             Sexo
+  fechaNacimiento  DateTime       @map("fecha_nacimiento") @db.Date
+  nivelActividad   NivelActividad @default(SEDENTARIO) @map("nivel_actividad")
+  meta             Meta           @default(MANTENER)
+  notas            String?
+  activo           Boolean        @default(true)
+  creadoEn         DateTime       @default(now()) @map("creado_en")
+  actualizadoEn    DateTime       @updatedAt @map("actualizado_en")
+
+  nutricionista Nutricionista          @relation(fields: [nutricionistaId], references: [id])
+  mediciones    Medicion[]
+  citas         Cita[]
+  planes        PlanAlimenticio[]
+  restricciones PacienteRestriccion[]
+  registros     RegistroComida[]
+
+  @@unique([nutricionistaId, correo])
+  @@index([nutricionistaId, activo])
+  @@map("paciente")
+}
+
+model Medicion {
+  id         String   @id @default(uuid()) @db.Uuid
+  pacienteId String   @map("paciente_id") @db.Uuid
+  fecha      DateTime @default(now()) @db.Date
+  pesoKg     Float    @map("peso_kg")
+  tallaCm    Float    @map("talla_cm")
+  pctGrasa   Float?   @map("pct_grasa")
+  cinturaCm  Float?   @map("cintura_cm")
+  notas      String?
+  creadoEn   DateTime @default(now()) @map("creado_en")
+
+  paciente Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
+  @@index([pacienteId, fecha])
+  @@map("medicion")
+}
+
+model Restriccion {
+  id          String  @id @default(uuid()) @db.Uuid
+  /// Etiqueta que se compara contra alimento.contiene (ej. "lactosa")
+  codigo      String  @unique
+  nombre      String
+  descripcion String?
+
+  pacientes PacienteRestriccion[]
+
+  @@map("restriccion")
+}
+
+/// Tabla intermedia N:M paciente ↔ restriccion
+model PacienteRestriccion {
+  pacienteId    String @map("paciente_id") @db.Uuid
+  restriccionId String @map("restriccion_id") @db.Uuid
+
+  paciente    Paciente    @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  restriccion Restriccion @relation(fields: [restriccionId], references: [id], onDelete: Cascade)
+
+  @@id([pacienteId, restriccionId])
+  @@map("paciente_restriccion")
+}
+
+model Cita {
+  id              String     @id @default(uuid()) @db.Uuid
+  pacienteId      String     @map("paciente_id") @db.Uuid
+  nutricionistaId String     @map("nutricionista_id") @db.Uuid
+  fechaHora       DateTime   @map("fecha_hora")
+  duracionMin     Int        @default(45) @map("duracion_min")
+  motivo          String?
+  estado          EstadoCita @default(PROGRAMADA)
+  notas           String?
+  creadoEn        DateTime   @default(now()) @map("creado_en")
+
+  paciente      Paciente      @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  nutricionista Nutricionista @relation(fields: [nutricionistaId], references: [id])
+
+  @@index([nutricionistaId, fechaHora])
+  @@index([pacienteId, fechaHora])
+  @@map("cita")
+}
+
+// ─── Catálogo ─────────────────────────────────────────────────────────────
+
+model Alimento {
+  id                 String            @id @default(uuid()) @db.Uuid
+  nombre             String            @unique
+  categoria          CategoriaAlimento
+  /// Descripción legible de la porción, ej. "1 unidad", "1/2 taza"
+  porcionDescripcion String            @map("porcion_descripcion")
+  porcionGramos      Float             @map("porcion_gramos")
+  kcal               Float
+  proteinaG          Float             @map("proteina_g")
+  carbohidratoG      Float             @map("carbohidrato_g")
+  grasaG             Float             @map("grasa_g")
+  fibraG             Float?            @map("fibra_g")
+  /// En qué tiempos de comida tiene sentido sugerirlo
+  tiposComida        TipoComida[]      @map("tipos_comida")
+  /// Etiquetas para filtrar restricciones (lactosa, gluten, cerdo…)
+  contiene           String[]          @default([])
+  esTipicoHn         Boolean           @default(false) @map("es_tipico_hn")
+  fuente             String?
+  activo             Boolean           @default(true)
+
+  items PlanItem[]
+
+  @@index([categoria])
+  @@map("alimento")
+}
+
+// ─── Plan alimenticio ─────────────────────────────────────────────────────
+
+model PlanAlimenticio {
+  id              String     @id @default(uuid()) @db.Uuid
+  pacienteId      String     @map("paciente_id") @db.Uuid
+  nutricionistaId String     @map("nutricionista_id") @db.Uuid
+  nombre          String
+  kcalObjetivo    Float      @map("kcal_objetivo")
+  proteinaG       Float      @map("proteina_g")
+  carbohidratoG   Float      @map("carbohidrato_g")
+  grasaG          Float      @map("grasa_g")
+  estado          EstadoPlan @default(BORRADOR)
+  origen          OrigenPlan @default(MANUAL)
+  /// Resumen o justificación devuelta por el recomendador
+  justificacion   String?
+  creadoEn        DateTime   @default(now()) @map("creado_en")
+  aprobadoEn      DateTime?  @map("aprobado_en")
+
+  paciente      Paciente       @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  nutricionista Nutricionista  @relation(fields: [nutricionistaId], references: [id])
+  tiempos       TiempoComida[]
+
+  @@index([pacienteId, estado])
+  @@map("plan_alimenticio")
+}
+
+model TiempoComida {
+  id      String     @id @default(uuid()) @db.Uuid
+  planId  String     @map("plan_id") @db.Uuid
+  tipo    TipoComida
+  /// Porcentaje de las kcal del día asignado a este tiempo
+  pctKcal Float      @map("pct_kcal")
+  orden   Int
+
+  plan      PlanAlimenticio  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  items     PlanItem[]
+  registros RegistroComida[]
+
+  @@unique([planId, tipo])
+  @@map("tiempo_comida")
+}
+
+/// Resuelve la relación N:M tiempo_comida ↔ alimento con la cantidad de porciones
+model PlanItem {
+  id             String @id @default(uuid()) @db.Uuid
+  tiempoComidaId String @map("tiempo_comida_id") @db.Uuid
+  alimentoId     String @map("alimento_id") @db.Uuid
+  porciones      Float
+
+  tiempoComida TiempoComida @relation(fields: [tiempoComidaId], references: [id], onDelete: Cascade)
+  alimento     Alimento     @relation(fields: [alimentoId], references: [id])
+
+  @@map("plan_item")
+}
+
+/// Diario del paciente: ¿cumplió este tiempo de comida en esta fecha?
+model RegistroComida {
+  id             String   @id @default(uuid()) @db.Uuid
+  pacienteId     String   @map("paciente_id") @db.Uuid
+  tiempoComidaId String   @map("tiempo_comida_id") @db.Uuid
+  fecha          DateTime @db.Date
+  cumplido       Boolean
+  comentario     String?
+  creadoEn       DateTime @default(now()) @map("creado_en")
+
+  paciente     Paciente     @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  tiempoComida TiempoComida @relation(fields: [tiempoComidaId], references: [id], onDelete: Cascade)
+
+  @@unique([pacienteId, tiempoComidaId, fecha])
+  @@map("registro_comida")
+}
