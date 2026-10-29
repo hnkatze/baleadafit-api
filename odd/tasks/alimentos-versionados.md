@@ -15,11 +15,11 @@ Los valores nutricionales del catálogo son datos de referencia que cambian con 
 
 ## Tasks
 
-- [ ] V1 — Modelo y migración: `AlimentoVersion`, `PlanItem.alimentoVersionId` y backfill de los datos existentes (S1, S3, S7)
-- [ ] V2 — Alta y edición de alimentos crean versión; `GET /alimentos/:id/versiones` (S2, S5, S6)
-- [ ] V3 — Los planes atan la versión vigente al crear ítems y totalizan con la versión atada (S3, S4)
-- [ ] V4 — Seed idempotente que crea la versión inicial de cada alimento (S7)
-- [ ] V5 — README y OpenAPI al día (S5, S6)
+- [x] V1 — Modelo y migración: `AlimentoVersion`, `PlanItem.alimentoVersionId` y backfill de los datos existentes (S1, S3, S7) — commit `f350415`
+- [x] V2 — Alta y edición de alimentos crean versión; `GET /alimentos/:id/versiones` (S2, S5, S6) — commit `1702d24`
+- [x] V3 — Los planes atan la versión vigente al crear ítems y totalizan con la versión atada (S3, S4) — commit `49b92d6`
+- [x] V4 — Seed idempotente que crea la versión inicial de cada alimento (S7) — commit `3e40563`
+- [x] V5 — README y OpenAPI al día (S5, S6) — commit `8e7237a`
 
 ## Log
 
@@ -28,3 +28,6 @@ Los valores nutricionales del catálogo son datos de referencia que cambian con 
 - **L3** (decisión): los **valores nutricionales se versionan**, no se configuran: son datos de referencia con fuente y vigencia. Lo que sí será configurable son los umbrales clínicos de N5, porque son política clínica. Los planes quedan atados a la versión usada, para que el historial no se mueva.
 - **L4** (defecto que motiva el feature): `planes.service.ts:65,74` recalcula los totales con los valores actuales del alimento, así que un `PATCH /alimentos/:id` cambia retroactivamente los totales y la desviación de planes ya aprobados y archivados.
 - **L5** (causa real declarada, no el cambio climático): lo que mueve la tabla son las revisiones del INCAP, las leyes de fortificación (harina de trigo, sal yodada, azúcar con vitamina A), la reformulación industrial y las variedades biofortificadas. El CO₂ alto reduce algo la proteína y los minerales de los cereales, pero en escala de años y de forma pequeña.
+- **L6** (evidencia en vivo del test estrella): plan nuevo con el código versionado → todos los ítems quedan con `alimentoVersion.version = 1`. Se corrige el sodio de un alimento usado en ese plan (120 → 520 mg): se abre la versión 2 y la 1 queda cerrada con `vigenteHasta = 2026-10-29`, y el plan existente **sigue en 1477 kcal / 755 mg de sodio**. Un plan generado después usa la versión 2 (520 mg). Ningún alimento quedó sin versión vigente (0 filas).
+- **L7** (deuda declarada): el seed implementa su propia comparación de valores en lugar de importar `CAMPOS_VERSION` de `src/alimentos/alimento-version.ts`, porque ambos archivos se estaban tocando en paralelo. Si se agrega un nutriente nuevo hay que tocar los dos lugares; conviene unificar cuando haya una ventana sin cambios.
+- **L8** (incidente de entorno, tercera vez en la sesión): el servidor de desarrollo volvió a quedar como proceso huérfano sirviendo el build viejo (404 en `/alimentos/:id/versiones` y ítems sin versión). El primer intento de verificación en vivo dio un falso positivo de inmutabilidad porque el alimento editado no estaba en el plan. Regla: antes de verificar en vivo, comprobar el puerto y que la ruta nueva responda.
