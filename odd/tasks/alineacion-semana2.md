@@ -14,11 +14,11 @@ Fuente de verdad: `BaleadaFit — Semana 2.pdf` (12 slides, CEUTEC 769). El MVP 
 
 ## Tasks
 
-- [ ] T1 — Corregir la convergencia de `ajustarPorciones` para que todo tiempo de comida quede dentro de ±10 % cuando el catálogo lo permite (S1, S2) — inline, test-first
-- [ ] T2 — `POST /pacientes/:id/mediciones` devuelve `imc` como el `GET` (S3) — inline, test-first
-- [ ] T3 — Versionar la migración inicial y dejar `db:deploy` operativo (S4) — inline
-- [ ] T4 — Diagnóstico de Bedrock: estado de la IA consultable y llamada con timeout (S5) — inline, test-first
-- [ ] T5 — Ampliar el catálogo de alimentos del seed (S6) — delegable
+- [x] T1 — Corregir la convergencia de `ajustarPorciones` para que todo tiempo de comida quede dentro de ±10 % cuando el catálogo lo permite (S1, S2) — inline, test-first — commit `3078302`
+- [x] T2 — `POST /pacientes/:id/mediciones` devuelve `imc` como el `GET` (S3) — inline, test-first — commit `7071680`
+- [x] T3 — Versionar la migración inicial y dejar `db:deploy` operativo (S4) — inline — commit `69df422`
+- [x] T4 — Diagnóstico de Bedrock: estado de la IA consultable y llamada con timeout (S5) — worker `mvtra91f-1-dl55`, revisado por el orquestador
+- [x] T5 — Ampliar el catálogo de alimentos del seed (S6) — worker `mvtra91l-2-1rpy`, revisado por el orquestador
 - [ ] T6 — Refresh de sesión (S7) — bloqueada hasta que el dueño decida qué necesita
 
 ## Log
@@ -27,3 +27,6 @@ Fuente de verdad: `BaleadaFit — Semana 2.pdf` (12 slides, CEUTEC 769). El MVP 
 - **L2** (contexto entregado, verbatim): "C:\Users\Camilo\Downloads\BaleadaFit — Semana 2.pdf esto es lo que vamos a entregar, solo que haremos una app para el BO tambien,"
 - **L3** (decisión de esta sesión): el PPT de Semana 2 manda sobre el HTML "Visión & Arquitectura de Producto", que queda como visión a largo plazo (480 platos, BaleadaNet, WhatsApp, InBody, FHIR, HIPAA) y no como alcance del curso.
 - **L4** (abierto): "refresh" puede significar renovación de token de sesión o refresco de datos en el portal. Con Firebase Auth el SDK del cliente renueva el ID token (1 h) sin endpoint propio; un `/auth/refresh` del lado del API duplicaría al SDK. Se necesita la decisión del dueño antes de implementar.
+- **L5** (evidencia T1/T2, mismo paciente de prueba, contra la API viva): MERIENDA_AM de 144 kcal pasó de 116 kcal (−19.4 %) a 143 kcal (−0.7 %); las cinco comidas entre −4.2 % y +1.4 %; plan total 1435 vs 1440 (−0.3 %). `POST /mediciones` devuelve `imc: 28.5` para 73 kg / 160 cm.
+- **L6** (decisión sobre la validación del seed): la regla de coherencia de macros (>15 % de desvío) se aplica con un piso absoluto de 20 kcal, porque tres filas del catálogo original no se pueden tocar y fallan por redondeo en porciones chicas: Pataste cocido 22.8 %, Fresco de rosa de Jamaica sin azúcar 20.0 %, Elote cocido 15.7 %. Se agrega además que toda etiqueta de `contiene` exista como `restriccion.codigo`.
+- **L7** (evidencia T4/T5, contra la API viva): `GET /ia/estado` → `{habilitado:false, region:"us-east-1", ultimaLlamada:null}` sin `BEDROCK_MODEL_ID`; `POST /ia/estado/probar` → 201 con `{ok:false, error:"IA deshabilitada o BEDROCK_MODEL_ID sin configurar."}`; 401 sin token. Catálogo: 150 alimentos / 150 nombres distintos en la DB, 30 platos típicos, 87 marcados como típicos. Plan generado con el catálogo ampliado: 1400 kcal vs 1440 (−2.8 %) y las cinco comidas entre −9.0 % y +3.5 %.
