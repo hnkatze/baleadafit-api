@@ -32,7 +32,6 @@ import {
 import {
   AdherenciaEntity,
   MedicionConImcEntity,
-  MedicionEntity,
   PacienteConRestriccionesEntity,
   PacienteDetalleEntity,
   PacienteEntity,
@@ -143,7 +142,7 @@ export class PacientesController {
   @Post('pacientes/:id/mediciones')
   @ID_PACIENTE
   @ApiOperation({ summary: 'Registrar medición' })
-  @ApiCreatedResponse({ type: MedicionEntity })
+  @ApiCreatedResponse({ type: MedicionConImcEntity })
   @ApiErrores(400, 404)
   agregarMedicion(
     @UsuarioAct() u: UsuarioActual,

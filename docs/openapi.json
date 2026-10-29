@@ -649,7 +649,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MedicionEntity"
+                  "$ref": "#/components/schemas/MedicionConImcEntity"
                 }
               }
             }
