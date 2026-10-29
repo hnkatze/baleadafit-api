@@ -28,6 +28,29 @@ Proyecto de la clase **769 Ingeniería de Software I — CEUTEC**.
 
 La lógica pura está en `src/nutricion/` y tiene pruebas unitarias.
 
+## Conectar AWS Bedrock (IA real)
+
+Sin credenciales el API funciona igual: el recomendador cae al **generador por reglas** y el plan se genera con el catálogo y las restricciones del paciente.
+
+1. **Model access:** en la consola de Bedrock (la región que vayas a usar) pide acceso al modelo, por ejemplo Anthropic Claude 3.5 Sonnet.
+2. **Variables de entorno** en `.env` (o en Railway):
+
+   ```bash
+   IA_HABILITADA=true
+   AWS_REGION=us-east-1
+   AWS_ACCESS_KEY_ID=...
+   AWS_SECRET_ACCESS_KEY=...
+   BEDROCK_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0
+   ```
+
+   La región y las credenciales salen de la cadena estándar de AWS (variables, perfil o rol de IAM). `BEDROCK_MODEL_ID` debe ser un ID de inferencia válido en esa región.
+3. **Verificar** con la sesión de una nutricionista:
+
+   - `GET /ia/estado` → `{ habilitado, modelo, region, ultimaLlamada }`. `habilitado` es `false` si `IA_HABILITADA=false` o si falta `BEDROCK_MODEL_ID`; `ultimaLlamada` es `null` hasta la primera llamada real.
+   - `POST /ia/estado/probar` → envía una llamada mínima ("Responde OK", 16 tokens) y devuelve `{ ok: true }` o `{ ok: false, error }` sin lanzar error HTTP.
+
+Para que una llamada lenta no cuelgue el request, el cliente usa timeout de conexión de 2 s y de request de 20 s; si se agota, la generación del plan sigue por reglas.
+
 ## Correr en local
 
 ```bash
@@ -88,6 +111,7 @@ Un guard global verifica el ID token de Firebase y resuelve el rol:
 | nutricionista | `GET /pacientes/:id/planes`, `POST /pacientes/:id/planes/generar` | Planes y recomendador |
 | nutricionista | `GET/PATCH/DELETE /planes/:id`, `PUT /planes/:id/tiempos/:tipo/items`, `POST /planes/:id/activar` | Editar y aprobar planes |
 | nutricionista | `GET/POST /citas`, `PATCH /citas/:id` | Agenda (valida choques de horario) |
+| nutricionista | `GET /ia/estado`, `POST /ia/estado/probar` | Estado de la IA y prueba de conexión con Bedrock |
 | ambos | `GET /alimentos`, `GET /restricciones` | Catálogo (`?q=&categoria=&tipoComida=&excluir=lactosa,gluten`) |
 | nutricionista | `POST/PATCH /alimentos` | Mantener el catálogo |
 | paciente | `GET /me/hoy`, `GET /me/plan`, `GET /me/mediciones`, `GET /me/citas` | App del paciente |

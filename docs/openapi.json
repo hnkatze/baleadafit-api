@@ -1904,6 +1904,102 @@
         ]
       }
     },
+    "/ia/estado": {
+      "get": {
+        "description": "Indica si el recomendador usará Bedrock (`habilitado`), con qué `modelo` y `region`, y el resultado de la última llamada real (`ultimaLlamada`). Solo nutricionistas.",
+        "operationId": "IaController_estado",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoIaEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Estado de la IA",
+        "tags": [
+          "ia"
+        ]
+      }
+    },
+    "/ia/estado/probar": {
+      "post": {
+        "description": "Envía una llamada mínima (\"Responde OK\", 16 tokens) para verificar credenciales, región y acceso al modelo. No lanza: si falla devuelve `ok: false` con el `error`. Solo nutricionistas.",
+        "operationId": "IaController_probar",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PruebaIaEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Probar la conexión con Bedrock",
+        "tags": [
+          "ia"
+        ]
+      }
+    },
     "/citas": {
       "get": {
         "description": "Citas de la nutricionista ordenadas por fecha, con filtros opcionales.",
@@ -4796,6 +4892,77 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "LlamadaIaEntity": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "error": {
+            "type": "string",
+            "example": "The security token included in the request is invalid."
+          },
+          "en": {
+            "type": "string",
+            "example": "2026-02-11T15:04:05.000Z"
+          }
+        },
+        "required": [
+          "ok",
+          "en"
+        ]
+      },
+      "EstadoIaEntity": {
+        "type": "object",
+        "properties": {
+          "ultimaLlamada": {
+            "nullable": true,
+            "description": "`null` mientras no se haya llamado a Bedrock.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LlamadaIaEntity"
+              }
+            ]
+          },
+          "habilitado": {
+            "type": "boolean",
+            "example": true
+          },
+          "modelo": {
+            "type": "string",
+            "description": "Modelo configurado en `BEDROCK_MODEL_ID`.",
+            "example": "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+          },
+          "region": {
+            "type": "string",
+            "description": "Región configurada en `AWS_REGION`.",
+            "example": "us-east-1"
+          }
+        },
+        "required": [
+          "ultimaLlamada",
+          "habilitado",
+          "region"
+        ]
+      },
+      "PruebaIaEntity": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "error": {
+            "type": "string",
+            "example": "IA deshabilitada o BEDROCK_MODEL_ID sin configurar."
+          }
+        },
+        "required": [
+          "ok"
         ]
       },
       "CrearCitaDto": {
