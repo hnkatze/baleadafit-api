@@ -113,7 +113,8 @@ Un guard global verifica el ID token de Firebase y resuelve el rol:
 | todos | `GET /auth/me` | Rol y perfil |
 | sin perfil | `POST /auth/registro-nutricionista` | Crea el perfil de nutricionista |
 | nutricionista | `GET /dashboard` | Pacientes activos, borradores, citas de hoy |
-| nutricionista | `GET/POST /pacientes`, `GET/PATCH/DELETE /pacientes/:id` | Expediente (el DELETE es baja lógica) |
+| nutricionista | `GET/POST /pacientes`, `GET/PATCH/DELETE /pacientes/:id` | Expediente (el DELETE es baja lógica); acepta `condiciones` y devuelve condiciones, medicación vigente y las últimas mediciones |
+| nutricionista | `POST /pacientes/:id/medicamentos`, `PATCH/DELETE /medicamentos/:id` | Medicación declarada (el DELETE es baja lógica: conserva el historial) |
 | nutricionista | `GET/POST /pacientes/:id/mediciones`, `DELETE /mediciones/:id` | Peso, talla, % grasa, cintura (+ IMC) |
 | nutricionista | `GET /pacientes/:id/requerimiento` | kcal y macros calculados |
 | nutricionista | `GET /pacientes/:id/adherencia` | Diario del paciente y % de cumplimiento |
@@ -121,7 +122,7 @@ Un guard global verifica el ID token de Firebase y resuelve el rol:
 | nutricionista | `GET/PATCH/DELETE /planes/:id`, `PUT /planes/:id/tiempos/:tipo/items`, `POST /planes/:id/activar` | Editar y aprobar planes |
 | nutricionista | `GET/POST /citas`, `PATCH /citas/:id` | Agenda (valida choques de horario) |
 | nutricionista | `GET /ia/estado`, `POST /ia/estado/probar` | Estado de la IA y prueba de conexión con Bedrock |
-| ambos | `GET /alimentos`, `GET /restricciones` | Catálogo (`?q=&categoria=&tipoComida=&excluir=lactosa,gluten`) |
+| ambos | `GET /alimentos`, `GET /restricciones`, `GET /condiciones` | Catálogos (`?q=&categoria=&tipoComida=&excluir=lactosa,gluten`); los `codigo` de condiciones se usan al crear o actualizar pacientes |
 | nutricionista | `POST/PATCH /alimentos` | Mantener el catálogo |
 | paciente | `GET /me/hoy`, `GET /me/plan`, `GET /me/mediciones`, `GET /me/citas` | App del paciente |
 | paciente | `PUT /me/registros`, `GET /me/registros` | Marcar comidas cumplidas |
