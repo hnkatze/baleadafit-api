@@ -1,0 +1,22 @@
+# dependencias y build
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# cliente generado por Prisma (se crea con `npx prisma generate` / `npm install`)
+src/generated/
+
+# entorno
+.env
+.env.*
+!.env.example
+
+# logs y SO
+*.log
+.DS_Store
+
+# editores
+.idea/
+.vscode/*
+!.vscode/extensions.json
