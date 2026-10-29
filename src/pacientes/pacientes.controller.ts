@@ -34,6 +34,7 @@ import {
 import {
   AdherenciaEntity,
   MedicamentoEntity,
+  FichaPacienteEntity,
   MedicionConImcEntity,
   PacienteConCondicionesEntity,
   PacienteDetalleEntity,
@@ -84,6 +85,22 @@ export class PacientesController {
   @ApiErrores(400, 409)
   crear(@UsuarioAct() u: UsuarioActual, @Body() dto: CrearPacienteDto) {
     return this.service.crear(u.nutricionistaId!, dto);
+  }
+
+  @Get('pacientes/:id/ficha')
+  @ID_PACIENTE
+  @ApiOperation({
+    summary: 'Ficha del paciente',
+    description:
+      'Todo lo que muestra la pantalla del expediente en una sola llamada: cabecera con IMC clasificado y masa magra, progreso contra el objetivo, situación clínica, hábitos, requerimiento, adherencia de los últimos 30 días, alertas calculadas por el sistema, evolución completa, consultas (pasadas con SOAP y próximas) y planes con la tabla con la que se calcularon.',
+  })
+  @ApiOkResponse({ type: FichaPacienteEntity })
+  @ApiErrores(404)
+  ficha(
+    @UsuarioAct() u: UsuarioActual,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.ficha(id, u.nutricionistaId!);
   }
 
   @Get('pacientes/:id')

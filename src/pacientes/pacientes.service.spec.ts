@@ -255,6 +255,105 @@ describe('PacientesService', () => {
     });
   });
 
+  describe('ficha del paciente', () => {
+    it('compone los bloques, calcula derivados y alertas en el backend', async () => {
+      prisma.paciente.findFirst.mockResolvedValue({
+        ...paciente,
+        pesoObjetivoKg: 65,
+        fechaObjetivo: new Date('2027-03-01T00:00:00.000Z'),
+      });
+      prisma.pacienteCondicion.findMany.mockResolvedValue([
+        { condicion: { nombre: 'Hipertensión arterial' } },
+      ]);
+      prisma.medicamento.findMany.mockResolvedValue([]);
+      prisma.pacienteRestriccion.findMany.mockResolvedValue([]);
+      prisma.medicion.findMany.mockResolvedValue([
+        { fecha: new Date('2026-09-03T00:00:00.000Z'), pesoKg: 76, tallaCm: 160 },
+        {
+          fecha: new Date('2026-10-01T00:00:00.000Z'),
+          pesoKg: 72,
+          tallaCm: 160,
+          pctGrasa: 33,
+        },
+      ]);
+      prisma.cita.findMany.mockResolvedValue([]);
+      prisma.planAlimenticio.findMany.mockResolvedValue([
+        {
+          id: 'plan1',
+          nombre: 'Plan A',
+          estado: 'ACTIVO',
+          kcalObjetivo: 1440,
+          creadoEn: new Date('2026-10-25T00:00:00.000Z'),
+          aprobadoEn: null,
+          tiempos: [{ items: [{ alimentoVersion: { tabla: 'Inicial' } }] }],
+        },
+      ]);
+      vi.spyOn(svc, 'adherencia').mockResolvedValue({
+        desde: new Date('2026-10-16T00:00:00.000Z'),
+        hasta: new Date('2026-10-29T00:00:00.000Z'),
+        totalRegistros: 20,
+        cumplidos: 6,
+        adherencia: 0.3,
+        registros: [],
+      });
+      vi.spyOn(svc, 'requerimiento').mockResolvedValue({
+        kcalObjetivo: 1440,
+      } as never);
+
+      const f = await svc.ficha('p1', 'n1');
+
+      expect(f.cabecera).toMatchObject({
+        imc: 28.1,
+        clasificacionImc: 'SOBREPESO',
+        pctGrasa: 33,
+        masaMagraKg: 48.2,
+      });
+      expect(f.progreso).toMatchObject({ pesoInicial: 76, pesoActual: 72, deltaKg: -4 });
+      expect(f.situacion.condiciones).toHaveLength(1);
+      expect(f.requerimiento).toMatchObject({ kcalObjetivo: 1440 });
+      expect(f.adherencia30d).toMatchObject({ porcentaje: 0.3, total: 20 });
+      expect(f.alertas.map((a) => a.tipo)).toEqual(
+        expect.arrayContaining(['ADHERENCIA_BAJA']),
+      );
+      expect(f.evolucion).toHaveLength(2);
+      expect(f.evolucion[1].imc).toBe(28.1);
+      expect(f.planes[0].tablas).toEqual(['Inicial']);
+    });
+
+    it('no rompe si el paciente no tiene mediciones ni requerimiento posible', async () => {
+      prisma.paciente.findFirst.mockResolvedValue({ ...paciente });
+      prisma.pacienteCondicion.findMany.mockResolvedValue([]);
+      prisma.medicamento.findMany.mockResolvedValue([]);
+      prisma.pacienteRestriccion.findMany.mockResolvedValue([]);
+      prisma.medicion.findMany.mockResolvedValue([]);
+      prisma.cita.findMany.mockResolvedValue([]);
+      prisma.planAlimenticio.findMany.mockResolvedValue([]);
+      vi.spyOn(svc, 'adherencia').mockResolvedValue({
+        desde: new Date(),
+        hasta: new Date(),
+        totalRegistros: 0,
+        cumplidos: 0,
+        adherencia: null,
+        registros: [],
+      });
+      vi.spyOn(svc, 'requerimiento').mockRejectedValue(
+        new BadRequestException('necesita una medición'),
+      );
+
+      const f = await svc.ficha('p1', 'n1');
+
+      expect(f.cabecera).toMatchObject({
+        imc: null,
+        clasificacionImc: null,
+        masaMagraKg: null,
+      });
+      expect(f.requerimiento).toBeNull();
+      expect(f.alertas.map((a) => a.tipo)).toEqual(
+        expect.arrayContaining(['SIN_MEDICION', 'SIN_PLAN_ACTIVO']),
+      );
+    });
+  });
+
   it('actualizar sigue reemplazando el set de restricciones', async () => {
     prisma.restriccion.findMany.mockResolvedValue([
       { id: 'r1', codigo: 'lactosa' },

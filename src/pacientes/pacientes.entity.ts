@@ -348,3 +348,124 @@ export class AdherenciaEntity {
   adherencia: number | null;
   registros: RegistroComidaConTipoEntity[];
 }
+
+/// ─── Ficha del paciente ──────────────────────────────────────────────────
+
+export class ProgresoPesoEntity {
+  /** @example 76 */
+  pesoInicial: number | null;
+  /** @example 73.4 */
+  pesoActual: number | null;
+  /** @example -2.6 */
+  deltaKg: number | null;
+  /** Ritmo semanal; negativo si está bajando. @example -0.4 */
+  ritmoKgSemana: number | null;
+  /** Extrapolación lineal al objetivo; es una proyección, no una promesa. @example 68.1 */
+  proyeccionKg: number | null;
+}
+
+export class AlertaFichaEntity {
+  /**
+   * SIN_MEDICION | PESO_ESTANCADO | SIN_PLAN_ACTIVO | PLAN_VIEJO | ADHERENCIA_BAJA
+   * @example "SIN_MEDICION"
+   */
+  tipo: string;
+  /** @example "media" */
+  severidad: string;
+  /** @example "Última medición hace 45 días." */
+  detalle: string;
+}
+
+export class CabeceraFichaEntity {
+  /** @example 31 */
+  edad: number;
+  /** @example 28.7 */
+  imc: number | null;
+  /**
+   * BAJO_PESO | NORMAL | SOBREPESO | OBESIDAD_I | OBESIDAD_II | OBESIDAD_III
+   * @example "SOBREPESO"
+   */
+  clasificacionImc: string | null;
+  /** Sale de la última medición que trae composición. @example 33.5 */
+  pctGrasa: number | null;
+  /** @example 24.5 */
+  masaGrasaKg: number | null;
+  /** @example 24.8 */
+  masaMuscularKg: number | null;
+  /** @example 8 */
+  grasaVisceral: number | null;
+  /** Fecha de la medición de la que salió la composición. */
+  composicionFecha: Date | null;
+  /** Peso de la última medición menos masa grasa. @example 48.6 */
+  masaMagraKg: number | null;
+  ultimaMedicion: { fecha: Date } | null;
+  objetivo: {
+    pesoKg: number | null;
+    fecha: Date | null;
+    meta: Meta;
+  };
+}
+
+export class SituacionFichaEntity {
+  condiciones: PacienteCondicionEntity[];
+  restricciones: PacienteRestriccionEntity[];
+  medicacion: MedicamentoEntity[];
+  @ApiProperty({ enum: EstadoFisiologico, enumName: 'EstadoFisiologico' })
+  estadoFisiologico: EstadoFisiologico;
+  alergias: string | null;
+  cirugias: string | null;
+  suplementos: string | null;
+  motivoConsulta: string | null;
+}
+
+export class HabitosFichaEntity {
+  comidasAlDia: number | null;
+  aguaLitros: number | null;
+  horasSueno: number | null;
+  alcohol: string | null;
+  tabaco: string | null;
+  quienCocina: string | null;
+  presupuesto: string | null;
+}
+
+export class AdherenciaFichaEntity {
+  desde: Date;
+  hasta: Date;
+  /** Entre 0 y 1. @example 0.72 */
+  porcentaje: number | null;
+  /** @example 18 */
+  cumplidos: number;
+  total: number;
+}
+
+export class ConsultasFichaEntity {
+  proximas: CitaBasicaEntity[];
+  /** Consultas ya ocurridas, con su SOAP. */
+  pasadas: CitaBasicaEntity[];
+}
+
+export class PlanEnFichaEntity {
+  id: string;
+  nombre: string;
+  @ApiProperty({ enum: EstadoPlan, enumName: 'EstadoPlan' })
+  estado: EstadoPlan;
+  kcalObjetivo: number;
+  creadoEn: Date;
+  aprobadoEn: Date | null;
+  /// Tablas nutricionales con las que se calcularon sus ítems.
+  tablas: string[];
+}
+
+export class FichaPacienteEntity {
+  paciente: PacienteEntity;
+  cabecera: CabeceraFichaEntity;
+  progreso: ProgresoPesoEntity;
+  situacion: SituacionFichaEntity;
+  habitos: HabitosFichaEntity;
+  requerimiento: RequerimientoEntity | null;
+  adherencia30d: AdherenciaFichaEntity;
+  alertas: AlertaFichaEntity[];
+  evolucion: MedicionConImcEntity[];
+  consultas: ConsultasFichaEntity;
+  planes: PlanEnFichaEntity[];
+}

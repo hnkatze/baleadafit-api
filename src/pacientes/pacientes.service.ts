@@ -12,6 +12,12 @@ import {
   calcularRequerimiento,
   imc,
 } from '../nutricion/nutricion.util.js';
+import {
+  alertasDeFicha,
+  clasificarImc,
+  progresoDePeso,
+  ultimaComposicion,
+} from './ficha.util.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type {
   ActualizarMedicamentoDto,
@@ -368,6 +374,176 @@ export class PacientesService {
           : null,
         meta: paciente.meta,
       },
+    };
+  }
+
+  /**
+   * Ficha completa del paciente para la pantalla del portal: una sola lectura con
+   * los indicadores derivados y las alertas calculadas acá, no en el cliente.
+   */
+  async ficha(pacienteId: string, nutricionistaId: string) {
+    const paciente = await this.acceso.pacienteDeNutricionista(
+      pacienteId,
+      nutricionistaId,
+    );
+    const hoy = aFecha(hoyIso());
+
+    const [
+      condiciones,
+      medicamentos,
+      restricciones,
+      mediciones,
+      proximas,
+      pasadas,
+      planes,
+    ] = await Promise.all([
+      this.prisma.pacienteCondicion.findMany({
+        where: { pacienteId },
+        include: { condicion: true },
+      }),
+      this.prisma.medicamento.findMany({
+        where: { pacienteId, activo: true },
+        orderBy: { creadoEn: 'desc' },
+      }),
+      this.prisma.pacienteRestriccion.findMany({
+        where: { pacienteId },
+        include: { restriccion: true },
+      }),
+      this.prisma.medicion.findMany({
+        where: { pacienteId },
+        orderBy: [{ fecha: 'asc' }, { creadoEn: 'asc' }],
+      }),
+      this.prisma.cita.findMany({
+        where: { pacienteId, fechaHora: { gte: new Date() } },
+        orderBy: { fechaHora: 'asc' },
+        take: 3,
+      }),
+      this.prisma.cita.findMany({
+        where: { pacienteId, fechaHora: { lt: new Date() } },
+        orderBy: { fechaHora: 'desc' },
+        take: 5,
+      }),
+      this.prisma.planAlimenticio.findMany({
+        where: { pacienteId },
+        orderBy: { creadoEn: 'desc' },
+        include: {
+          tiempos: {
+            select: {
+              items: {
+                select: { alimentoVersion: { select: { tabla: true } } },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const conImc = mediciones.map((m) => ({
+      ...m,
+      imc: imc(m.pesoKg, m.tallaCm),
+    }));
+    const ultima = conImc[conImc.length - 1];
+    const activo = planes.find((p) => p.estado === 'ACTIVO') ?? null;
+
+    // La última medición puede ser un control de peso sin bioimpedancia: se usa
+    // la última que sí trae composición, con su fecha, para no borrar el dato.
+    const composicion = ultimaComposicion(conImc);
+    const masaMagraKg = ultima
+      ? composicion.masaGrasaKg != null
+        ? Math.round((ultima.pesoKg - composicion.masaGrasaKg) * 10) / 10
+        : composicion.pctGrasa != null
+          ? Math.round(ultima.pesoKg * (1 - composicion.pctGrasa / 100) * 10) /
+            10
+          : null
+      : null;
+
+    const adherencia = await this.adherencia(pacienteId, nutricionistaId);
+    const requerimiento = await this.requerimiento(
+      pacienteId,
+      nutricionistaId,
+    ).catch(() => null);
+
+    const progreso = progresoDePeso(
+      conImc.map((m) => ({ fecha: m.fecha, pesoKg: m.pesoKg })),
+      {
+        pesoKg: paciente.pesoObjetivoKg,
+        fecha: paciente.fechaObjetivo,
+      },
+      hoy,
+    );
+
+    const alertas = alertasDeFicha({
+      hoy,
+      meta: paciente.meta,
+      mediciones: conImc.map((m) => ({ fecha: m.fecha, pesoKg: m.pesoKg })),
+      planActivo: activo ? { creadoEn: activo.creadoEn } : null,
+      adherencia: {
+        porcentaje: adherencia.adherencia,
+        total: adherencia.totalRegistros,
+      },
+    });
+
+    return {
+      paciente,
+      cabecera: {
+        edad: calcularEdad(paciente.fechaNacimiento, hoy),
+        imc: ultima ? ultima.imc : null,
+        clasificacionImc: ultima ? clasificarImc(ultima.imc) : null,
+        pctGrasa: composicion.pctGrasa,
+        masaGrasaKg: composicion.masaGrasaKg,
+        masaMuscularKg: composicion.masaMuscularKg,
+        grasaVisceral: composicion.grasaVisceral,
+        composicionFecha: composicion.fecha,
+        masaMagraKg,
+        ultimaMedicion: ultima ? { fecha: ultima.fecha } : null,
+        objetivo: {
+          pesoKg: paciente.pesoObjetivoKg,
+          fecha: paciente.fechaObjetivo,
+          meta: paciente.meta,
+        },
+      },
+      progreso,
+      situacion: {
+        condiciones,
+        restricciones,
+        medicacion: medicamentos,
+        estadoFisiologico: paciente.estadoFisiologico,
+        alergias: paciente.alergias,
+        cirugias: paciente.cirugias,
+        suplementos: paciente.suplementos,
+        motivoConsulta: paciente.motivoConsulta,
+      },
+      habitos: {
+        comidasAlDia: paciente.comidasAlDia,
+        aguaLitros: paciente.aguaLitros,
+        horasSueno: paciente.horasSueno,
+        alcohol: paciente.alcohol,
+        tabaco: paciente.tabaco,
+        quienCocina: paciente.quienCocina,
+        presupuesto: paciente.presupuesto,
+      },
+      requerimiento,
+      adherencia30d: {
+        desde: adherencia.desde,
+        hasta: adherencia.hasta,
+        porcentaje: adherencia.adherencia,
+        cumplidos: adherencia.cumplidos,
+        total: adherencia.totalRegistros,
+      },
+      alertas,
+      evolucion: conImc,
+      consultas: { proximas, pasadas },
+      planes: planes.map(({ tiempos, ...plan }) => ({
+        ...plan,
+        tablas: [
+          ...new Set(
+            tiempos
+              .flatMap((t) => t.items)
+              .map((i) => i.alimentoVersion?.tabla)
+              .filter((t): t is string => !!t),
+          ),
+        ],
+      })),
     };
   }
 
