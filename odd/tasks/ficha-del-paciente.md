@@ -15,9 +15,9 @@ La pantalla principal del BO es el expediente de un paciente. Hoy se arma con cu
 
 ## Tasks
 
-- [ ] F1 — Utilidades puras de la ficha (clasificación de IMC, progreso y alertas) con tests (S2, S3, S6)
-- [ ] F2 — `GET /pacientes/:id/ficha`: composición de los bloques con aislamiento por nutricionista (S1, S4, S5, S7, S8)
-- [ ] F3 — README y OpenAPI al día
+- [x] F1 — Utilidades puras de la ficha (clasificación de IMC, progreso, alertas y última composición) con tests (S2, S3, S6) — commit `c10610a`
+- [x] F2 — `GET /pacientes/:id/ficha`: composición de los bloques con aislamiento por nutricionista (S1, S4, S5, S7, S8) — commit `c10610a`
+- [x] F3 — README y OpenAPI al día — commit `60101e6`
 
 ## Log
 
@@ -25,3 +25,6 @@ La pantalla principal del BO es el expediente de un paciente. Hoy se arma con cu
 - **L2** (decisión de diseño): endpoint compuesto de lectura en el backend, no composición en el portal, porque los indicadores y las alertas son lógica de dominio y así también los puede reusar la app del paciente. Se mantienen los endpoints existentes para no romper nada.
 - **L3** (límite clínico respetado): las alertas de nutrientes (sodio, carga glucémica) **no** entran todavía porque dependen de los umbrales de N5, que el dueño no definió. Inventar un umbral acá sería peor que no tener la alerta.
 - **L4** (criterio de las alertas): se calculan solo con datos que el sistema ya tiene y con referencias públicas, sin diagnosticar: días sin medición, tres mediciones sin cambio, plan activo viejo o ausente y adherencia baja. La clasificación de IMC usa los rangos de la OMS.
+- **L5** (defecto encontrado al probar en vivo): la cabecera tomaba el % de grasa de la **última** medición, y como la última era un control de peso sin bioimpedancia, el dato salía nulo aunque hubiera una medición con composición del mismo mes. Se corrigió con `ultimaComposicion()`: usa la última medición que trae composición y expone `composicionFecha` para no mentir sobre la fecha.
+- **L6** (evidencia en vivo): `GET /pacientes/:id/ficha` respondió 200 y devolvió cabecera (edad 31, IMC 28.7, sobrepeso), progreso, 2 condiciones, requerimiento (1450 kcal, TMB 1418), adherencia, 7 mediciones, 1 consulta próxima y 7 planes con su tabla `Inicial`. Sin alertas, porque el paciente tenía medición del día, plan activo reciente y adherencia alta.
+- **L7** (nota de verificación): antes de probar en vivo se comprobó que la ruta nueva respondiera, por los tres incidentes previos de servidor huérfano con build viejo.
