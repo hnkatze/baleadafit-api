@@ -1,5 +1,5 @@
 /**
- * Datos iniciales: restricciones y catálogo de alimentos hondureños.
+ * Datos iniciales: restricciones, condiciones clínicas y catálogo de alimentos hondureños.
  *
  * IMPORTANTE: los valores nutricionales son APROXIMADOS para desarrollo y demo.
  * Antes de uso clínico deben verificarse contra la Tabla de Composición de
@@ -31,6 +31,113 @@ const restricciones = [
   { codigo: 'cerdo', nombre: 'Sin cerdo' },
   { codigo: 'mariscos', nombre: 'Sin pescados ni mariscos' },
   { codigo: 'mani', nombre: 'Sin maní' },
+];
+
+/**
+ * Catálogo de condiciones clínicas. La descripción dice qué cambia en el plan,
+ * que es lo que la nutricionista necesita recordar al generarlo.
+ */
+const condiciones = [
+  {
+    codigo: 'diabetes_t2',
+    nombre: 'Diabetes mellitus tipo 2',
+    descripcion: 'Control de carbohidratos, fibra en cada tiempo y evitar azúcares libres.',
+  },
+  {
+    codigo: 'diabetes_t1',
+    nombre: 'Diabetes mellitus tipo 1',
+    descripcion: 'Conteo de carbohidratos por tiempo y horarios estables de comida.',
+  },
+  {
+    codigo: 'prediabetes',
+    nombre: 'Prediabetes',
+    descripcion: 'Reducir carga glucémica y sostener el déficit calórico moderado.',
+  },
+  {
+    codigo: 'hta',
+    nombre: 'Hipertensión arterial',
+    descripcion: 'Menos sodio: limitar embutidos, quesos salados y caldos concentrados.',
+  },
+  {
+    codigo: 'dislipidemia',
+    nombre: 'Dislipidemia',
+    descripcion: 'Bajar grasa saturada, priorizar grasa insaturada y fibra soluble.',
+  },
+  {
+    codigo: 'erc',
+    nombre: 'Enfermedad renal crónica',
+    descripcion: 'Ajustar proteína, potasio y fósforo según el estadio; requiere nefrología.',
+  },
+  {
+    codigo: 'higado_graso',
+    nombre: 'Hígado graso no alcohólico',
+    descripcion: 'Déficit calórico sostenido, menos fructosa líquida y menos alcohol.',
+  },
+  {
+    codigo: 'hipotiroidismo',
+    nombre: 'Hipotiroidismo',
+    descripcion: 'Vigilar yodo y fibra; el gasto energético puede estar subestimado.',
+  },
+  {
+    codigo: 'hipertiroidismo',
+    nombre: 'Hipertiroidismo',
+    descripcion: 'El gasto energético puede estar sobreestimado: cuidar la pérdida de masa.',
+  },
+  {
+    codigo: 'sop',
+    nombre: 'Síndrome de ovario poliquístico',
+    descripcion: 'Menor carga glucémica, proteína suficiente y actividad física regular.',
+  },
+  {
+    codigo: 'gota',
+    nombre: 'Gota / hiperuricemia',
+    descripcion: 'Limitar vísceras, mariscos y cerveza; mantener hidratación alta.',
+  },
+  {
+    codigo: 'anemia',
+    nombre: 'Anemia ferropénica',
+    descripcion: 'Hierro hemo con vitamina C y evitar café o té junto a la comida principal.',
+  },
+  {
+    codigo: 'gastritis',
+    nombre: 'Gastritis / reflujo',
+    descripcion: 'Comidas frecuentes y pequeñas, sin frituras ni irritantes.',
+  },
+  {
+    codigo: 'colon_irritable',
+    nombre: 'Síndrome de colon irritable',
+    descripcion: 'Probar tolerancia a lactosa y fibra fermentable por separado.',
+  },
+  {
+    codigo: 'embarazo',
+    nombre: 'Embarazo',
+    descripcion: 'Sin déficit agresivo: sumar calorías y vigilar hierro, folato y calcio.',
+  },
+  {
+    codigo: 'lactancia',
+    nombre: 'Lactancia',
+    descripcion: 'Cubrir el gasto de la producción de leche e hidratación abundante.',
+  },
+  {
+    codigo: 'bariatrica',
+    nombre: 'Post cirugía bariátrica',
+    descripcion: 'Porciones pequeñas, proteína primero y suplementación indicada.',
+  },
+  {
+    codigo: 'oncologia',
+    nombre: 'Tratamiento oncológico',
+    descripcion: 'Priorizar energía y proteína; adaptar texturas según tolerancia.',
+  },
+  {
+    codigo: 'vih',
+    nombre: 'VIH',
+    descripcion: 'Requerimiento proteico elevado y control de infecciones alimentarias.',
+  },
+  {
+    codigo: 'tca',
+    nombre: 'Trastorno de la conducta alimentaria',
+    descripcion: 'Sin énfasis en peso ni conteo estricto; coordinar con psicología.',
+  },
 ];
 
 // Atajos para tiempos de comida
@@ -721,6 +828,14 @@ async function main() {
     });
   }
 
+  for (const c of condiciones) {
+    await prisma.condicion.upsert({
+      where: { codigo: c.codigo },
+      create: c,
+      update: { nombre: c.nombre, descripcion: c.descripcion },
+    });
+  }
+
   for (const [
     nombre,
     categoria,
@@ -757,7 +872,7 @@ async function main() {
   const tipicos = alimentos.filter(([, , , , , , , , , , tipico]) => tipico === true).length;
 
   console.log(
-    `Seed listo: ${restricciones.length} restricciones, ${alimentos.length} alimentos.`,
+    `Seed listo: ${restricciones.length} restricciones, ${condiciones.length} condiciones, ${alimentos.length} alimentos.`,
   );
   console.log(`Conteo por categoría:\n${resumenPorCategoria(alimentos)}`);
   console.log(`Marcados como típicos hondureños: ${tipicos}.`);

@@ -72,6 +72,22 @@ enum EstadoCita {
   CANCELADA
 }
 
+/// Estado fisiológico: cambia el requerimiento y las recomendaciones
+enum EstadoFisiologico {
+  NINGUNO
+  EMBARAZO
+  LACTANCIA
+}
+
+/// De dónde salió la medición: distingue lo medido de lo estimado
+enum FuenteMedicion {
+  MANUAL
+  BASCULA
+  INBODY
+  OMRON
+  OTRO
+}
+
 // ─── Expediente ───────────────────────────────────────────────────────────
 
 model Nutricionista {
@@ -91,28 +107,49 @@ model Nutricionista {
 }
 
 model Paciente {
-  id               String         @id @default(uuid()) @db.Uuid
-  nutricionistaId  String         @map("nutricionista_id") @db.Uuid
+  id              String         @id @default(uuid()) @db.Uuid
+  nutricionistaId String         @map("nutricionista_id") @db.Uuid
   /// Se vincula cuando el paciente inicia sesión en la app con el mismo correo
-  firebaseUid      String?        @unique @map("firebase_uid")
-  nombre           String
-  apellido         String
-  correo           String?
-  telefono         String?
-  sexo             Sexo
-  fechaNacimiento  DateTime       @map("fecha_nacimiento") @db.Date
-  nivelActividad   NivelActividad @default(SEDENTARIO) @map("nivel_actividad")
-  meta             Meta           @default(MANTENER)
-  notas            String?
-  activo           Boolean        @default(true)
-  creadoEn         DateTime       @default(now()) @map("creado_en")
-  actualizadoEn    DateTime       @updatedAt @map("actualizado_en")
+  firebaseUid     String?        @unique @map("firebase_uid")
+  nombre          String
+  apellido        String
+  correo          String?
+  telefono        String?
+  sexo            Sexo
+  fechaNacimiento DateTime       @map("fecha_nacimiento") @db.Date
+  nivelActividad  NivelActividad @default(SEDENTARIO) @map("nivel_actividad")
+  meta            Meta           @default(MANTENER)
+  notas           String?
 
-  nutricionista Nutricionista          @relation(fields: [nutricionistaId], references: [id])
+  // ─── Expediente clínico ─────────────────────────────
+  /// Objetivo pactado con el paciente
+  pesoObjetivoKg    Float?            @map("peso_objetivo_kg")
+  fechaObjetivo     DateTime?         @map("fecha_objetivo") @db.Date
+  estadoFisiologico EstadoFisiologico @default(NINGUNO) @map("estado_fisiologico")
+  motivoConsulta    String?           @map("motivo_consulta")
+  alergias          String?
+  cirugias          String?
+  suplementos       String?
+  // Hábitos y contexto de vida
+  comidasAlDia      Int?              @map("comidas_al_dia")
+  aguaLitros        Float?            @map("agua_litros")
+  horasSueno        Float?            @map("horas_sueno")
+  alcohol           String?
+  tabaco            String?
+  quienCocina       String?           @map("quien_cocina")
+  presupuesto       String?
+
+  activo        Boolean  @default(true)
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+  nutricionista Nutricionista         @relation(fields: [nutricionistaId], references: [id])
   mediciones    Medicion[]
   citas         Cita[]
   planes        PlanAlimenticio[]
   restricciones PacienteRestriccion[]
+  condiciones   PacienteCondicion[]
+  medicamentos  Medicamento[]
   registros     RegistroComida[]
 
   @@unique([nutricionistaId, correo])
@@ -128,8 +165,27 @@ model Medicion {
   tallaCm    Float    @map("talla_cm")
   pctGrasa   Float?   @map("pct_grasa")
   cinturaCm  Float?   @map("cintura_cm")
-  notas      String?
-  creadoEn   DateTime @default(now()) @map("creado_en")
+
+  // ─── Composición corporal (bioimpedancia o pliegues) ──
+  masaMuscularKg        Float?         @map("masa_muscular_kg")
+  masaGrasaKg           Float?         @map("masa_grasa_kg")
+  /// Nivel de grasa visceral que reporta el equipo (1-20)
+  grasaVisceral         Int?           @map("grasa_visceral")
+  aguaIntracelularL     Float?         @map("agua_intracelular_l")
+  aguaExtracelularL     Float?         @map("agua_extracelular_l")
+  anguloFase            Float?         @map("angulo_fase")
+  pliegueTricipitalMm   Float?         @map("pliegue_tricipital_mm")
+  pliegueSubescapularMm Float?         @map("pliegue_subescapular_mm")
+  pliegueSuprailiacoMm  Float?         @map("pliegue_suprailiaco_mm")
+  pliegueBicipitalMm    Float?         @map("pliegue_bicipital_mm")
+  perimetroBrazoCm      Float?         @map("perimetro_brazo_cm")
+  perimetroCaderaCm     Float?         @map("perimetro_cadera_cm")
+  perimetroMusloCm      Float?         @map("perimetro_muslo_cm")
+  presionSistolica      Int?           @map("presion_sistolica")
+  presionDiastolica     Int?           @map("presion_diastolica")
+  fuente                FuenteMedicion @default(MANUAL)
+  notas                 String?
+  creadoEn              DateTime       @default(now()) @map("creado_en")
 
   paciente Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
 
@@ -161,6 +217,48 @@ model PacienteRestriccion {
   @@map("paciente_restriccion")
 }
 
+/// Catálogo de condiciones clínicas (diabetes, HTA, ERC…)
+model Condicion {
+  id          String  @id @default(uuid()) @db.Uuid
+  codigo      String  @unique
+  nombre      String
+  descripcion String?
+
+  pacientes PacienteCondicion[]
+
+  @@map("condicion")
+}
+
+/// Tabla intermedia N:M paciente ↔ condición
+model PacienteCondicion {
+  pacienteId  String  @map("paciente_id") @db.Uuid
+  condicionId String  @map("condicion_id") @db.Uuid
+  /// Detalle del caso (grado, control, desde cuándo)
+  notas       String?
+
+  paciente  Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  condicion Condicion @relation(fields: [condicionId], references: [id], onDelete: Cascade)
+
+  @@id([pacienteId, condicionId])
+  @@map("paciente_condicion")
+}
+
+/// Medicación declarada por el paciente; se conserva el historial
+model Medicamento {
+  id         String   @id @default(uuid()) @db.Uuid
+  pacienteId String   @map("paciente_id") @db.Uuid
+  nombre     String
+  dosis      String?
+  frecuencia String?
+  activo     Boolean  @default(true)
+  creadoEn   DateTime @default(now()) @map("creado_en")
+
+  paciente Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
+  @@index([pacienteId, activo])
+  @@map("medicamento")
+}
+
 model Cita {
   id              String     @id @default(uuid()) @db.Uuid
   pacienteId      String     @map("paciente_id") @db.Uuid
@@ -170,7 +268,14 @@ model Cita {
   motivo          String?
   estado          EstadoCita @default(PROGRAMADA)
   notas           String?
-  creadoEn        DateTime   @default(now()) @map("creado_en")
+
+  // ─── Notas de la consulta (SOAP) ─────────────────────
+  subjetivo           String?
+  objetivo            String?
+  analisis            String?
+  plan                String?
+  proximaCitaSugerida DateTime? @map("proxima_cita_sugerida") @db.Date
+  creadoEn            DateTime  @default(now()) @map("creado_en")
 
   paciente      Paciente      @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
   nutricionista Nutricionista @relation(fields: [nutricionistaId], references: [id])
