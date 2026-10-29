@@ -1,0 +1,5154 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/auth/me": {
+      "get": {
+        "description": "Primera llamada de la app después del login. Según `rol` muestra la navegación de nutricionista, la del paciente o el registro (`sin_perfil`).",
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rol y perfil del usuario",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/registro-nutricionista": {
+      "post": {
+        "description": "Crea el perfil de nutricionista para una cuenta de Firebase sin perfil. Usa el correo del token.",
+        "operationId": "AuthController_registrarNutricionista",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroNutricionistaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutricionistaEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar nutricionista",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/": {
+      "get": {
+        "description": "No requiere token.",
+        "operationId": "DashboardController_salud",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaludEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Estado del servicio",
+        "tags": [
+          "salud"
+        ]
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "description": "Pacientes activos, planes en borrador y citas de hoy (sin canceladas).",
+        "operationId": "DashboardController_resumen",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resumen de inicio",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/pacientes": {
+      "get": {
+        "description": "Pacientes de la nutricionista con su última medición y plan activo. Busca por nombre, apellido o correo.",
+        "operationId": "PacientesController_listar",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Busca en nombre, apellido o correo.",
+            "schema": {
+              "example": "López",
+              "type": "string"
+            }
+          },
+          {
+            "name": "incluirInactivos",
+            "required": false,
+            "in": "query",
+            "description": "Incluir pacientes dados de baja.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PacienteListadoEntity"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar pacientes",
+        "tags": [
+          "pacientes"
+        ]
+      },
+      "post": {
+        "description": "Con `correo`, el paciente queda vinculado al iniciar sesión en la app con ese correo verificado.",
+        "operationId": "PacientesController_crear",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPacienteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacienteConRestriccionesEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crear paciente",
+        "tags": [
+          "pacientes"
+        ]
+      }
+    },
+    "/pacientes/{id}": {
+      "get": {
+        "description": "Restricciones, últimas 10 mediciones, próximas citas y planes.",
+        "operationId": "PacientesController_detalle",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacienteDetalleEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Expediente del paciente",
+        "tags": [
+          "pacientes"
+        ]
+      },
+      "patch": {
+        "description": "Si se envía `restricciones`, reemplaza la lista completa.",
+        "operationId": "PacientesController_actualizar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPacienteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacienteConRestriccionesEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Actualizar paciente",
+        "tags": [
+          "pacientes"
+        ]
+      },
+      "delete": {
+        "description": "Baja lógica (`activo = false`); el historial se conserva.",
+        "operationId": "PacientesController_desactivar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacienteEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dar de baja al paciente",
+        "tags": [
+          "pacientes"
+        ]
+      }
+    },
+    "/pacientes/{id}/mediciones": {
+      "get": {
+        "description": "De la más antigua a la más reciente, con IMC.",
+        "operationId": "PacientesController_mediciones",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MedicionConImcEntity"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Historial de mediciones",
+        "tags": [
+          "pacientes"
+        ]
+      },
+      "post": {
+        "operationId": "PacientesController_agregarMedicion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMedicionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicionEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar medición",
+        "tags": [
+          "pacientes"
+        ]
+      }
+    },
+    "/mediciones/{id}": {
+      "delete": {
+        "operationId": "PacientesController_eliminarMedicion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de la medición",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Eliminada."
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Eliminar medición",
+        "tags": [
+          "pacientes"
+        ]
+      }
+    },
+    "/pacientes/{id}/requerimiento": {
+      "get": {
+        "description": "Mifflin-St Jeor con la medición más reciente × factor de actividad ± ajuste por meta. Requiere al menos una medición.",
+        "operationId": "PacientesController_requerimiento",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequerimientoEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Requerimiento calórico",
+        "tags": [
+          "pacientes"
+        ]
+      }
+    },
+    "/pacientes/{id}/adherencia": {
+      "get": {
+        "description": "Registros del diario del paciente y porcentaje de comidas cumplidas. Por defecto, los últimos 14 días.",
+        "operationId": "PacientesController_adherencia",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "desde",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD",
+            "schema": {
+              "example": "2026-10-15",
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasta",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD (por defecto hoy)",
+            "schema": {
+              "example": "2026-10-28",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdherenciaEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Adherencia al plan",
+        "tags": [
+          "pacientes"
+        ]
+      }
+    },
+    "/alimentos": {
+      "get": {
+        "description": "Catálogo activo. `excluir=lactosa,gluten` quita los alimentos que contienen esas etiquetas.",
+        "operationId": "AlimentosController_listar",
+        "parameters": [
+          {
+            "name": "excluir",
+            "required": false,
+            "in": "query",
+            "description": "Excluye alimentos con alguna de estas etiquetas, separadas por coma.",
+            "schema": {
+              "example": "lactosa,gluten",
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "baleada",
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoria",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PLATO_TIPICO",
+                "PROTEINA",
+                "CEREAL_TUBERCULO",
+                "LEGUMINOSA",
+                "LACTEO",
+                "FRUTA",
+                "VERDURA",
+                "GRASA",
+                "BEBIDA"
+              ]
+            }
+          },
+          {
+            "name": "tipoComida",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DESAYUNO",
+                "MERIENDA_AM",
+                "ALMUERZO",
+                "MERIENDA_PM",
+                "CENA"
+              ]
+            }
+          },
+          {
+            "name": "soloTipicos",
+            "required": false,
+            "in": "query",
+            "description": "Solo platos y alimentos típicos hondureños.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AlimentoEntity"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Buscar alimentos",
+        "tags": [
+          "catálogo"
+        ]
+      },
+      "post": {
+        "description": "Solo nutricionistas. Valores por porción.",
+        "operationId": "AlimentosController_crear",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearAlimentoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlimentoEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Agregar alimento",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
+    "/alimentos/{id}": {
+      "get": {
+        "operationId": "AlimentosController_detalle",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del alimento",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlimentoEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalle de un alimento",
+        "tags": [
+          "catálogo"
+        ]
+      },
+      "patch": {
+        "description": "Solo nutricionistas. `activo = false` lo saca del catálogo sin borrarlo.",
+        "operationId": "AlimentosController_actualizar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del alimento",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarAlimentoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlimentoEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Editar alimento",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
+    "/restricciones": {
+      "get": {
+        "description": "Sus `codigo` se usan al crear pacientes y en `excluir`.",
+        "operationId": "AlimentosController_restricciones",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RestriccionEntity"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar restricciones alimentarias",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
+    "/pacientes/{id}/planes": {
+      "get": {
+        "description": "Del más reciente al más antiguo, sin detalle.",
+        "operationId": "PlanesController_listar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlanEntity"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Planes del paciente",
+        "tags": [
+          "planes"
+        ]
+      }
+    },
+    "/pacientes/{id}/planes/generar": {
+      "post": {
+        "description": "Crea un plan en `BORRADOR`:\n1. Calcula kcal y macros con Mifflin-St Jeor (o usa `kcalObjetivo`).\n2. Filtra el catálogo por las restricciones del paciente.\n3. Si `usarIa` (por defecto), AWS Bedrock propone alimentos y porciones.\n4. El backend descarta alimentos inexistentes y ajusta porciones a ±10 % por tiempo de comida.\n5. Si la IA no está disponible usa reglas (`origen = REGLAS`).\n\nRequiere al menos una medición del paciente.",
+        "operationId": "PlanesController_generar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerarPlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetalleEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Generar plan con el recomendador",
+        "tags": [
+          "planes"
+        ]
+      }
+    },
+    "/planes/{id}": {
+      "get": {
+        "description": "Tiempos de comida con alimentos, totales y desviación contra la meta.",
+        "operationId": "PlanesController_detalle",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del plan",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetalleEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalle del plan",
+        "tags": [
+          "planes"
+        ]
+      },
+      "patch": {
+        "description": "Nombre, metas y justificación. No permitido en planes archivados.",
+        "operationId": "PlanesController_actualizar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del plan",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetalleEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Editar datos del plan",
+        "tags": [
+          "planes"
+        ]
+      },
+      "delete": {
+        "description": "Solo planes en `BORRADOR`.",
+        "operationId": "PlanesController_eliminar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del plan",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Eliminado."
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Eliminar borrador",
+        "tags": [
+          "planes"
+        ]
+      }
+    },
+    "/planes/{id}/tiempos/{tipo}/items": {
+      "put": {
+        "description": "Edición manual: reemplaza la lista completa del tiempo indicado.",
+        "operationId": "PlanesController_reemplazarItems",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del plan",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tipo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/TipoComida"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReemplazarItemsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetalleEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reemplazar alimentos de un tiempo de comida",
+        "tags": [
+          "planes"
+        ]
+      }
+    },
+    "/planes/{id}/activar": {
+      "post": {
+        "description": "Queda `ACTIVO` y visible en la app del paciente; el plan activo anterior pasa a `ARCHIVADO`.",
+        "operationId": "PlanesController_activar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del plan",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetalleEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aprobar y activar el plan",
+        "tags": [
+          "planes"
+        ]
+      }
+    },
+    "/citas": {
+      "get": {
+        "description": "Citas de la nutricionista ordenadas por fecha, con filtros opcionales.",
+        "operationId": "CitasController_listar",
+        "parameters": [
+          {
+            "name": "desde",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-11-01T00:00:00-06:00",
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasta",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-11-30T23:59:59-06:00",
+              "type": "string"
+            }
+          },
+          {
+            "name": "pacienteId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "estado",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PROGRAMADA",
+                "COMPLETADA",
+                "CANCELADA"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CitaEntity"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Agenda",
+        "tags": [
+          "citas"
+        ]
+      },
+      "post": {
+        "description": "Responde 409 si se traslapa con otra cita programada.",
+        "operationId": "CitasController_crear",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearCitaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitaEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Programar cita",
+        "tags": [
+          "citas"
+        ]
+      }
+    },
+    "/citas/{id}": {
+      "patch": {
+        "description": "Para cancelar, enviar `estado: \"CANCELADA\"`.",
+        "operationId": "CitasController_actualizar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID de la cita",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarCitaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitaEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reprogramar, completar o cancelar",
+        "tags": [
+          "citas"
+        ]
+      }
+    },
+    "/me/hoy": {
+      "get": {
+        "description": "Comidas del plan activo con su registro del día, comidas cumplidas y próxima cita.",
+        "operationId": "MiCuentaController_hoy",
+        "parameters": [
+          {
+            "name": "fecha",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD (por defecto hoy)",
+            "schema": {
+              "example": "2026-10-28",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoyEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pantalla Hoy",
+        "tags": [
+          "mi cuenta (paciente)"
+        ]
+      }
+    },
+    "/me/plan": {
+      "get": {
+        "description": "Plan completo con totales. Responde `null` si la nutricionista aún no activa uno.",
+        "operationId": "MiCuentaController_plan",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Plan activo o null.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanDetalleEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mi plan activo",
+        "tags": [
+          "mi cuenta (paciente)"
+        ]
+      }
+    },
+    "/me/mediciones": {
+      "get": {
+        "description": "Mediciones con IMC, de la más antigua a la más reciente.",
+        "operationId": "MiCuentaController_mediciones",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MedicionConImcEntity"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mi progreso",
+        "tags": [
+          "mi cuenta (paciente)"
+        ]
+      }
+    },
+    "/me/citas": {
+      "get": {
+        "description": "Todas, de la más reciente a la más antigua.",
+        "operationId": "MiCuentaController_citas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CitaPacienteEntity"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mis citas",
+        "tags": [
+          "mi cuenta (paciente)"
+        ]
+      }
+    },
+    "/me/registros": {
+      "put": {
+        "description": "Marca un tiempo de comida como cumplido o no en una fecha. Si ya existe, lo actualiza.",
+        "operationId": "MiCuentaController_registrar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrarComidaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistroComidaEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar comida",
+        "tags": [
+          "mi cuenta (paciente)"
+        ]
+      },
+      "get": {
+        "description": "Por defecto, los últimos 7 días.",
+        "operationId": "MiCuentaController_registros",
+        "parameters": [
+          {
+            "name": "desde",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasta",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD (por defecto hoy)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegistroComidaConTipoEntity"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mi diario de comidas",
+        "tags": [
+          "mi cuenta (paciente)"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "BaleadaFit API",
+    "description": "\nAPI de **BaleadaFit**: nutrición clínica con comida hondureña.\n\nUna sola app móvil con dos roles:\n- **Nutricionista**: pacientes, mediciones, catálogo, planes y agenda.\n- **Paciente**: plan del día, progreso, citas y registro de comidas (rutas `/me`).\n\n### Autenticación\nEnvía el ID token de Firebase en `Authorization: Bearer <token>`.\n`GET /auth/me` devuelve el rol (`nutricionista`, `paciente` o `sin_perfil`).\nUna cuenta nueva usa `POST /auth/registro-nutricionista`; un paciente queda vinculado\nautomáticamente al iniciar sesión con el correo que registró su nutricionista.\n\nEn desarrollo, con `AUTH_DEV_BYPASS=true`, se acepta `Bearer dev:<uid>:<correo>`.\n\n### Recomendador\n`POST /pacientes/{id}/planes/generar` calcula kcal y macros (Mifflin-St Jeor), pide a\nAWS Bedrock una propuesta con el catálogo filtrado por restricciones y la valida\n(±10 % por tiempo de comida). Si la IA no está disponible usa reglas.\n",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "salud",
+      "description": "Estado del servicio"
+    },
+    {
+      "name": "auth",
+      "description": "Sesión, rol y registro de nutricionista"
+    },
+    {
+      "name": "dashboard",
+      "description": "Resumen de inicio de la nutricionista"
+    },
+    {
+      "name": "pacientes",
+      "description": "Expediente, mediciones, requerimiento y adherencia"
+    },
+    {
+      "name": "catálogo",
+      "description": "Alimentos y restricciones"
+    },
+    {
+      "name": "planes",
+      "description": "Recomendador y planes alimenticios"
+    },
+    {
+      "name": "citas",
+      "description": "Agenda de la nutricionista"
+    },
+    {
+      "name": "mi cuenta (paciente)",
+      "description": "Lo que ve y registra el paciente en la app"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "ID token de Firebase"
+      }
+    },
+    "schemas": {
+      "MeEntity": {
+        "type": "object",
+        "properties": {
+          "rol": {
+            "enum": [
+              "nutricionista",
+              "paciente",
+              "sin_perfil"
+            ],
+            "type": "string",
+            "description": "Define qué navegación muestra la app."
+          },
+          "perfil": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "description": "Nutricionista, o paciente con su nutricionista y restricciones. null si no tiene perfil."
+          }
+        },
+        "required": [
+          "rol",
+          "perfil"
+        ]
+      },
+      "ErrorRespuesta": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": [
+              "pesoKg must not be greater than 400"
+            ],
+            "description": "Mensaje o lista de errores de validación."
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message",
+          "error"
+        ]
+      },
+      "RegistroNutricionistaDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Lic. Sofía Herrera",
+            "minLength": 3,
+            "maxLength": 120
+          },
+          "colegiado": {
+            "type": "string",
+            "description": "Número de colegiada en el Colegio de Nutricionistas de Honduras.",
+            "example": "1402",
+            "maxLength": 40
+          },
+          "telefono": {
+            "type": "string",
+            "example": "+504 9999-0000",
+            "maxLength": 30
+          }
+        },
+        "required": [
+          "nombre"
+        ]
+      },
+      "NutricionistaEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "firebaseUid": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Lic. Sofía Herrera"
+          },
+          "correo": {
+            "type": "string",
+            "example": "sofia@clinica.hn"
+          },
+          "colegiado": {
+            "type": "string",
+            "nullable": true,
+            "example": "1402"
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "firebaseUid",
+          "nombre",
+          "correo",
+          "colegiado",
+          "telefono",
+          "creadoEn"
+        ]
+      },
+      "SaludEntity": {
+        "type": "object",
+        "properties": {
+          "servicio": {
+            "type": "string",
+            "example": "baleadafit-api"
+          },
+          "estado": {
+            "type": "string",
+            "example": "ok"
+          }
+        },
+        "required": [
+          "servicio",
+          "estado"
+        ]
+      },
+      "EstadoCita": {
+        "type": "string",
+        "enum": [
+          "PROGRAMADA",
+          "COMPLETADA",
+          "CANCELADA"
+        ]
+      },
+      "PacienteDeCitaEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Ana"
+          },
+          "apellido": {
+            "type": "string",
+            "example": "López"
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "apellido",
+          "telefono"
+        ]
+      },
+      "CitaEntity": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoCita"
+              }
+            ]
+          },
+          "paciente": {
+            "$ref": "#/components/schemas/PacienteDeCitaEntity"
+          },
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "nutricionistaId": {
+            "type": "string"
+          },
+          "fechaHora": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "duracionMin": {
+            "type": "number",
+            "example": 45
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true,
+            "example": "Control mensual"
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estado",
+          "paciente",
+          "id",
+          "pacienteId",
+          "nutricionistaId",
+          "fechaHora",
+          "duracionMin",
+          "motivo",
+          "notas",
+          "creadoEn"
+        ]
+      },
+      "DashboardEntity": {
+        "type": "object",
+        "properties": {
+          "pacientesActivos": {
+            "type": "number",
+            "example": 24
+          },
+          "planesEnBorrador": {
+            "type": "number",
+            "example": 3
+          },
+          "citasHoy": {
+            "description": "Citas de hoy que no están canceladas.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CitaEntity"
+            }
+          }
+        },
+        "required": [
+          "pacientesActivos",
+          "planesEnBorrador",
+          "citasHoy"
+        ]
+      },
+      "Sexo": {
+        "type": "string",
+        "enum": [
+          "M",
+          "F"
+        ]
+      },
+      "NivelActividad": {
+        "type": "string",
+        "enum": [
+          "SEDENTARIO",
+          "LIGERO",
+          "MODERADO",
+          "INTENSO",
+          "MUY_INTENSO"
+        ]
+      },
+      "Meta": {
+        "type": "string",
+        "enum": [
+          "BAJAR",
+          "MANTENER",
+          "SUBIR"
+        ]
+      },
+      "MedicionEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "fecha": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-28T00:00:00.000Z"
+          },
+          "pesoKg": {
+            "type": "number",
+            "example": 72
+          },
+          "tallaCm": {
+            "type": "number",
+            "example": 160
+          },
+          "pctGrasa": {
+            "type": "number",
+            "nullable": true,
+            "example": 34
+          },
+          "cinturaCm": {
+            "type": "number",
+            "nullable": true,
+            "example": 88
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "pacienteId",
+          "fecha",
+          "pesoKg",
+          "tallaCm",
+          "pctGrasa",
+          "cinturaCm",
+          "notas",
+          "creadoEn"
+        ]
+      },
+      "PlanActivoRefEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre"
+        ]
+      },
+      "PacienteListadoEntity": {
+        "type": "object",
+        "properties": {
+          "sexo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sexo"
+              }
+            ]
+          },
+          "nivelActividad": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NivelActividad"
+              }
+            ]
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              }
+            ]
+          },
+          "ultimaMedicion": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MedicionEntity"
+              }
+            ]
+          },
+          "planActivo": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanActivoRefEntity"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "nutricionistaId": {
+            "type": "string"
+          },
+          "firebaseUid": {
+            "type": "string",
+            "nullable": true,
+            "description": "UID de Firebase; null hasta que el paciente inicia sesión en la app."
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Ana"
+          },
+          "apellido": {
+            "type": "string",
+            "example": "López"
+          },
+          "correo": {
+            "type": "string",
+            "nullable": true,
+            "example": "ana@correo.hn"
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true,
+            "example": "+504 9999-0000"
+          },
+          "fechaNacimiento": {
+            "format": "date-time",
+            "type": "string",
+            "example": "1995-04-10T00:00:00.000Z"
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "actualizadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sexo",
+          "nivelActividad",
+          "meta",
+          "ultimaMedicion",
+          "planActivo",
+          "id",
+          "nutricionistaId",
+          "firebaseUid",
+          "nombre",
+          "apellido",
+          "correo",
+          "telefono",
+          "fechaNacimiento",
+          "notas",
+          "activo",
+          "creadoEn",
+          "actualizadoEn"
+        ]
+      },
+      "CrearPacienteDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Ana",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "apellido": {
+            "type": "string",
+            "example": "López",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "correo": {
+            "type": "string",
+            "description": "Con este correo el paciente se vincula al iniciar sesión en la app.",
+            "example": "ana@correo.hn",
+            "format": "email"
+          },
+          "telefono": {
+            "type": "string",
+            "example": "+504 9999-0000",
+            "maxLength": 30
+          },
+          "sexo": {
+            "type": "string",
+            "example": "F",
+            "enum": [
+              "M",
+              "F"
+            ]
+          },
+          "fechaNacimiento": {
+            "type": "string",
+            "description": "Formato YYYY-MM-DD.",
+            "example": "1995-04-10"
+          },
+          "nivelActividad": {
+            "type": "string",
+            "description": "Factor: sedentario 1.2, ligero 1.375, moderado 1.55, intenso 1.725, muy intenso 1.9.",
+            "example": "LIGERO",
+            "enum": [
+              "SEDENTARIO",
+              "LIGERO",
+              "MODERADO",
+              "INTENSO",
+              "MUY_INTENSO"
+            ]
+          },
+          "meta": {
+            "type": "string",
+            "description": "Ajuste calórico: bajar −500, mantener 0, subir +300.",
+            "example": "BAJAR",
+            "enum": [
+              "BAJAR",
+              "MANTENER",
+              "SUBIR"
+            ]
+          },
+          "notas": {
+            "type": "string",
+            "example": "Prefiere cenas ligeras. Trabaja por turnos.",
+            "maxLength": 2000
+          },
+          "restricciones": {
+            "description": "Códigos de `GET /restricciones`.",
+            "example": [
+              "lactosa"
+            ],
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "nombre",
+          "apellido",
+          "sexo",
+          "fechaNacimiento"
+        ]
+      },
+      "RestriccionEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "7c1f6a2e-1b2c-4d5e-8f90-1234567890ab"
+          },
+          "codigo": {
+            "type": "string",
+            "description": "Etiqueta que se compara con `alimento.contiene`.",
+            "example": "lactosa"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Sin lácteos / lactosa"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "codigo",
+          "nombre",
+          "descripcion"
+        ]
+      },
+      "PacienteRestriccionEntity": {
+        "type": "object",
+        "properties": {
+          "pacienteId": {
+            "type": "string"
+          },
+          "restriccionId": {
+            "type": "string"
+          },
+          "restriccion": {
+            "$ref": "#/components/schemas/RestriccionEntity"
+          }
+        },
+        "required": [
+          "pacienteId",
+          "restriccionId",
+          "restriccion"
+        ]
+      },
+      "PacienteConRestriccionesEntity": {
+        "type": "object",
+        "properties": {
+          "sexo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sexo"
+              }
+            ]
+          },
+          "nivelActividad": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NivelActividad"
+              }
+            ]
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              }
+            ]
+          },
+          "restricciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PacienteRestriccionEntity"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "nutricionistaId": {
+            "type": "string"
+          },
+          "firebaseUid": {
+            "type": "string",
+            "nullable": true,
+            "description": "UID de Firebase; null hasta que el paciente inicia sesión en la app."
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Ana"
+          },
+          "apellido": {
+            "type": "string",
+            "example": "López"
+          },
+          "correo": {
+            "type": "string",
+            "nullable": true,
+            "example": "ana@correo.hn"
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true,
+            "example": "+504 9999-0000"
+          },
+          "fechaNacimiento": {
+            "format": "date-time",
+            "type": "string",
+            "example": "1995-04-10T00:00:00.000Z"
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "actualizadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sexo",
+          "nivelActividad",
+          "meta",
+          "restricciones",
+          "id",
+          "nutricionistaId",
+          "firebaseUid",
+          "nombre",
+          "apellido",
+          "correo",
+          "telefono",
+          "fechaNacimiento",
+          "notas",
+          "activo",
+          "creadoEn",
+          "actualizadoEn"
+        ]
+      },
+      "CitaBasicaEntity": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoCita"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "nutricionistaId": {
+            "type": "string"
+          },
+          "fechaHora": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "duracionMin": {
+            "type": "number",
+            "example": 45
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true,
+            "example": "Control mensual"
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estado",
+          "id",
+          "pacienteId",
+          "nutricionistaId",
+          "fechaHora",
+          "duracionMin",
+          "motivo",
+          "notas",
+          "creadoEn"
+        ]
+      },
+      "EstadoPlan": {
+        "type": "string",
+        "enum": [
+          "BORRADOR",
+          "ACTIVO",
+          "ARCHIVADO"
+        ]
+      },
+      "OrigenPlan": {
+        "type": "string",
+        "enum": [
+          "MANUAL",
+          "REGLAS",
+          "IA"
+        ]
+      },
+      "PlanResumenEntity": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoPlan"
+              }
+            ]
+          },
+          "origen": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrigenPlan"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Plan inicial"
+          },
+          "kcalObjetivo": {
+            "type": "number",
+            "example": 1430
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estado",
+          "origen",
+          "id",
+          "nombre",
+          "kcalObjetivo",
+          "creadoEn"
+        ]
+      },
+      "PacienteDetalleEntity": {
+        "type": "object",
+        "properties": {
+          "sexo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sexo"
+              }
+            ]
+          },
+          "nivelActividad": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NivelActividad"
+              }
+            ]
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              }
+            ]
+          },
+          "restricciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PacienteRestriccionEntity"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "nutricionistaId": {
+            "type": "string"
+          },
+          "firebaseUid": {
+            "type": "string",
+            "nullable": true,
+            "description": "UID de Firebase; null hasta que el paciente inicia sesión en la app."
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Ana"
+          },
+          "apellido": {
+            "type": "string",
+            "example": "López"
+          },
+          "correo": {
+            "type": "string",
+            "nullable": true,
+            "example": "ana@correo.hn"
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true,
+            "example": "+504 9999-0000"
+          },
+          "fechaNacimiento": {
+            "format": "date-time",
+            "type": "string",
+            "example": "1995-04-10T00:00:00.000Z"
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "actualizadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "mediciones": {
+            "description": "Últimas 10 mediciones, de la más reciente a la más antigua.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicionEntity"
+            }
+          },
+          "citas": {
+            "description": "Próximas 3 citas.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CitaBasicaEntity"
+            }
+          },
+          "planes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanResumenEntity"
+            }
+          }
+        },
+        "required": [
+          "sexo",
+          "nivelActividad",
+          "meta",
+          "restricciones",
+          "id",
+          "nutricionistaId",
+          "firebaseUid",
+          "nombre",
+          "apellido",
+          "correo",
+          "telefono",
+          "fechaNacimiento",
+          "notas",
+          "activo",
+          "creadoEn",
+          "actualizadoEn",
+          "mediciones",
+          "citas",
+          "planes"
+        ]
+      },
+      "ActualizarPacienteDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Ana",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "apellido": {
+            "type": "string",
+            "example": "López",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "correo": {
+            "type": "string",
+            "description": "Con este correo el paciente se vincula al iniciar sesión en la app.",
+            "example": "ana@correo.hn",
+            "format": "email"
+          },
+          "telefono": {
+            "type": "string",
+            "example": "+504 9999-0000",
+            "maxLength": 30
+          },
+          "sexo": {
+            "example": "F",
+            "enum": [
+              "M",
+              "F"
+            ],
+            "type": "string"
+          },
+          "fechaNacimiento": {
+            "type": "string",
+            "description": "Formato YYYY-MM-DD.",
+            "example": "1995-04-10"
+          },
+          "nivelActividad": {
+            "description": "Factor: sedentario 1.2, ligero 1.375, moderado 1.55, intenso 1.725, muy intenso 1.9.",
+            "example": "LIGERO",
+            "enum": [
+              "SEDENTARIO",
+              "LIGERO",
+              "MODERADO",
+              "INTENSO",
+              "MUY_INTENSO"
+            ],
+            "type": "string"
+          },
+          "meta": {
+            "description": "Ajuste calórico: bajar −500, mantener 0, subir +300.",
+            "example": "BAJAR",
+            "enum": [
+              "BAJAR",
+              "MANTENER",
+              "SUBIR"
+            ],
+            "type": "string"
+          },
+          "notas": {
+            "type": "string",
+            "example": "Prefiere cenas ligeras. Trabaja por turnos.",
+            "maxLength": 2000
+          },
+          "restricciones": {
+            "description": "Códigos de `GET /restricciones`.",
+            "example": [
+              "lactosa"
+            ],
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PacienteEntity": {
+        "type": "object",
+        "properties": {
+          "sexo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Sexo"
+              }
+            ]
+          },
+          "nivelActividad": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NivelActividad"
+              }
+            ]
+          },
+          "meta": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meta"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "nutricionistaId": {
+            "type": "string"
+          },
+          "firebaseUid": {
+            "type": "string",
+            "nullable": true,
+            "description": "UID de Firebase; null hasta que el paciente inicia sesión en la app."
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Ana"
+          },
+          "apellido": {
+            "type": "string",
+            "example": "López"
+          },
+          "correo": {
+            "type": "string",
+            "nullable": true,
+            "example": "ana@correo.hn"
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true,
+            "example": "+504 9999-0000"
+          },
+          "fechaNacimiento": {
+            "format": "date-time",
+            "type": "string",
+            "example": "1995-04-10T00:00:00.000Z"
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "actualizadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sexo",
+          "nivelActividad",
+          "meta",
+          "id",
+          "nutricionistaId",
+          "firebaseUid",
+          "nombre",
+          "apellido",
+          "correo",
+          "telefono",
+          "fechaNacimiento",
+          "notas",
+          "activo",
+          "creadoEn",
+          "actualizadoEn"
+        ]
+      },
+      "MedicionConImcEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "fecha": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-28T00:00:00.000Z"
+          },
+          "pesoKg": {
+            "type": "number",
+            "example": 72
+          },
+          "tallaCm": {
+            "type": "number",
+            "example": 160
+          },
+          "pctGrasa": {
+            "type": "number",
+            "nullable": true,
+            "example": 34
+          },
+          "cinturaCm": {
+            "type": "number",
+            "nullable": true,
+            "example": 88
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "imc": {
+            "type": "number",
+            "description": "Índice de masa corporal calculado.",
+            "example": 28.1
+          }
+        },
+        "required": [
+          "id",
+          "pacienteId",
+          "fecha",
+          "pesoKg",
+          "tallaCm",
+          "pctGrasa",
+          "cinturaCm",
+          "notas",
+          "creadoEn",
+          "imc"
+        ]
+      },
+      "CrearMedicionDto": {
+        "type": "object",
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "description": "Formato YYYY-MM-DD. Por defecto, hoy.",
+            "example": "2026-10-28"
+          },
+          "pesoKg": {
+            "type": "number",
+            "example": 72.5,
+            "minimum": 20,
+            "maximum": 400
+          },
+          "tallaCm": {
+            "type": "number",
+            "example": 160,
+            "minimum": 80,
+            "maximum": 250
+          },
+          "pctGrasa": {
+            "type": "number",
+            "description": "Porcentaje de grasa corporal.",
+            "example": 34,
+            "minimum": 2,
+            "maximum": 70
+          },
+          "cinturaCm": {
+            "type": "number",
+            "example": 88,
+            "minimum": 40,
+            "maximum": 250
+          },
+          "notas": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "pesoKg",
+          "tallaCm"
+        ]
+      },
+      "DistribucionMacrosEntity": {
+        "type": "object",
+        "properties": {
+          "proteina": {
+            "type": "number",
+            "example": 0.25
+          },
+          "carbohidrato": {
+            "type": "number",
+            "example": 0.5
+          },
+          "grasa": {
+            "type": "number",
+            "example": 0.25
+          }
+        },
+        "required": [
+          "proteina",
+          "carbohidrato",
+          "grasa"
+        ]
+      },
+      "RequerimientoEntity": {
+        "type": "object",
+        "properties": {
+          "medicion": {
+            "description": "Medición usada para el cálculo (la más reciente).",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MedicionEntity"
+              }
+            ]
+          },
+          "edad": {
+            "type": "number",
+            "example": 31
+          },
+          "tmb": {
+            "type": "number",
+            "description": "Tasa metabólica basal (Mifflin-St Jeor), kcal.",
+            "example": 1404
+          },
+          "factorActividad": {
+            "type": "number",
+            "example": 1.375
+          },
+          "gastoTotal": {
+            "type": "number",
+            "description": "TMB × factor de actividad, kcal.",
+            "example": 1931
+          },
+          "ajusteMeta": {
+            "type": "number",
+            "description": "Ajuste por meta: −500 bajar, 0 mantener, +300 subir.",
+            "example": -500
+          },
+          "kcalObjetivo": {
+            "type": "number",
+            "example": 1430
+          },
+          "proteinaG": {
+            "type": "number",
+            "example": 89.4
+          },
+          "carbohidratoG": {
+            "type": "number",
+            "example": 178.8
+          },
+          "grasaG": {
+            "type": "number",
+            "example": 39.7
+          },
+          "distribucionMacros": {
+            "$ref": "#/components/schemas/DistribucionMacrosEntity"
+          }
+        },
+        "required": [
+          "medicion",
+          "edad",
+          "tmb",
+          "factorActividad",
+          "gastoTotal",
+          "ajusteMeta",
+          "kcalObjetivo",
+          "proteinaG",
+          "carbohidratoG",
+          "grasaG",
+          "distribucionMacros"
+        ]
+      },
+      "TipoComida": {
+        "type": "string",
+        "enum": [
+          "DESAYUNO",
+          "MERIENDA_AM",
+          "ALMUERZO",
+          "MERIENDA_PM",
+          "CENA"
+        ]
+      },
+      "TiempoComidaTipoEntity": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TipoComida"
+              }
+            ]
+          }
+        },
+        "required": [
+          "tipo"
+        ]
+      },
+      "RegistroComidaConTipoEntity": {
+        "type": "object",
+        "properties": {
+          "tiempoComida": {
+            "$ref": "#/components/schemas/TiempoComidaTipoEntity"
+          },
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "tiempoComidaId": {
+            "type": "string"
+          },
+          "fecha": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-28T00:00:00.000Z"
+          },
+          "cumplido": {
+            "type": "boolean",
+            "example": true
+          },
+          "comentario": {
+            "type": "string",
+            "nullable": true,
+            "example": "Cambié el plátano por yuca"
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tiempoComida",
+          "id",
+          "pacienteId",
+          "tiempoComidaId",
+          "fecha",
+          "cumplido",
+          "comentario",
+          "creadoEn"
+        ]
+      },
+      "AdherenciaEntity": {
+        "type": "object",
+        "properties": {
+          "desde": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "hasta": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "totalRegistros": {
+            "type": "number",
+            "example": 20
+          },
+          "cumplidos": {
+            "type": "number",
+            "example": 16
+          },
+          "adherencia": {
+            "type": "number",
+            "nullable": true,
+            "description": "Cumplidos / total (0–1); null si no hay registros.",
+            "example": 0.8
+          },
+          "registros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegistroComidaConTipoEntity"
+            }
+          }
+        },
+        "required": [
+          "desde",
+          "hasta",
+          "totalRegistros",
+          "cumplidos",
+          "adherencia",
+          "registros"
+        ]
+      },
+      "CategoriaAlimento": {
+        "type": "string",
+        "enum": [
+          "PLATO_TIPICO",
+          "PROTEINA",
+          "CEREAL_TUBERCULO",
+          "LEGUMINOSA",
+          "LACTEO",
+          "FRUTA",
+          "VERDURA",
+          "GRASA",
+          "BEBIDA"
+        ]
+      },
+      "AlimentoEntity": {
+        "type": "object",
+        "properties": {
+          "categoria": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CategoriaAlimento"
+              }
+            ]
+          },
+          "tiposComida": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TipoComida"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Baleada sencilla"
+          },
+          "porcionDescripcion": {
+            "type": "string",
+            "example": "1 unidad"
+          },
+          "porcionGramos": {
+            "type": "number",
+            "example": 120
+          },
+          "kcal": {
+            "type": "number",
+            "description": "Por porción.",
+            "example": 330
+          },
+          "proteinaG": {
+            "type": "number",
+            "example": 11
+          },
+          "carbohidratoG": {
+            "type": "number",
+            "example": 42
+          },
+          "grasaG": {
+            "type": "number",
+            "example": 13
+          },
+          "fibraG": {
+            "type": "number",
+            "nullable": true
+          },
+          "contiene": {
+            "description": "Etiquetas para filtrar restricciones.",
+            "example": [
+              "gluten",
+              "lactosa"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "esTipicoHn": {
+            "type": "boolean",
+            "example": true
+          },
+          "fuente": {
+            "type": "string",
+            "nullable": true,
+            "example": "Aproximado — verificar con Tabla de Composición de Alimentos INCAP"
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "categoria",
+          "tiposComida",
+          "id",
+          "nombre",
+          "porcionDescripcion",
+          "porcionGramos",
+          "kcal",
+          "proteinaG",
+          "carbohidratoG",
+          "grasaG",
+          "fibraG",
+          "contiene",
+          "esTipicoHn",
+          "fuente",
+          "activo"
+        ]
+      },
+      "CrearAlimentoDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Baleada sencilla",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "categoria": {
+            "type": "string",
+            "example": "PLATO_TIPICO",
+            "enum": [
+              "PLATO_TIPICO",
+              "PROTEINA",
+              "CEREAL_TUBERCULO",
+              "LEGUMINOSA",
+              "LACTEO",
+              "FRUTA",
+              "VERDURA",
+              "GRASA",
+              "BEBIDA"
+            ]
+          },
+          "porcionDescripcion": {
+            "type": "string",
+            "example": "1 unidad",
+            "maxLength": 60
+          },
+          "porcionGramos": {
+            "type": "number",
+            "example": 120,
+            "minimum": 1,
+            "maximum": 2000
+          },
+          "kcal": {
+            "type": "number",
+            "description": "kcal por porción.",
+            "example": 330,
+            "minimum": 0,
+            "maximum": 3000
+          },
+          "proteinaG": {
+            "type": "number",
+            "example": 11,
+            "minimum": 0
+          },
+          "carbohidratoG": {
+            "type": "number",
+            "example": 42,
+            "minimum": 0
+          },
+          "grasaG": {
+            "type": "number",
+            "example": 13,
+            "minimum": 0
+          },
+          "fibraG": {
+            "type": "number",
+            "minimum": 0
+          },
+          "tiposComida": {
+            "type": "array",
+            "description": "Tiempos de comida en los que se puede sugerir.",
+            "example": [
+              "DESAYUNO",
+              "CENA"
+            ],
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "DESAYUNO",
+                "MERIENDA_AM",
+                "ALMUERZO",
+                "MERIENDA_PM",
+                "CENA"
+              ]
+            }
+          },
+          "contiene": {
+            "description": "Etiquetas que coinciden con códigos de restricción.",
+            "example": [
+              "gluten",
+              "lactosa"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "esTipicoHn": {
+            "type": "boolean",
+            "example": true
+          },
+          "fuente": {
+            "type": "string",
+            "example": "Tabla de Composición de Alimentos INCAP",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "nombre",
+          "categoria",
+          "porcionDescripcion",
+          "porcionGramos",
+          "kcal",
+          "proteinaG",
+          "carbohidratoG",
+          "grasaG",
+          "tiposComida"
+        ]
+      },
+      "ActualizarAlimentoDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Baleada sencilla",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "categoria": {
+            "example": "PLATO_TIPICO",
+            "enum": [
+              "PLATO_TIPICO",
+              "PROTEINA",
+              "CEREAL_TUBERCULO",
+              "LEGUMINOSA",
+              "LACTEO",
+              "FRUTA",
+              "VERDURA",
+              "GRASA",
+              "BEBIDA"
+            ],
+            "type": "string"
+          },
+          "porcionDescripcion": {
+            "type": "string",
+            "example": "1 unidad",
+            "maxLength": 60
+          },
+          "porcionGramos": {
+            "type": "number",
+            "example": 120,
+            "minimum": 1,
+            "maximum": 2000
+          },
+          "kcal": {
+            "type": "number",
+            "description": "kcal por porción.",
+            "example": 330,
+            "minimum": 0,
+            "maximum": 3000
+          },
+          "proteinaG": {
+            "type": "number",
+            "example": 11,
+            "minimum": 0
+          },
+          "carbohidratoG": {
+            "type": "number",
+            "example": 42,
+            "minimum": 0
+          },
+          "grasaG": {
+            "type": "number",
+            "example": 13,
+            "minimum": 0
+          },
+          "fibraG": {
+            "type": "number",
+            "minimum": 0
+          },
+          "tiposComida": {
+            "type": "array",
+            "description": "Tiempos de comida en los que se puede sugerir.",
+            "example": [
+              "DESAYUNO",
+              "CENA"
+            ],
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "DESAYUNO",
+                "MERIENDA_AM",
+                "ALMUERZO",
+                "MERIENDA_PM",
+                "CENA"
+              ]
+            }
+          },
+          "contiene": {
+            "description": "Etiquetas que coinciden con códigos de restricción.",
+            "example": [
+              "gluten",
+              "lactosa"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "esTipicoHn": {
+            "type": "boolean",
+            "example": true
+          },
+          "fuente": {
+            "type": "string",
+            "example": "Tabla de Composición de Alimentos INCAP",
+            "maxLength": 200
+          },
+          "activo": {
+            "type": "boolean",
+            "description": "false lo saca del catálogo sin borrarlo."
+          }
+        }
+      },
+      "PlanEntity": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoPlan"
+              }
+            ]
+          },
+          "origen": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrigenPlan"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "nutricionistaId": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Plan inicial"
+          },
+          "kcalObjetivo": {
+            "type": "number",
+            "example": 1430
+          },
+          "proteinaG": {
+            "type": "number",
+            "example": 89.4
+          },
+          "carbohidratoG": {
+            "type": "number",
+            "example": 178.8
+          },
+          "grasaG": {
+            "type": "number",
+            "example": 39.7
+          },
+          "justificacion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Resumen del recomendador o notas de la nutricionista.",
+            "example": "Plan con comida típica y porciones moderadas.\nPorciones verificadas por el sistema (±10 % de la meta). Revisar antes de aprobar."
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "aprobadoEn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "estado",
+          "origen",
+          "id",
+          "pacienteId",
+          "nutricionistaId",
+          "nombre",
+          "kcalObjetivo",
+          "proteinaG",
+          "carbohidratoG",
+          "grasaG",
+          "justificacion",
+          "creadoEn",
+          "aprobadoEn"
+        ]
+      },
+      "DistribucionMacrosDto": {
+        "type": "object",
+        "properties": {
+          "proteina": {
+            "type": "number",
+            "example": 0.3,
+            "minimum": 0.1,
+            "maximum": 0.5
+          },
+          "carbohidrato": {
+            "type": "number",
+            "example": 0.45,
+            "minimum": 0.2,
+            "maximum": 0.7
+          },
+          "grasa": {
+            "type": "number",
+            "example": 0.25,
+            "minimum": 0.1,
+            "maximum": 0.5
+          }
+        },
+        "required": [
+          "proteina",
+          "carbohidrato",
+          "grasa"
+        ]
+      },
+      "DistribucionTiemposDto": {
+        "type": "object",
+        "properties": {
+          "DESAYUNO": {
+            "type": "number",
+            "example": 0.3,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "MERIENDA_AM": {
+            "type": "number",
+            "example": 0,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "ALMUERZO": {
+            "type": "number",
+            "example": 0.4,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "MERIENDA_PM": {
+            "type": "number",
+            "example": 0.1,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "CENA": {
+            "type": "number",
+            "example": 0.2,
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "GenerarPlanDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "description": "Por defecto \"Plan YYYY-MM-DD\".",
+            "example": "Plan inicial",
+            "maxLength": 120
+          },
+          "usarIa": {
+            "type": "boolean",
+            "description": "true (por defecto): Bedrock propone y el backend valida. false: solo reglas.",
+            "example": true
+          },
+          "kcalObjetivo": {
+            "type": "number",
+            "description": "Sobrescribe las kcal calculadas con Mifflin-St Jeor.",
+            "example": 1600,
+            "minimum": 1000,
+            "maximum": 5000
+          },
+          "distribucionMacros": {
+            "description": "Por defecto 25 % proteína, 50 % carbohidratos, 25 % grasa.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DistribucionMacrosDto"
+              }
+            ]
+          },
+          "distribucionTiempos": {
+            "description": "Por defecto desayuno 25 %, merienda AM 10 %, almuerzo 35 %, merienda PM 10 %, cena 20 %.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DistribucionTiemposDto"
+              }
+            ]
+          },
+          "indicaciones": {
+            "type": "string",
+            "description": "Indicaciones para la IA.",
+            "example": "Prefiere desayunos rápidos y cenas sin frituras.",
+            "maxLength": 500
+          }
+        }
+      },
+      "PlanItemEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tiempoComidaId": {
+            "type": "string"
+          },
+          "alimentoId": {
+            "type": "string"
+          },
+          "porciones": {
+            "type": "number",
+            "description": "Múltiplos de 0.25 de la porción del alimento.",
+            "example": 1.5
+          },
+          "alimento": {
+            "$ref": "#/components/schemas/AlimentoEntity"
+          }
+        },
+        "required": [
+          "id",
+          "tiempoComidaId",
+          "alimentoId",
+          "porciones",
+          "alimento"
+        ]
+      },
+      "TotalesEntity": {
+        "type": "object",
+        "properties": {
+          "kcal": {
+            "type": "number",
+            "example": 1436
+          },
+          "proteinaG": {
+            "type": "number",
+            "example": 105.9
+          },
+          "carbohidratoG": {
+            "type": "number",
+            "example": 161.3
+          },
+          "grasaG": {
+            "type": "number",
+            "example": 45.7
+          }
+        },
+        "required": [
+          "kcal",
+          "proteinaG",
+          "carbohidratoG",
+          "grasaG"
+        ]
+      },
+      "TiempoComidaEntity": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TipoComida"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "planId": {
+            "type": "string"
+          },
+          "pctKcal": {
+            "type": "number",
+            "description": "Fracción de las kcal del día.",
+            "example": 0.35
+          },
+          "orden": {
+            "type": "number",
+            "example": 2
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanItemEntity"
+            }
+          },
+          "kcalMeta": {
+            "type": "number",
+            "description": "kcal objetivo de este tiempo de comida.",
+            "example": 500
+          },
+          "totales": {
+            "$ref": "#/components/schemas/TotalesEntity"
+          },
+          "desviacion": {
+            "type": "number",
+            "description": "(real − meta) / meta.",
+            "example": 0.05
+          }
+        },
+        "required": [
+          "tipo",
+          "id",
+          "planId",
+          "pctKcal",
+          "orden",
+          "items",
+          "kcalMeta",
+          "totales",
+          "desviacion"
+        ]
+      },
+      "PlanDetalleEntity": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoPlan"
+              }
+            ]
+          },
+          "origen": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrigenPlan"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "nutricionistaId": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Plan inicial"
+          },
+          "kcalObjetivo": {
+            "type": "number",
+            "example": 1430
+          },
+          "proteinaG": {
+            "type": "number",
+            "example": 89.4
+          },
+          "carbohidratoG": {
+            "type": "number",
+            "example": 178.8
+          },
+          "grasaG": {
+            "type": "number",
+            "example": 39.7
+          },
+          "justificacion": {
+            "type": "string",
+            "nullable": true,
+            "description": "Resumen del recomendador o notas de la nutricionista.",
+            "example": "Plan con comida típica y porciones moderadas.\nPorciones verificadas por el sistema (±10 % de la meta). Revisar antes de aprobar."
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "aprobadoEn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "tiempos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TiempoComidaEntity"
+            }
+          },
+          "totales": {
+            "description": "Totales del día.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TotalesEntity"
+              }
+            ]
+          },
+          "desviacion": {
+            "type": "number",
+            "description": "Desviación del día contra kcalObjetivo.",
+            "example": 0.004
+          }
+        },
+        "required": [
+          "estado",
+          "origen",
+          "id",
+          "pacienteId",
+          "nutricionistaId",
+          "nombre",
+          "kcalObjetivo",
+          "proteinaG",
+          "carbohidratoG",
+          "grasaG",
+          "justificacion",
+          "creadoEn",
+          "aprobadoEn",
+          "tiempos",
+          "totales",
+          "desviacion"
+        ]
+      },
+      "ActualizarPlanDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Plan noviembre",
+            "maxLength": 120
+          },
+          "kcalObjetivo": {
+            "type": "number",
+            "example": 1500,
+            "minimum": 1000,
+            "maximum": 5000
+          },
+          "proteinaG": {
+            "type": "number",
+            "example": 95,
+            "minimum": 0
+          },
+          "carbohidratoG": {
+            "type": "number",
+            "example": 180,
+            "minimum": 0
+          },
+          "grasaG": {
+            "type": "number",
+            "example": 45,
+            "minimum": 0
+          },
+          "justificacion": {
+            "type": "string",
+            "example": "Ajustado por preferencia del paciente.",
+            "maxLength": 4000
+          }
+        }
+      },
+      "ItemPlanDto": {
+        "type": "object",
+        "properties": {
+          "alimentoId": {
+            "type": "string",
+            "description": "ID de `GET /alimentos`.",
+            "format": "uuid"
+          },
+          "porciones": {
+            "type": "number",
+            "description": "Cantidad de porciones del alimento (múltiplos de 0.25 recomendados).",
+            "example": 1.5,
+            "minimum": 0.25,
+            "maximum": 6
+          }
+        },
+        "required": [
+          "alimentoId",
+          "porciones"
+        ]
+      },
+      "ReemplazarItemsDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Lista completa de alimentos del tiempo de comida (máximo 12).",
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemPlanDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CrearCitaDto": {
+        "type": "object",
+        "properties": {
+          "pacienteId": {
+            "type": "string",
+            "description": "ID del paciente.",
+            "format": "uuid"
+          },
+          "fechaHora": {
+            "type": "string",
+            "description": "ISO 8601 con zona horaria.",
+            "example": "2026-11-03T15:00:00-06:00"
+          },
+          "duracionMin": {
+            "type": "number",
+            "description": "Por defecto 45.",
+            "example": 45,
+            "minimum": 15,
+            "maximum": 240
+          },
+          "motivo": {
+            "type": "string",
+            "example": "Control mensual",
+            "maxLength": 200
+          },
+          "notas": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "pacienteId",
+          "fechaHora"
+        ]
+      },
+      "ActualizarCitaDto": {
+        "type": "object",
+        "properties": {
+          "pacienteId": {
+            "type": "string",
+            "description": "ID del paciente.",
+            "format": "uuid"
+          },
+          "fechaHora": {
+            "type": "string",
+            "description": "ISO 8601 con zona horaria.",
+            "example": "2026-11-03T15:00:00-06:00"
+          },
+          "duracionMin": {
+            "type": "number",
+            "description": "Por defecto 45.",
+            "example": 45,
+            "minimum": 15,
+            "maximum": 240
+          },
+          "motivo": {
+            "type": "string",
+            "example": "Control mensual",
+            "maxLength": 200
+          },
+          "notas": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "estado": {
+            "type": "string",
+            "example": "COMPLETADA",
+            "enum": [
+              "PROGRAMADA",
+              "COMPLETADA",
+              "CANCELADA"
+            ]
+          }
+        }
+      },
+      "PlanHoyEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Plan inicial"
+          },
+          "kcalObjetivo": {
+            "type": "number",
+            "example": 1430
+          },
+          "totales": {
+            "$ref": "#/components/schemas/TotalesEntity"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "kcalObjetivo",
+          "totales"
+        ]
+      },
+      "RegistroComidaEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "tiempoComidaId": {
+            "type": "string"
+          },
+          "fecha": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-28T00:00:00.000Z"
+          },
+          "cumplido": {
+            "type": "boolean",
+            "example": true
+          },
+          "comentario": {
+            "type": "string",
+            "nullable": true,
+            "example": "Cambié el plátano por yuca"
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "pacienteId",
+          "tiempoComidaId",
+          "fecha",
+          "cumplido",
+          "comentario",
+          "creadoEn"
+        ]
+      },
+      "TiempoHoyEntity": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TipoComida"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "planId": {
+            "type": "string"
+          },
+          "pctKcal": {
+            "type": "number",
+            "description": "Fracción de las kcal del día.",
+            "example": 0.35
+          },
+          "orden": {
+            "type": "number",
+            "example": 2
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanItemEntity"
+            }
+          },
+          "kcalMeta": {
+            "type": "number",
+            "description": "kcal objetivo de este tiempo de comida.",
+            "example": 500
+          },
+          "totales": {
+            "$ref": "#/components/schemas/TotalesEntity"
+          },
+          "desviacion": {
+            "type": "number",
+            "description": "(real − meta) / meta.",
+            "example": 0.05
+          },
+          "registro": {
+            "nullable": true,
+            "description": "Registro del día para este tiempo de comida, si ya lo marcó.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RegistroComidaEntity"
+              }
+            ]
+          }
+        },
+        "required": [
+          "tipo",
+          "id",
+          "planId",
+          "pctKcal",
+          "orden",
+          "items",
+          "kcalMeta",
+          "totales",
+          "desviacion",
+          "registro"
+        ]
+      },
+      "HoyEntity": {
+        "type": "object",
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "example": "2026-10-28"
+          },
+          "plan": {
+            "nullable": true,
+            "description": "null si el paciente no tiene plan activo.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanHoyEntity"
+              }
+            ]
+          },
+          "tiempos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TiempoHoyEntity"
+            }
+          },
+          "cumplidos": {
+            "type": "number",
+            "example": 2
+          },
+          "proximaCita": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CitaBasicaEntity"
+              }
+            ]
+          }
+        },
+        "required": [
+          "fecha",
+          "plan",
+          "tiempos",
+          "cumplidos",
+          "proximaCita"
+        ]
+      },
+      "NutricionistaDeCitaEntity": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Lic. Sofía Herrera"
+          }
+        },
+        "required": [
+          "nombre"
+        ]
+      },
+      "CitaPacienteEntity": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoCita"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "nutricionistaId": {
+            "type": "string"
+          },
+          "fechaHora": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "duracionMin": {
+            "type": "number",
+            "example": 45
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true,
+            "example": "Control mensual"
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "nutricionista": {
+            "$ref": "#/components/schemas/NutricionistaDeCitaEntity"
+          }
+        },
+        "required": [
+          "estado",
+          "id",
+          "pacienteId",
+          "nutricionistaId",
+          "fechaHora",
+          "duracionMin",
+          "motivo",
+          "notas",
+          "creadoEn",
+          "nutricionista"
+        ]
+      },
+      "RegistrarComidaDto": {
+        "type": "object",
+        "properties": {
+          "tiempoComidaId": {
+            "type": "string",
+            "description": "ID del tiempo de comida del plan (viene en `GET /me/hoy`).",
+            "format": "uuid"
+          },
+          "fecha": {
+            "type": "string",
+            "description": "YYYY-MM-DD. Por defecto, hoy.",
+            "example": "2026-10-28"
+          },
+          "cumplido": {
+            "type": "boolean",
+            "example": true
+          },
+          "comentario": {
+            "type": "string",
+            "example": "Cambié el plátano por yuca",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "tiempoComidaId",
+          "cumplido"
+        ]
+      }
+    }
+  }
+}

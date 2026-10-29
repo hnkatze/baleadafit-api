@@ -40,7 +40,18 @@ npm run start:dev
 ```
 
 - Swagger: http://localhost:3000/docs
+- OpenAPI JSON: http://localhost:3000/docs-json
 - Salud: `GET /`
+
+### Documentación de la API
+
+Swagger documenta cada endpoint con su resumen, parámetros, ejemplos, modelo de respuesta y errores (400, 401, 403, 404, 409 con formato `ErrorRespuesta`). Usa **Authorize** con un ID token de Firebase, o con `dev:<uid>:<correo>` en desarrollo.
+
+`docs/openapi.json` tiene la especificación versionada; sirve para generar el cliente de la app. Para regenerarla:
+
+```bash
+npm run build && npm run openapi
+```
 
 ### Probar sin Firebase
 
@@ -96,6 +107,7 @@ Las tablas son `nutricionista`, `paciente`, `medicion`, `restriccion`, `paciente
 | `npm run build` / `npm run start:prod` | Compilar y correr |
 | `npm test` / `npm run test:e2e` | Pruebas unitarias / e2e (no requieren BD) |
 | `npm run db:migrate` / `db:deploy` / `db:seed` / `db:studio` | Prisma |
+| `npm run openapi` | Exporta `docs/openapi.json` (después de `build`) |
 
 ## Deploy en Railway
 
