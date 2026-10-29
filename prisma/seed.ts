@@ -4,6 +4,8 @@
  * IMPORTANTE: los valores nutricionales son APROXIMADOS para desarrollo y demo.
  * Antes de uso clínico deben verificarse contra la Tabla de Composición de
  * Alimentos de Centroamérica (INCAP/OPS) o el etiquetado del producto.
+ * La ampliación del catálogo (T5 / S6) usa estimaciones a partir de recetas
+ * hondureñas y porciones caseras: también requiere esa verificación.
  *
  * Ejecutar: npx prisma db seed
  */
@@ -517,9 +519,200 @@ const alimentos: Fila[] = [
     0,
     [ALM, CEN, ...MER],
   ],
+
+  // ─── Ampliación del catálogo (T5 / S6) ──────────────────────────────────
+  // Las 45 filas anteriores se dejan intactas; estas 105 filas amplían el
+  // catálogo a 150 alimentos. Valores estimados de recetas hondureñas y
+  // porciones caseras: verificar contra INCAP antes de uso clínico.
+
+  // Platos típicos
+  ['Sopa de mondongo', 'PLATO_TIPICO', '1 plato', 350, 304, 22, 18, 16, [ALM], [], true],
+  ['Pollo con tajadas', 'PLATO_TIPICO', '1 plato', 400, 538, 30, 55, 22, [ALM], [], true],
+  ['Carne asada con chimol', 'PLATO_TIPICO', '1 plato', 250, 322, 28, 12, 18, [ALM, CEN], [], true],
+  ['Yuca con chicharrón', 'PLATO_TIPICO', '1 plato', 250, 469, 16, 45, 25, [ALM], ['cerdo'], true],
+  ['Arroz con leche', 'PLATO_TIPICO', '1 taza', 200, 252, 7, 38, 8, [DES, ...MER, CEN], ['lactosa'], true],
+  ['Torrejas', 'PLATO_TIPICO', '2 unidades', 130, 298, 8, 35, 14, [DES, MPM], ['gluten', 'lactosa', 'huevo'], true],
+  ['Ticucos', 'PLATO_TIPICO', '2 unidades', 150, 254, 8, 33, 10, [DES, CEN], [], true],
+  ['Nacatamal', 'PLATO_TIPICO', '1 unidad', 250, 378, 14, 40, 18, [DES, ALM], ['cerdo'], true],
+  ['Sopa de gallina india', 'PLATO_TIPICO', '1 plato', 350, 284, 24, 20, 12, [ALM, CEN], [], true],
+  ['Sopa de pescado', 'PLATO_TIPICO', '1 plato', 350, 266, 26, 18, 10, [ALM], ['mariscos'], true],
+  ['Sopa de albóndigas', 'PLATO_TIPICO', '1 plato', 350, 294, 20, 22, 14, [ALM, CEN], ['gluten'], true],
+  ['Tapado olanchano', 'PLATO_TIPICO', '1 plato', 400, 424, 22, 30, 24, [ALM], ['mariscos'], true],
+  ['Arroz con pollo', 'PLATO_TIPICO', '1 plato', 300, 396, 24, 48, 12, [ALM], [], true],
+  ['Pollo frito con tajadas', 'PLATO_TIPICO', '1 plato', 320, 506, 28, 40, 26, [ALM], ['gluten'], true],
+  ['Baleada mixta', 'PLATO_TIPICO', '1 unidad', 200, 420, 16, 44, 20, [DES, CEN], ['gluten', 'lactosa', 'cerdo'], true],
+  ['Catrachas', 'PLATO_TIPICO', '2 unidades', 120, 230, 9, 26, 10, [DES, CEN], ['lactosa'], true],
+  ['Tajadas con queso', 'PLATO_TIPICO', '1 plato', 180, 370, 10, 42, 18, [ALM, CEN], ['lactosa'], true],
+  ['Tamal de elote', 'PLATO_TIPICO', '1 unidad', 180, 256, 6, 40, 8, [DES, CEN], ['lactosa'], true],
+  ['Montucas', 'PLATO_TIPICO', '1 unidad', 200, 270, 7, 38, 10, [DES, CEN], ['cerdo'], true],
+  ['Carne guisada con papa', 'PLATO_TIPICO', '1 plato', 300, 360, 26, 28, 16, [ALM, CEN], [], true],
+  ['Pescado frito con tajadas', 'PLATO_TIPICO', '1 plato', 350, 478, 28, 42, 22, [ALM], ['mariscos'], true],
+
+  // Proteínas
+  ['Muslo de pollo sin piel', 'PROTEINA', '1 pieza', 90, 133, 22, 0, 5, [ALM, CEN]],
+  ['Carne molida de res magra', 'PROTEINA', '90 g', 90, 165, 21, 0, 9, [ALM, CEN]],
+  ['Bistec de res a la plancha', 'PROTEINA', '90 g', 90, 172, 25, 0, 8, [ALM, CEN], [], true],
+  ['Lomo de cerdo asado', 'PROTEINA', '90 g', 90, 177, 24, 0, 9, [ALM], ['cerdo']],
+  ['Camarones cocidos', 'PROTEINA', '100 g', 100, 93, 20, 1, 1, [ALM, CEN], ['mariscos']],
+  ['Róbalo a la plancha', 'PROTEINA', '120 g', 120, 167, 26, 0, 7, [ALM], ['mariscos'], true],
+  ['Sardinas en agua', 'PROTEINA', '100 g', 100, 178, 22, 0, 10, [ALM], ['mariscos']],
+  ['Atún en agua', 'PROTEINA', '100 g', 100, 101, 23, 0, 1, [ALM, CEN], ['mariscos']],
+  ['Jamón de pavo', 'PROTEINA', '60 g', 60, 66, 11, 2, 1.5, [DES, ...MER, CEN]],
+  ['Huevo frito', 'PROTEINA', '1 unidad', 60, 111, 7, 0.5, 9, [DES, CEN], ['huevo']],
+  ['Clara de huevo cocida', 'PROTEINA', '2 unidades', 70, 34, 7, 1, 0.2, [DES, ...MER, CEN], ['huevo']],
+
+  // Cereales y tubérculos
+  ['Yuca frita', 'CEREAL_TUBERCULO', '1 taza', 120, 300, 1.5, 42, 14, [ALM, CEN], [], true],
+  ['Malanga cocida', 'CEREAL_TUBERCULO', '1 taza', 130, 147, 2, 34, 0.3, [ALM, CEN], [], true],
+  ['Camote cocido', 'CEREAL_TUBERCULO', '1 taza', 150, 130, 2, 30, 0.2, [DES, ALM], [], true],
+  ['Guineo verde cocido', 'CEREAL_TUBERCULO', '1 unidad', 120, 137, 1.5, 32, 0.3, [ALM, CEN], [], true],
+  ['Tajadas de plátano verde fritas', 'CEREAL_TUBERCULO', '1 taza', 100, 292, 1.3, 38, 15, [ALM, ...MER], [], true],
+  ['Arroz integral cocido', 'CEREAL_TUBERCULO', '1/2 taza', 90, 107, 2.5, 22, 1, [ALM, CEN]],
+  ['Tortilla de harina de trigo', 'CEREAL_TUBERCULO', '1 unidad', 40, 119, 3, 20, 3, [DES, ...MER], ['gluten']],
+  ['Pan blanco', 'CEREAL_TUBERCULO', '1 rebanada', 30, 79, 2.5, 15, 1, [DES, ...MER], ['gluten']],
+  ['Elote asado', 'CEREAL_TUBERCULO', '1 unidad', 100, 120, 3.5, 22, 2, [ALM, ...MER], [], true],
+  ['Papa cocida', 'CEREAL_TUBERCULO', '1 unidad', 150, 134, 3, 30, 0.2, [ALM, CEN]],
+  ['Puré de papa con leche', 'CEREAL_TUBERCULO', '1 taza', 200, 198, 4, 32, 6, [ALM, CEN], ['lactosa']],
+  ['Avena en hojuelas', 'CEREAL_TUBERCULO', '1/2 taza', 40, 155, 5, 27, 3, [DES, ...MER], ['gluten']],
+  ['Espagueti cocido', 'CEREAL_TUBERCULO', '1 taza', 140, 189, 5, 40, 1, [ALM, CEN], ['gluten']],
+  ['Tostadas de maíz', 'CEREAL_TUBERCULO', '2 unidades', 24, 89, 2, 18, 1, [DES, ALM, ...MER], [], true],
+
+  // Leguminosas
+  ['Lentejas cocidas', 'LEGUMINOSA', '1/2 taza', 100, 120, 9, 20, 0.4, [ALM, CEN]],
+  ['Garbanzos cocidos', 'LEGUMINOSA', '1/2 taza', 82, 132, 7.5, 22, 1.5, [ALM, CEN]],
+  ['Sopa de lentejas', 'LEGUMINOSA', '1 taza', 240, 163, 10, 24, 3, [ALM, CEN], [], true],
+  ['Frijol negro cocido', 'LEGUMINOSA', '1/2 taza', 90, 115, 7.5, 20, 0.5, [DES, ALM, CEN], [], true],
+  ['Frijol de soya cocido', 'LEGUMINOSA', '1/2 taza', 90, 168, 14, 10, 8, [ALM]],
+  ['Frijoles con chorizo', 'LEGUMINOSA', '1/2 taza', 110, 189, 9, 18, 9, [DES, ALM], ['cerdo'], true],
+  ['Sopa de habas', 'LEGUMINOSA', '1 taza', 240, 171, 10, 26, 3, [ALM, CEN], [], true],
+
+  // Lácteos
+  ['Crema hondureña', 'LACTEO', '2 cucharadas', 30, 100, 1, 1.5, 10, [DES, ALM, CEN], ['lactosa'], true],
+  ['Leche entera', 'LACTEO', '1 taza', 240, 150, 8, 11.5, 8, [DES, ...MER], ['lactosa']],
+  ['Leche descremada', 'LACTEO', '1 taza', 240, 84, 8, 12, 0.4, [DES, ...MER], ['lactosa']],
+  ['Queso americano', 'LACTEO', '1 lonja', 20, 74, 4, 1, 6, [DES, CEN], ['lactosa']],
+  ['Yogur griego natural', 'LACTEO', '1 taza', 200, 132, 17, 7, 4, [DES, ...MER], ['lactosa']],
+  ['Quesillo de capas', 'LACTEO', '30 g', 30, 91, 6, 1, 7, [DES, CEN], ['lactosa'], true],
+  ['Queso crema', 'LACTEO', '1 cucharada', 15, 51, 1, 0.6, 5, [DES, ...MER], ['lactosa']],
+
+  // Frutas
+  ['Zapote', 'FRUTA', '1 taza', 175, 239, 2.5, 55, 1, [...MER], [], true],
+  ['Mamey', 'FRUTA', '1 taza', 175, 179, 2.5, 40, 1, [DES, ...MER], [], true],
+  ['Nance', 'FRUTA', '1 taza', 110, 85, 1, 18, 1, [...MER], [], true],
+  ['Jocote', 'FRUTA', '5 unidades', 100, 87, 1, 20, 0.3, [...MER], [], true],
+  ['Marañón fresco (fruta)', 'FRUTA', '1 taza', 120, 89, 1.2, 20, 0.5, [...MER], [], true],
+  ['Mango verde con sal', 'FRUTA', '1 taza', 150, 67, 1, 15, 0.3, [...MER], [], true],
+  ['Melón', 'FRUTA', '1 taza', 160, 62, 0.9, 14, 0.3, [DES, ...MER]],
+  ['Naranja', 'FRUTA', '1 unidad', 140, 67, 1.3, 15, 0.2, [DES, ...MER]],
+  ['Mandarina', 'FRUTA', '1 unidad', 80, 44, 0.6, 10, 0.2, [...MER]],
+  ['Uva', 'FRUTA', '1 taza', 150, 115, 1, 27, 0.3, [...MER]],
+  ['Guayaba', 'FRUTA', '1 unidad', 100, 75, 2.5, 14, 1, [...MER], [], true],
+  ['Fresa', 'FRUTA', '1 taza', 150, 53, 1, 11, 0.5, [...MER]],
+  ['Pitahaya', 'FRUTA', '1 unidad', 200, 103, 2, 22, 0.8, [...MER], [], true],
+
+  // Verduras
+  ['Ayote cocido', 'VERDURA', '1 taza', 160, 56, 1.2, 12, 0.3, [ALM, CEN], [], true],
+  ['Loroco', 'VERDURA', '1/2 taza', 50, 31, 2.5, 4, 0.5, [DES, ALM], [], true],
+  ['Chipilín', 'VERDURA', '1/2 taza', 50, 25, 2.5, 3, 0.3, [ALM, CEN], [], true],
+  ['Ejotes cocidos', 'VERDURA', '1 taza', 125, 47, 2.4, 9, 0.2, [ALM, CEN]],
+  ['Rábano', 'VERDURA', '1 taza', 120, 20, 0.8, 4, 0.1, [ALM, CEN]],
+  ['Zanahoria cocida', 'VERDURA', '1 taza', 155, 59, 1.2, 13, 0.2, [ALM, CEN]],
+  ['Repollo cocido', 'VERDURA', '1 taza', 150, 39, 1.5, 8, 0.1, [ALM, CEN]],
+  ['Tomate', 'VERDURA', '1 unidad', 120, 26, 1, 5, 0.2, [DES, ALM, CEN]],
+  ['Pepino con limón', 'VERDURA', '1 taza', 130, 21, 0.8, 4, 0.2, [ALM, ...MER, CEN]],
+  ['Chayote cocido', 'VERDURA', '1 taza', 160, 39, 1.2, 8, 0.2, [ALM, CEN]],
+  ['Espinaca', 'VERDURA', '1 taza', 30, 9, 0.9, 1.1, 0.1, [ALM, CEN]],
+  ['Brócoli cocido', 'VERDURA', '1 taza', 155, 64, 3.7, 11, 0.6, [ALM, CEN]],
+
+  // Grasas
+  ['Coco fresco rallado', 'GRASA', '1/2 taza', 40, 156, 1.5, 6, 14, [DES, ...MER], [], true],
+  ['Marañón tostado', 'GRASA', '30 g', 30, 173, 5, 9, 13, [...MER], [], true],
+  ['Semillas de girasol', 'GRASA', '30 g', 30, 183, 6, 6, 15, [...MER]],
+  ['Semillas de chía', 'GRASA', '2 cucharadas', 24, 128, 4, 10, 8, [DES, ...MER]],
+  ['Manteca de cerdo', 'GRASA', '1 cucharada', 13, 117, 0, 0, 13, [ALM, CEN], ['cerdo'], true],
+  ['Aceite vegetal', 'GRASA', '1 cucharada', 14, 126, 0, 0, 14, [ALM, CEN]],
+  ['Mayonesa', 'GRASA', '1 cucharada', 14, 102, 0.2, 0.5, 11, [ALM, CEN], ['huevo']],
+
+  // Bebidas
+  ['Café de Marcala sin azúcar', 'BEBIDA', '1 taza', 240, 3, 0.3, 0.5, 0, [DES, ...MER], [], true],
+  ['Café con leche', 'BEBIDA', '1 taza', 240, 58, 4, 6, 2, [DES, ...MER], ['lactosa'], true],
+  ['Horchata', 'BEBIDA', '1 vaso', 250, 186, 3, 30, 6, [ALM, ...MER, CEN], ['lactosa'], true],
+  ['Fresco de rosa de Jamaica con azúcar', 'BEBIDA', '1 vaso', 250, 96, 0, 24, 0, [ALM, ...MER, CEN], [], true],
+  ['Pozol', 'BEBIDA', '1 taza', 240, 197, 4, 34, 5, [DES, ...MER], ['lactosa'], true],
+  ['Agua de coco', 'BEBIDA', '1 vaso', 240, 47, 1.5, 9, 0.5, [ALM, ...MER], [], true],
+  ['Fresco de tamarindo sin azúcar', 'BEBIDA', '1 vaso', 250, 51, 0.3, 12, 0.2, [ALM, ...MER, CEN], [], true],
+  ['Jugo de naranja natural', 'BEBIDA', '1 vaso', 250, 98, 1.5, 22, 0.4, [DES, ...MER]],
+  ['Fresco de melón', 'BEBIDA', '1 vaso', 250, 62, 0.8, 14, 0.3, [...MER]],
+  ['Licuado de banano con leche', 'BEBIDA', '1 vaso', 300, 206, 8, 30, 6, [DES, ...MER], ['lactosa'], true],
+  ['Batido de mango con leche', 'BEBIDA', '1 vaso', 300, 201, 7, 32, 5, [DES, ...MER], ['lactosa'], true],
+  ['Jugo de zanahoria', 'BEBIDA', '1 vaso', 250, 74, 1.5, 16, 0.4, [...MER]],
+  ['Atol de plátano', 'BEBIDA', '1 taza', 240, 197, 4, 34, 5, [DES, ...MER], ['lactosa'], true],
 ];
 
+// ─── Validación de coherencia de macros ──────────────────────────────────
+// Tolerancia del 15 % entre las kcal declaradas y el cálculo 4·P + 4·C + 9·G.
+// El piso absoluto de 20 kcal evita falsos positivos por redondeo en porciones
+// muy pequeñas (p. ej. una bebida sin azúcar de 5 kcal).
+const TOLERANCIA_RELATIVA = 0.15;
+const TOLERANCIA_ABSOLUTA_KCAL = 20;
+
+function validarCoherencia(lista: Fila[]) {
+  const codigosRestriccion = new Set(restricciones.map((r) => r.codigo));
+  const problemas: string[] = [];
+
+  for (const [
+    nombre,
+    ,
+    ,
+    ,
+    kcal,
+    proteinaG,
+    carbohidratoG,
+    grasaG,
+    ,
+    contiene = [],
+  ] of lista) {
+    const calculado = 4 * proteinaG + 4 * carbohidratoG + 9 * grasaG;
+    const diferencia = Math.abs(calculado - kcal);
+    const desvio = kcal === 0 ? 0 : diferencia / kcal;
+
+    if (desvio > TOLERANCIA_RELATIVA && diferencia > TOLERANCIA_ABSOLUTA_KCAL) {
+      problemas.push(
+        `${nombre}: ${kcal} kcal declaradas vs ${calculado.toFixed(1)} kcal calculadas (${(desvio * 100).toFixed(1)} % de desvío)`,
+      );
+    }
+
+    for (const etiqueta of contiene) {
+      if (!codigosRestriccion.has(etiqueta)) {
+        problemas.push(
+          `${nombre}: etiqueta "${etiqueta}" no corresponde a ninguna restricción`,
+        );
+      }
+    }
+  }
+
+  if (problemas.length > 0) {
+    throw new Error(
+      `Catálogo incoherente (${problemas.length} problema(s)):\n  - ${problemas.join('\n  - ')}`,
+    );
+  }
+}
+
+function resumenPorCategoria(lista: Fila[]) {
+  const conteo = new Map<string, number>();
+  for (const [, categoria] of lista) {
+    conteo.set(categoria, (conteo.get(categoria) ?? 0) + 1);
+  }
+  return [...conteo.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([categoria, total]) => `  ${categoria}: ${total}`)
+    .join('\n');
+}
+
 async function main() {
+  // Falla antes de escribir nada si alguna fila tiene macros incoherentes.
+  validarCoherencia(alimentos);
+
   for (const r of restricciones) {
     await prisma.restriccion.upsert({
       where: { codigo: r.codigo },
@@ -561,9 +754,13 @@ async function main() {
     });
   }
 
+  const tipicos = alimentos.filter(([, , , , , , , , , , tipico]) => tipico === true).length;
+
   console.log(
     `Seed listo: ${restricciones.length} restricciones, ${alimentos.length} alimentos.`,
   );
+  console.log(`Conteo por categoría:\n${resumenPorCategoria(alimentos)}`);
+  console.log(`Marcados como típicos hondureños: ${tipicos}.`);
 }
 
 main()
