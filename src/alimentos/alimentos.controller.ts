@@ -18,7 +18,10 @@ import {
 } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators.js';
 import { ApiErrores } from '../common/swagger.js';
-import { RestriccionEntity } from '../pacientes/pacientes.entity.js';
+import {
+  CondicionEntity,
+  RestriccionEntity,
+} from '../pacientes/pacientes.entity.js';
 import {
   ActualizarAlimentoDto,
   BuscarAlimentosDto,
@@ -99,5 +102,16 @@ export class AlimentosController {
   @ApiOkResponse({ type: [RestriccionEntity] })
   restricciones() {
     return this.service.restricciones();
+  }
+
+  @Get('condiciones')
+  @ApiOperation({
+    summary: 'Listar condiciones clínicas',
+    description:
+      'Catálogo de condiciones (diabetes, HTA, ERC…). Sus `codigo` se usan en `condiciones` al crear o actualizar pacientes.',
+  })
+  @ApiOkResponse({ type: [CondicionEntity] })
+  condiciones() {
+    return this.service.condiciones();
   }
 }

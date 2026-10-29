@@ -45,6 +45,14 @@ describe('AlimentosService', () => {
     });
   });
 
+  it('lista el catálogo de condiciones clínicas por nombre', async () => {
+    prisma.condicion.findMany.mockResolvedValue([]);
+    await svc.condiciones();
+    expect(prisma.condicion.findMany).toHaveBeenCalledWith({
+      orderBy: { nombre: 'asc' },
+    });
+  });
+
   it('responde 409 con nombre duplicado', async () => {
     prisma.alimento.create.mockRejectedValue(errorUnico());
     await expect(

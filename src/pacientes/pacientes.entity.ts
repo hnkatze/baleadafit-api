@@ -2,7 +2,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   EstadoCita,
+  EstadoFisiologico,
   EstadoPlan,
+  FuenteMedicion,
   Meta,
   NivelActividad,
   OrigenPlan,
@@ -29,6 +31,41 @@ export class PacienteRestriccionEntity {
   restriccion: RestriccionEntity;
 }
 
+export class CondicionEntity {
+  /** @example "3f2a7c1e-9b4d-4a6e-8c10-abcdefabcdef" */
+  id: string;
+  /**
+   * Se usa al crear o actualizar pacientes.
+   * @example "dm2"
+   */
+  codigo: string;
+  /** @example "Diabetes mellitus tipo 2" */
+  nombre: string;
+  descripcion: string | null;
+}
+
+export class PacienteCondicionEntity {
+  pacienteId: string;
+  condicionId: string;
+  /** Detalle del caso (grado, control, desde cuándo). */
+  notas: string | null;
+  condicion: CondicionEntity;
+}
+
+export class MedicamentoEntity {
+  id: string;
+  pacienteId: string;
+  /** @example "Metformina" */
+  nombre: string;
+  /** @example "500 mg" */
+  dosis: string | null;
+  /** @example "Cada 12 horas con comida" */
+  frecuencia: string | null;
+  /** `false` cuando se dio de baja lógica; el historial se conserva. */
+  activo: boolean;
+  creadoEn: Date;
+}
+
 export class MedicionEntity {
   id: string;
   pacienteId: string;
@@ -42,6 +79,41 @@ export class MedicionEntity {
   pctGrasa: number | null;
   /** @example 88 */
   cinturaCm: number | null;
+  /** @example 28.4 */
+  masaMuscularKg: number | null;
+  /** @example 24.6 */
+  masaGrasaKg: number | null;
+  /**
+   * Nivel de grasa visceral que reporta el equipo (1-20).
+   * @example 8
+   */
+  grasaVisceral: number | null;
+  /** @example 18.2 */
+  aguaIntracelularL: number | null;
+  /** @example 12.1 */
+  aguaExtracelularL: number | null;
+  /** @example 6.2 */
+  anguloFase: number | null;
+  /** @example 18 */
+  pliegueTricipitalMm: number | null;
+  /** @example 16 */
+  pliegueSubescapularMm: number | null;
+  /** @example 22 */
+  pliegueSuprailiacoMm: number | null;
+  /** @example 12 */
+  pliegueBicipitalMm: number | null;
+  /** @example 30 */
+  perimetroBrazoCm: number | null;
+  /** @example 98 */
+  perimetroCaderaCm: number | null;
+  /** @example 55 */
+  perimetroMusloCm: number | null;
+  /** @example 120 */
+  presionSistolica: number | null;
+  /** @example 80 */
+  presionDiastolica: number | null;
+  @ApiProperty({ enum: FuenteMedicion, enumName: 'FuenteMedicion' })
+  fuente: FuenteMedicion;
   notas: string | null;
   creadoEn: Date;
 }
@@ -75,6 +147,37 @@ export class PacienteEntity {
   nivelActividad: NivelActividad;
   @ApiProperty({ enum: Meta, enumName: 'Meta' })
   meta: Meta;
+  /**
+   * Peso objetivo pactado con el paciente, en kg.
+   * @example 68
+   */
+  pesoObjetivoKg: number | null;
+  /** @example "2027-03-01T00:00:00.000Z" */
+  fechaObjetivo: Date | null;
+  @ApiProperty({ enum: EstadoFisiologico, enumName: 'EstadoFisiologico' })
+  estadoFisiologico: EstadoFisiologico;
+  /** @example "Bajar de peso sin perder masa muscular" */
+  motivoConsulta: string | null;
+  /** Texto libre; complementa las restricciones del catálogo. */
+  alergias: string | null;
+  /** @example "Apendicectomía en 2018" */
+  cirugias: string | null;
+  /** @example "Vitamina D 1000 UI diaria" */
+  suplementos: string | null;
+  /** @example 5 */
+  comidasAlDia: number | null;
+  /** @example 2 */
+  aguaLitros: number | null;
+  /** @example 7 */
+  horasSueno: number | null;
+  /** @example "1 cerveza los fines de semana" */
+  alcohol: string | null;
+  /** @example "No fuma" */
+  tabaco: string | null;
+  /** @example "La mamá" */
+  quienCocina: string | null;
+  /** @example "L 1,500 semanales" */
+  presupuesto: string | null;
   notas: string | null;
   activo: boolean;
   creadoEn: Date;
@@ -83,6 +186,10 @@ export class PacienteEntity {
 
 export class PacienteConRestriccionesEntity extends PacienteEntity {
   restricciones: PacienteRestriccionEntity[];
+}
+
+export class PacienteConCondicionesEntity extends PacienteConRestriccionesEntity {
+  condiciones: PacienteCondicionEntity[];
 }
 
 export class PlanResumenEntity {
@@ -123,9 +230,11 @@ export class CitaBasicaEntity {
   creadoEn: Date;
 }
 
-export class PacienteDetalleEntity extends PacienteConRestriccionesEntity {
-  /** Últimas 10 mediciones, de la más reciente a la más antigua. */
-  mediciones: MedicionEntity[];
+export class PacienteDetalleEntity extends PacienteConCondicionesEntity {
+  /** Últimas 10 mediciones, de la más reciente a la más antigua, con IMC. */
+  mediciones: MedicionConImcEntity[];
+  /** Medicación vigente (`activo`), la más reciente primero. */
+  medicamentos: MedicamentoEntity[];
   /** Próximas 3 citas. */
   citas: CitaBasicaEntity[];
   planes: PlanResumenEntity[];

@@ -268,7 +268,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PacienteConRestriccionesEntity"
+                  "$ref": "#/components/schemas/PacienteConCondicionesEntity"
                 }
               }
             }
@@ -327,7 +327,7 @@
     },
     "/pacientes/{id}": {
       "get": {
-        "description": "Restricciones, últimas 10 mediciones, próximas citas y planes.",
+        "description": "Datos clínicos y hábitos, restricciones, condiciones, medicación vigente, últimas 10 mediciones, próximas citas y planes.",
         "operationId": "PacientesController_detalle",
         "parameters": [
           {
@@ -394,7 +394,7 @@
         ]
       },
       "patch": {
-        "description": "Si se envía `restricciones`, reemplaza la lista completa.",
+        "description": "Si se envía `restricciones` o `condiciones`, reemplaza la lista completa de esa relación.",
         "operationId": "PacientesController_actualizar",
         "parameters": [
           {
@@ -424,7 +424,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PacienteConRestriccionesEntity"
+                  "$ref": "#/components/schemas/PacienteConCondicionesEntity"
                 }
               }
             }
@@ -548,6 +548,251 @@
         ]
       }
     },
+    "/pacientes/{id}/medicamentos": {
+      "post": {
+        "description": "Nombre obligatorio; dosis y frecuencia son opcionales.",
+        "operationId": "PacientesController_crearMedicamento",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearMedicamentoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicamentoEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar medicamento",
+        "tags": [
+          "pacientes"
+        ]
+      }
+    },
+    "/medicamentos/{id}": {
+      "patch": {
+        "description": "Permite corregir los datos o marcar `activo = false` para darlo de baja.",
+        "operationId": "PacientesController_actualizarMedicamento",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del medicamento",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarMedicamentoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicamentoEntity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Editar medicamento",
+        "tags": [
+          "pacientes"
+        ]
+      },
+      "delete": {
+        "description": "Baja lógica (`activo = false`): nunca se borra, para conservar el historial clínico.",
+        "operationId": "PacientesController_desactivarMedicamento",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del medicamento",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MedicamentoEntity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dar de baja un medicamento",
+        "tags": [
+          "pacientes"
+        ]
+      }
+    },
     "/pacientes/{id}/mediciones": {
       "get": {
         "description": "De la más antigua a la más reciente, con IMC.",
@@ -620,6 +865,7 @@
         ]
       },
       "post": {
+        "description": "Peso y talla son obligatorios. Acepta composición corporal, pliegues, perímetros, presión arterial y la `fuente` del dato.",
         "operationId": "PacientesController_agregarMedicion",
         "parameters": [
           {
@@ -1336,6 +1582,57 @@
           }
         ],
         "summary": "Listar restricciones alimentarias",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
+    "/condiciones": {
+      "get": {
+        "description": "Catálogo de condiciones (diabetes, HTA, ERC…). Sus `codigo` se usan en `condiciones` al crear o actualizar pacientes.",
+        "operationId": "AlimentosController_condiciones",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CondicionEntity"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol del usuario no tiene acceso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar condiciones clínicas",
         "tags": [
           "catálogo"
         ]
@@ -2883,6 +3180,32 @@
           "paciente": {
             "$ref": "#/components/schemas/PacienteDeCitaEntity"
           },
+          "subjetivo": {
+            "type": "string",
+            "nullable": true,
+            "example": "Refiere hambre a media tarde y poca sed."
+          },
+          "objetivo": {
+            "type": "string",
+            "nullable": true,
+            "example": "Peso 78.4 kg, cintura 92 cm, presión 118/76."
+          },
+          "analisis": {
+            "type": "string",
+            "nullable": true,
+            "example": "Adherencia parcial al plan; pérdida de 1.2 kg en 4 semanas."
+          },
+          "plan": {
+            "type": "string",
+            "nullable": true,
+            "example": "Agregar merienda de fruta con yogur y control en 4 semanas."
+          },
+          "proximaCitaSugerida": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "example": "2026-12-01T00:00:00.000Z"
+          },
           "id": {
             "type": "string"
           },
@@ -2917,6 +3240,11 @@
         "required": [
           "estado",
           "paciente",
+          "subjetivo",
+          "objetivo",
+          "analisis",
+          "plan",
+          "proximaCitaSugerida",
           "id",
           "pacienteId",
           "nutricionistaId",
@@ -2977,9 +3305,34 @@
           "SUBIR"
         ]
       },
+      "EstadoFisiologico": {
+        "type": "string",
+        "enum": [
+          "NINGUNO",
+          "EMBARAZO",
+          "LACTANCIA"
+        ]
+      },
+      "FuenteMedicion": {
+        "type": "string",
+        "enum": [
+          "MANUAL",
+          "BASCULA",
+          "INBODY",
+          "OMRON",
+          "OTRO"
+        ]
+      },
       "MedicionEntity": {
         "type": "object",
         "properties": {
+          "fuente": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FuenteMedicion"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -3009,6 +3362,82 @@
             "nullable": true,
             "example": 88
           },
+          "masaMuscularKg": {
+            "type": "number",
+            "nullable": true,
+            "example": 28.4
+          },
+          "masaGrasaKg": {
+            "type": "number",
+            "nullable": true,
+            "example": 24.6
+          },
+          "grasaVisceral": {
+            "type": "number",
+            "nullable": true,
+            "description": "Nivel de grasa visceral que reporta el equipo (1-20).",
+            "example": 8
+          },
+          "aguaIntracelularL": {
+            "type": "number",
+            "nullable": true,
+            "example": 18.2
+          },
+          "aguaExtracelularL": {
+            "type": "number",
+            "nullable": true,
+            "example": 12.1
+          },
+          "anguloFase": {
+            "type": "number",
+            "nullable": true,
+            "example": 6.2
+          },
+          "pliegueTricipitalMm": {
+            "type": "number",
+            "nullable": true,
+            "example": 18
+          },
+          "pliegueSubescapularMm": {
+            "type": "number",
+            "nullable": true,
+            "example": 16
+          },
+          "pliegueSuprailiacoMm": {
+            "type": "number",
+            "nullable": true,
+            "example": 22
+          },
+          "pliegueBicipitalMm": {
+            "type": "number",
+            "nullable": true,
+            "example": 12
+          },
+          "perimetroBrazoCm": {
+            "type": "number",
+            "nullable": true,
+            "example": 30
+          },
+          "perimetroCaderaCm": {
+            "type": "number",
+            "nullable": true,
+            "example": 98
+          },
+          "perimetroMusloCm": {
+            "type": "number",
+            "nullable": true,
+            "example": 55
+          },
+          "presionSistolica": {
+            "type": "number",
+            "nullable": true,
+            "example": 120
+          },
+          "presionDiastolica": {
+            "type": "number",
+            "nullable": true,
+            "example": 80
+          },
           "notas": {
             "type": "string",
             "nullable": true
@@ -3019,6 +3448,7 @@
           }
         },
         "required": [
+          "fuente",
           "id",
           "pacienteId",
           "fecha",
@@ -3026,6 +3456,21 @@
           "tallaCm",
           "pctGrasa",
           "cinturaCm",
+          "masaMuscularKg",
+          "masaGrasaKg",
+          "grasaVisceral",
+          "aguaIntracelularL",
+          "aguaExtracelularL",
+          "anguloFase",
+          "pliegueTricipitalMm",
+          "pliegueSubescapularMm",
+          "pliegueSuprailiacoMm",
+          "pliegueBicipitalMm",
+          "perimetroBrazoCm",
+          "perimetroCaderaCm",
+          "perimetroMusloCm",
+          "presionSistolica",
+          "presionDiastolica",
           "notas",
           "creadoEn"
         ]
@@ -3066,6 +3511,13 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/Meta"
+              }
+            ]
+          },
+          "estadoFisiologico": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoFisiologico"
               }
             ]
           },
@@ -3121,6 +3573,73 @@
             "type": "string",
             "example": "1995-04-10T00:00:00.000Z"
           },
+          "pesoObjetivoKg": {
+            "type": "number",
+            "nullable": true,
+            "description": "Peso objetivo pactado con el paciente, en kg.",
+            "example": 68
+          },
+          "fechaObjetivo": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "example": "2027-03-01T00:00:00.000Z"
+          },
+          "motivoConsulta": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bajar de peso sin perder masa muscular"
+          },
+          "alergias": {
+            "type": "string",
+            "nullable": true,
+            "description": "Texto libre; complementa las restricciones del catálogo."
+          },
+          "cirugias": {
+            "type": "string",
+            "nullable": true,
+            "example": "Apendicectomía en 2018"
+          },
+          "suplementos": {
+            "type": "string",
+            "nullable": true,
+            "example": "Vitamina D 1000 UI diaria"
+          },
+          "comidasAlDia": {
+            "type": "number",
+            "nullable": true,
+            "example": 5
+          },
+          "aguaLitros": {
+            "type": "number",
+            "nullable": true,
+            "example": 2
+          },
+          "horasSueno": {
+            "type": "number",
+            "nullable": true,
+            "example": 7
+          },
+          "alcohol": {
+            "type": "string",
+            "nullable": true,
+            "example": "1 cerveza los fines de semana"
+          },
+          "tabaco": {
+            "type": "string",
+            "nullable": true,
+            "example": "No fuma"
+          },
+          "quienCocina": {
+            "type": "string",
+            "nullable": true,
+            "example": "La mamá"
+          },
+          "presupuesto": {
+            "type": "string",
+            "nullable": true,
+            "example": "L 1,500 semanales"
+          },
           "notas": {
             "type": "string",
             "nullable": true
@@ -3141,6 +3660,7 @@
           "sexo",
           "nivelActividad",
           "meta",
+          "estadoFisiologico",
           "ultimaMedicion",
           "planActivo",
           "id",
@@ -3151,6 +3671,19 @@
           "correo",
           "telefono",
           "fechaNacimiento",
+          "pesoObjetivoKg",
+          "fechaObjetivo",
+          "motivoConsulta",
+          "alergias",
+          "cirugias",
+          "suplementos",
+          "comidasAlDia",
+          "aguaLitros",
+          "horasSueno",
+          "alcohol",
+          "tabaco",
+          "quienCocina",
+          "presupuesto",
           "notas",
           "activo",
           "creadoEn",
@@ -3233,6 +3766,97 @@
             "items": {
               "type": "string"
             }
+          },
+          "pesoObjetivoKg": {
+            "type": "number",
+            "minimum": 20,
+            "maximum": 400
+          },
+          "fechaObjetivo": {
+            "type": "string",
+            "description": "Formato YYYY-MM-DD.",
+            "example": "2027-03-01"
+          },
+          "estadoFisiologico": {
+            "type": "string",
+            "description": "Cambia el requerimiento y las recomendaciones.",
+            "example": "NINGUNO",
+            "enum": [
+              "NINGUNO",
+              "EMBARAZO",
+              "LACTANCIA"
+            ]
+          },
+          "motivoConsulta": {
+            "type": "string",
+            "example": "Bajar de peso sin perder masa muscular",
+            "maxLength": 1000
+          },
+          "alergias": {
+            "type": "string",
+            "description": "Texto libre; complementa las restricciones del catálogo.",
+            "example": "Penicilina; ronchas con el marisco",
+            "maxLength": 1000
+          },
+          "cirugias": {
+            "type": "string",
+            "example": "Apendicectomía en 2018",
+            "maxLength": 1000
+          },
+          "suplementos": {
+            "type": "string",
+            "example": "Vitamina D 1000 UI diaria",
+            "maxLength": 500
+          },
+          "comidasAlDia": {
+            "type": "number",
+            "example": 5,
+            "minimum": 1,
+            "maximum": 12
+          },
+          "aguaLitros": {
+            "type": "number",
+            "example": 2,
+            "minimum": 0.2,
+            "maximum": 10
+          },
+          "horasSueno": {
+            "type": "number",
+            "example": 7,
+            "minimum": 0,
+            "maximum": 24
+          },
+          "alcohol": {
+            "type": "string",
+            "example": "1 cerveza los fines de semana",
+            "maxLength": 200
+          },
+          "tabaco": {
+            "type": "string",
+            "example": "No fuma",
+            "maxLength": 200
+          },
+          "quienCocina": {
+            "type": "string",
+            "example": "La mamá",
+            "maxLength": 80
+          },
+          "presupuesto": {
+            "type": "string",
+            "example": "L 1,500 semanales",
+            "maxLength": 120
+          },
+          "condiciones": {
+            "description": "Códigos de `GET /condiciones`.",
+            "example": [
+              "dm2",
+              "hta"
+            ],
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -3240,6 +3864,59 @@
           "apellido",
           "sexo",
           "fechaNacimiento"
+        ]
+      },
+      "CondicionEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3f2a7c1e-9b4d-4a6e-8c10-abcdefabcdef"
+          },
+          "codigo": {
+            "type": "string",
+            "description": "Se usa al crear o actualizar pacientes.",
+            "example": "dm2"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Diabetes mellitus tipo 2"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "codigo",
+          "nombre",
+          "descripcion"
+        ]
+      },
+      "PacienteCondicionEntity": {
+        "type": "object",
+        "properties": {
+          "pacienteId": {
+            "type": "string"
+          },
+          "condicionId": {
+            "type": "string"
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true,
+            "description": "Detalle del caso (grado, control, desde cuándo)."
+          },
+          "condicion": {
+            "$ref": "#/components/schemas/CondicionEntity"
+          }
+        },
+        "required": [
+          "pacienteId",
+          "condicionId",
+          "notas",
+          "condicion"
         ]
       },
       "RestriccionEntity": {
@@ -3289,7 +3966,7 @@
           "restriccion"
         ]
       },
-      "PacienteConRestriccionesEntity": {
+      "PacienteConCondicionesEntity": {
         "type": "object",
         "properties": {
           "sexo": {
@@ -3312,6 +3989,19 @@
                 "$ref": "#/components/schemas/Meta"
               }
             ]
+          },
+          "estadoFisiologico": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoFisiologico"
+              }
+            ]
+          },
+          "condiciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PacienteCondicionEntity"
+            }
           },
           "restricciones": {
             "type": "array",
@@ -3353,6 +4043,73 @@
             "type": "string",
             "example": "1995-04-10T00:00:00.000Z"
           },
+          "pesoObjetivoKg": {
+            "type": "number",
+            "nullable": true,
+            "description": "Peso objetivo pactado con el paciente, en kg.",
+            "example": 68
+          },
+          "fechaObjetivo": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "example": "2027-03-01T00:00:00.000Z"
+          },
+          "motivoConsulta": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bajar de peso sin perder masa muscular"
+          },
+          "alergias": {
+            "type": "string",
+            "nullable": true,
+            "description": "Texto libre; complementa las restricciones del catálogo."
+          },
+          "cirugias": {
+            "type": "string",
+            "nullable": true,
+            "example": "Apendicectomía en 2018"
+          },
+          "suplementos": {
+            "type": "string",
+            "nullable": true,
+            "example": "Vitamina D 1000 UI diaria"
+          },
+          "comidasAlDia": {
+            "type": "number",
+            "nullable": true,
+            "example": 5
+          },
+          "aguaLitros": {
+            "type": "number",
+            "nullable": true,
+            "example": 2
+          },
+          "horasSueno": {
+            "type": "number",
+            "nullable": true,
+            "example": 7
+          },
+          "alcohol": {
+            "type": "string",
+            "nullable": true,
+            "example": "1 cerveza los fines de semana"
+          },
+          "tabaco": {
+            "type": "string",
+            "nullable": true,
+            "example": "No fuma"
+          },
+          "quienCocina": {
+            "type": "string",
+            "nullable": true,
+            "example": "La mamá"
+          },
+          "presupuesto": {
+            "type": "string",
+            "nullable": true,
+            "example": "L 1,500 semanales"
+          },
           "notas": {
             "type": "string",
             "nullable": true
@@ -3373,6 +4130,8 @@
           "sexo",
           "nivelActividad",
           "meta",
+          "estadoFisiologico",
+          "condiciones",
           "restricciones",
           "id",
           "nutricionistaId",
@@ -3382,10 +4141,223 @@
           "correo",
           "telefono",
           "fechaNacimiento",
+          "pesoObjetivoKg",
+          "fechaObjetivo",
+          "motivoConsulta",
+          "alergias",
+          "cirugias",
+          "suplementos",
+          "comidasAlDia",
+          "aguaLitros",
+          "horasSueno",
+          "alcohol",
+          "tabaco",
+          "quienCocina",
+          "presupuesto",
           "notas",
           "activo",
           "creadoEn",
           "actualizadoEn"
+        ]
+      },
+      "MedicionConImcEntity": {
+        "type": "object",
+        "properties": {
+          "fuente": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FuenteMedicion"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "fecha": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-28T00:00:00.000Z"
+          },
+          "pesoKg": {
+            "type": "number",
+            "example": 72
+          },
+          "tallaCm": {
+            "type": "number",
+            "example": 160
+          },
+          "pctGrasa": {
+            "type": "number",
+            "nullable": true,
+            "example": 34
+          },
+          "cinturaCm": {
+            "type": "number",
+            "nullable": true,
+            "example": 88
+          },
+          "masaMuscularKg": {
+            "type": "number",
+            "nullable": true,
+            "example": 28.4
+          },
+          "masaGrasaKg": {
+            "type": "number",
+            "nullable": true,
+            "example": 24.6
+          },
+          "grasaVisceral": {
+            "type": "number",
+            "nullable": true,
+            "description": "Nivel de grasa visceral que reporta el equipo (1-20).",
+            "example": 8
+          },
+          "aguaIntracelularL": {
+            "type": "number",
+            "nullable": true,
+            "example": 18.2
+          },
+          "aguaExtracelularL": {
+            "type": "number",
+            "nullable": true,
+            "example": 12.1
+          },
+          "anguloFase": {
+            "type": "number",
+            "nullable": true,
+            "example": 6.2
+          },
+          "pliegueTricipitalMm": {
+            "type": "number",
+            "nullable": true,
+            "example": 18
+          },
+          "pliegueSubescapularMm": {
+            "type": "number",
+            "nullable": true,
+            "example": 16
+          },
+          "pliegueSuprailiacoMm": {
+            "type": "number",
+            "nullable": true,
+            "example": 22
+          },
+          "pliegueBicipitalMm": {
+            "type": "number",
+            "nullable": true,
+            "example": 12
+          },
+          "perimetroBrazoCm": {
+            "type": "number",
+            "nullable": true,
+            "example": 30
+          },
+          "perimetroCaderaCm": {
+            "type": "number",
+            "nullable": true,
+            "example": 98
+          },
+          "perimetroMusloCm": {
+            "type": "number",
+            "nullable": true,
+            "example": 55
+          },
+          "presionSistolica": {
+            "type": "number",
+            "nullable": true,
+            "example": 120
+          },
+          "presionDiastolica": {
+            "type": "number",
+            "nullable": true,
+            "example": 80
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "imc": {
+            "type": "number",
+            "description": "Índice de masa corporal calculado.",
+            "example": 28.1
+          }
+        },
+        "required": [
+          "fuente",
+          "id",
+          "pacienteId",
+          "fecha",
+          "pesoKg",
+          "tallaCm",
+          "pctGrasa",
+          "cinturaCm",
+          "masaMuscularKg",
+          "masaGrasaKg",
+          "grasaVisceral",
+          "aguaIntracelularL",
+          "aguaExtracelularL",
+          "anguloFase",
+          "pliegueTricipitalMm",
+          "pliegueSubescapularMm",
+          "pliegueSuprailiacoMm",
+          "pliegueBicipitalMm",
+          "perimetroBrazoCm",
+          "perimetroCaderaCm",
+          "perimetroMusloCm",
+          "presionSistolica",
+          "presionDiastolica",
+          "notas",
+          "creadoEn",
+          "imc"
+        ]
+      },
+      "MedicamentoEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Metformina"
+          },
+          "dosis": {
+            "type": "string",
+            "nullable": true,
+            "example": "500 mg"
+          },
+          "frecuencia": {
+            "type": "string",
+            "nullable": true,
+            "example": "Cada 12 horas con comida"
+          },
+          "activo": {
+            "type": "boolean",
+            "description": "`false` cuando se dio de baja lógica; el historial se conserva."
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "pacienteId",
+          "nombre",
+          "dosis",
+          "frecuencia",
+          "activo",
+          "creadoEn"
         ]
       },
       "CitaBasicaEntity": {
@@ -3523,6 +4495,19 @@
               }
             ]
           },
+          "estadoFisiologico": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoFisiologico"
+              }
+            ]
+          },
+          "condiciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PacienteCondicionEntity"
+            }
+          },
           "restricciones": {
             "type": "array",
             "items": {
@@ -3563,6 +4548,73 @@
             "type": "string",
             "example": "1995-04-10T00:00:00.000Z"
           },
+          "pesoObjetivoKg": {
+            "type": "number",
+            "nullable": true,
+            "description": "Peso objetivo pactado con el paciente, en kg.",
+            "example": 68
+          },
+          "fechaObjetivo": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "example": "2027-03-01T00:00:00.000Z"
+          },
+          "motivoConsulta": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bajar de peso sin perder masa muscular"
+          },
+          "alergias": {
+            "type": "string",
+            "nullable": true,
+            "description": "Texto libre; complementa las restricciones del catálogo."
+          },
+          "cirugias": {
+            "type": "string",
+            "nullable": true,
+            "example": "Apendicectomía en 2018"
+          },
+          "suplementos": {
+            "type": "string",
+            "nullable": true,
+            "example": "Vitamina D 1000 UI diaria"
+          },
+          "comidasAlDia": {
+            "type": "number",
+            "nullable": true,
+            "example": 5
+          },
+          "aguaLitros": {
+            "type": "number",
+            "nullable": true,
+            "example": 2
+          },
+          "horasSueno": {
+            "type": "number",
+            "nullable": true,
+            "example": 7
+          },
+          "alcohol": {
+            "type": "string",
+            "nullable": true,
+            "example": "1 cerveza los fines de semana"
+          },
+          "tabaco": {
+            "type": "string",
+            "nullable": true,
+            "example": "No fuma"
+          },
+          "quienCocina": {
+            "type": "string",
+            "nullable": true,
+            "example": "La mamá"
+          },
+          "presupuesto": {
+            "type": "string",
+            "nullable": true,
+            "example": "L 1,500 semanales"
+          },
           "notas": {
             "type": "string",
             "nullable": true
@@ -3579,10 +4631,17 @@
             "type": "string"
           },
           "mediciones": {
-            "description": "Últimas 10 mediciones, de la más reciente a la más antigua.",
+            "description": "Últimas 10 mediciones, de la más reciente a la más antigua, con IMC.",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MedicionEntity"
+              "$ref": "#/components/schemas/MedicionConImcEntity"
+            }
+          },
+          "medicamentos": {
+            "description": "Medicación vigente (`activo`), la más reciente primero.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicamentoEntity"
             }
           },
           "citas": {
@@ -3603,6 +4662,8 @@
           "sexo",
           "nivelActividad",
           "meta",
+          "estadoFisiologico",
+          "condiciones",
           "restricciones",
           "id",
           "nutricionistaId",
@@ -3612,11 +4673,25 @@
           "correo",
           "telefono",
           "fechaNacimiento",
+          "pesoObjetivoKg",
+          "fechaObjetivo",
+          "motivoConsulta",
+          "alergias",
+          "cirugias",
+          "suplementos",
+          "comidasAlDia",
+          "aguaLitros",
+          "horasSueno",
+          "alcohol",
+          "tabaco",
+          "quienCocina",
+          "presupuesto",
           "notas",
           "activo",
           "creadoEn",
           "actualizadoEn",
           "mediciones",
+          "medicamentos",
           "citas",
           "planes"
         ]
@@ -3697,6 +4772,147 @@
             "items": {
               "type": "string"
             }
+          },
+          "pesoObjetivoKg": {
+            "type": "number",
+            "minimum": 20,
+            "maximum": 400
+          },
+          "fechaObjetivo": {
+            "type": "string",
+            "description": "Formato YYYY-MM-DD.",
+            "example": "2027-03-01"
+          },
+          "estadoFisiologico": {
+            "description": "Cambia el requerimiento y las recomendaciones.",
+            "example": "NINGUNO",
+            "enum": [
+              "NINGUNO",
+              "EMBARAZO",
+              "LACTANCIA"
+            ],
+            "type": "string"
+          },
+          "motivoConsulta": {
+            "type": "string",
+            "example": "Bajar de peso sin perder masa muscular",
+            "maxLength": 1000
+          },
+          "alergias": {
+            "type": "string",
+            "description": "Texto libre; complementa las restricciones del catálogo.",
+            "example": "Penicilina; ronchas con el marisco",
+            "maxLength": 1000
+          },
+          "cirugias": {
+            "type": "string",
+            "example": "Apendicectomía en 2018",
+            "maxLength": 1000
+          },
+          "suplementos": {
+            "type": "string",
+            "example": "Vitamina D 1000 UI diaria",
+            "maxLength": 500
+          },
+          "comidasAlDia": {
+            "type": "number",
+            "example": 5,
+            "minimum": 1,
+            "maximum": 12
+          },
+          "aguaLitros": {
+            "type": "number",
+            "example": 2,
+            "minimum": 0.2,
+            "maximum": 10
+          },
+          "horasSueno": {
+            "type": "number",
+            "example": 7,
+            "minimum": 0,
+            "maximum": 24
+          },
+          "alcohol": {
+            "type": "string",
+            "example": "1 cerveza los fines de semana",
+            "maxLength": 200
+          },
+          "tabaco": {
+            "type": "string",
+            "example": "No fuma",
+            "maxLength": 200
+          },
+          "quienCocina": {
+            "type": "string",
+            "example": "La mamá",
+            "maxLength": 80
+          },
+          "presupuesto": {
+            "type": "string",
+            "example": "L 1,500 semanales",
+            "maxLength": 120
+          },
+          "condiciones": {
+            "description": "Códigos de `GET /condiciones`.",
+            "example": [
+              "dm2",
+              "hta"
+            ],
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CrearMedicamentoDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Metformina",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "dosis": {
+            "type": "string",
+            "example": "500 mg",
+            "maxLength": 80
+          },
+          "frecuencia": {
+            "type": "string",
+            "example": "Cada 12 horas con comida",
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "nombre"
+        ]
+      },
+      "ActualizarMedicamentoDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Metformina",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "dosis": {
+            "type": "string",
+            "example": "500 mg",
+            "maxLength": 80
+          },
+          "frecuencia": {
+            "type": "string",
+            "example": "Cada 12 horas con comida",
+            "maxLength": 120
+          },
+          "activo": {
+            "type": "boolean",
+            "description": "`false` lo saca del expediente activo sin borrar el historial.",
+            "example": false
           }
         }
       },
@@ -3721,6 +4937,13 @@
             "allOf": [
               {
                 "$ref": "#/components/schemas/Meta"
+              }
+            ]
+          },
+          "estadoFisiologico": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoFisiologico"
               }
             ]
           },
@@ -3758,6 +4981,73 @@
             "type": "string",
             "example": "1995-04-10T00:00:00.000Z"
           },
+          "pesoObjetivoKg": {
+            "type": "number",
+            "nullable": true,
+            "description": "Peso objetivo pactado con el paciente, en kg.",
+            "example": 68
+          },
+          "fechaObjetivo": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "example": "2027-03-01T00:00:00.000Z"
+          },
+          "motivoConsulta": {
+            "type": "string",
+            "nullable": true,
+            "example": "Bajar de peso sin perder masa muscular"
+          },
+          "alergias": {
+            "type": "string",
+            "nullable": true,
+            "description": "Texto libre; complementa las restricciones del catálogo."
+          },
+          "cirugias": {
+            "type": "string",
+            "nullable": true,
+            "example": "Apendicectomía en 2018"
+          },
+          "suplementos": {
+            "type": "string",
+            "nullable": true,
+            "example": "Vitamina D 1000 UI diaria"
+          },
+          "comidasAlDia": {
+            "type": "number",
+            "nullable": true,
+            "example": 5
+          },
+          "aguaLitros": {
+            "type": "number",
+            "nullable": true,
+            "example": 2
+          },
+          "horasSueno": {
+            "type": "number",
+            "nullable": true,
+            "example": 7
+          },
+          "alcohol": {
+            "type": "string",
+            "nullable": true,
+            "example": "1 cerveza los fines de semana"
+          },
+          "tabaco": {
+            "type": "string",
+            "nullable": true,
+            "example": "No fuma"
+          },
+          "quienCocina": {
+            "type": "string",
+            "nullable": true,
+            "example": "La mamá"
+          },
+          "presupuesto": {
+            "type": "string",
+            "nullable": true,
+            "example": "L 1,500 semanales"
+          },
           "notas": {
             "type": "string",
             "nullable": true
@@ -3778,6 +5068,7 @@
           "sexo",
           "nivelActividad",
           "meta",
+          "estadoFisiologico",
           "id",
           "nutricionistaId",
           "firebaseUid",
@@ -3786,69 +5077,23 @@
           "correo",
           "telefono",
           "fechaNacimiento",
+          "pesoObjetivoKg",
+          "fechaObjetivo",
+          "motivoConsulta",
+          "alergias",
+          "cirugias",
+          "suplementos",
+          "comidasAlDia",
+          "aguaLitros",
+          "horasSueno",
+          "alcohol",
+          "tabaco",
+          "quienCocina",
+          "presupuesto",
           "notas",
           "activo",
           "creadoEn",
           "actualizadoEn"
-        ]
-      },
-      "MedicionConImcEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "pacienteId": {
-            "type": "string"
-          },
-          "fecha": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-10-28T00:00:00.000Z"
-          },
-          "pesoKg": {
-            "type": "number",
-            "example": 72
-          },
-          "tallaCm": {
-            "type": "number",
-            "example": 160
-          },
-          "pctGrasa": {
-            "type": "number",
-            "nullable": true,
-            "example": 34
-          },
-          "cinturaCm": {
-            "type": "number",
-            "nullable": true,
-            "example": 88
-          },
-          "notas": {
-            "type": "string",
-            "nullable": true
-          },
-          "creadoEn": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "imc": {
-            "type": "number",
-            "description": "Índice de masa corporal calculado.",
-            "example": 28.1
-          }
-        },
-        "required": [
-          "id",
-          "pacienteId",
-          "fecha",
-          "pesoKg",
-          "tallaCm",
-          "pctGrasa",
-          "cinturaCm",
-          "notas",
-          "creadoEn",
-          "imc"
         ]
       },
       "CrearMedicionDto": {
@@ -3883,6 +5128,108 @@
             "example": 88,
             "minimum": 40,
             "maximum": 250
+          },
+          "masaMuscularKg": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 200
+          },
+          "masaGrasaKg": {
+            "type": "number",
+            "example": 24.6,
+            "minimum": 0,
+            "maximum": 200
+          },
+          "grasaVisceral": {
+            "type": "number",
+            "description": "Nivel que reporta el equipo (1-20).",
+            "example": 8,
+            "minimum": 1,
+            "maximum": 20
+          },
+          "aguaIntracelularL": {
+            "type": "number",
+            "example": 18.2,
+            "minimum": 0,
+            "maximum": 100
+          },
+          "aguaExtracelularL": {
+            "type": "number",
+            "example": 12.1,
+            "minimum": 0,
+            "maximum": 100
+          },
+          "anguloFase": {
+            "type": "number",
+            "example": 6.2,
+            "minimum": 1,
+            "maximum": 15
+          },
+          "pliegueTricipitalMm": {
+            "type": "number",
+            "example": 18,
+            "minimum": 2,
+            "maximum": 80
+          },
+          "pliegueSubescapularMm": {
+            "type": "number",
+            "example": 16,
+            "minimum": 2,
+            "maximum": 80
+          },
+          "pliegueSuprailiacoMm": {
+            "type": "number",
+            "example": 22,
+            "minimum": 2,
+            "maximum": 80
+          },
+          "pliegueBicipitalMm": {
+            "type": "number",
+            "example": 12,
+            "minimum": 2,
+            "maximum": 80
+          },
+          "perimetroBrazoCm": {
+            "type": "number",
+            "example": 30,
+            "minimum": 10,
+            "maximum": 200
+          },
+          "perimetroCaderaCm": {
+            "type": "number",
+            "example": 98,
+            "minimum": 10,
+            "maximum": 200
+          },
+          "perimetroMusloCm": {
+            "type": "number",
+            "example": 55,
+            "minimum": 10,
+            "maximum": 200
+          },
+          "presionSistolica": {
+            "type": "number",
+            "example": 120,
+            "minimum": 60,
+            "maximum": 250
+          },
+          "presionDiastolica": {
+            "type": "number",
+            "example": 80,
+            "minimum": 60,
+            "maximum": 250
+          },
+          "fuente": {
+            "type": "string",
+            "description": "De dónde salió el dato: distingue lo medido de lo estimado.",
+            "example": "INBODY",
+            "enum": [
+              "MANUAL",
+              "BASCULA",
+              "INBODY",
+              "OMRON",
+              "OTRO"
+            ]
           },
           "notas": {
             "type": "string",
@@ -5037,6 +6384,35 @@
               "COMPLETADA",
               "CANCELADA"
             ]
+          },
+          "subjetivo": {
+            "type": "string",
+            "description": "SOAP, S: lo que el paciente refiere.",
+            "example": "Refiere hambre a media tarde y poca sed.",
+            "maxLength": 4000
+          },
+          "objetivo": {
+            "type": "string",
+            "description": "SOAP, O: lo medido y observado en la consulta.",
+            "example": "Peso 78.4 kg, cintura 92 cm, presión 118/76.",
+            "maxLength": 4000
+          },
+          "analisis": {
+            "type": "string",
+            "description": "SOAP, A: interpretación del caso.",
+            "example": "Adherencia parcial al plan; pérdida de 1.2 kg en 4 semanas.",
+            "maxLength": 4000
+          },
+          "plan": {
+            "type": "string",
+            "description": "SOAP, P: acuerdos y ajustes para el siguiente periodo.",
+            "example": "Agregar merienda de fruta con yogur y control en 4 semanas.",
+            "maxLength": 4000
+          },
+          "proximaCitaSugerida": {
+            "type": "string",
+            "description": "Fecha sugerida de la próxima cita, formato YYYY-MM-DD.",
+            "example": "2026-12-01"
           }
         }
       },

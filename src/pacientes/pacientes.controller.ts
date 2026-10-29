@@ -24,15 +24,18 @@ import type { UsuarioActual } from '../auth/auth.types.js';
 import { Roles, UsuarioAct } from '../auth/decorators.js';
 import { ApiErrores } from '../common/swagger.js';
 import {
+  ActualizarMedicamentoDto,
   ActualizarPacienteDto,
   BuscarPacientesDto,
+  CrearMedicamentoDto,
   CrearMedicionDto,
   CrearPacienteDto,
 } from './pacientes.dto.js';
 import {
   AdherenciaEntity,
+  MedicamentoEntity,
   MedicionConImcEntity,
-  PacienteConRestriccionesEntity,
+  PacienteConCondicionesEntity,
   PacienteDetalleEntity,
   PacienteEntity,
   PacienteListadoEntity,
@@ -43,6 +46,12 @@ import { PacientesService } from './pacientes.service.js';
 const ID_PACIENTE = ApiParam({
   name: 'id',
   description: 'ID del paciente',
+  format: 'uuid',
+});
+
+const ID_MEDICAMENTO = ApiParam({
+  name: 'id',
+  description: 'ID del medicamento',
   format: 'uuid',
 });
 
@@ -71,7 +80,7 @@ export class PacientesController {
     description:
       'Con `correo`, el paciente queda vinculado al iniciar sesión en la app con ese correo verificado.',
   })
-  @ApiCreatedResponse({ type: PacienteConRestriccionesEntity })
+  @ApiCreatedResponse({ type: PacienteConCondicionesEntity })
   @ApiErrores(400, 409)
   crear(@UsuarioAct() u: UsuarioActual, @Body() dto: CrearPacienteDto) {
     return this.service.crear(u.nutricionistaId!, dto);
@@ -82,7 +91,7 @@ export class PacientesController {
   @ApiOperation({
     summary: 'Expediente del paciente',
     description:
-      'Restricciones, últimas 10 mediciones, próximas citas y planes.',
+      'Datos clínicos y hábitos, restricciones, condiciones, medicación vigente, últimas 10 mediciones, próximas citas y planes.',
   })
   @ApiOkResponse({ type: PacienteDetalleEntity })
   @ApiErrores(404)
@@ -97,9 +106,10 @@ export class PacientesController {
   @ID_PACIENTE
   @ApiOperation({
     summary: 'Actualizar paciente',
-    description: 'Si se envía `restricciones`, reemplaza la lista completa.',
+    description:
+      'Si se envía `restricciones` o `condiciones`, reemplaza la lista completa de esa relación.',
   })
-  @ApiOkResponse({ type: PacienteConRestriccionesEntity })
+  @ApiOkResponse({ type: PacienteConCondicionesEntity })
   @ApiErrores(400, 404)
   actualizar(
     @UsuarioAct() u: UsuarioActual,
@@ -107,6 +117,55 @@ export class PacientesController {
     @Body() dto: ActualizarPacienteDto,
   ) {
     return this.service.actualizar(id, u.nutricionistaId!, dto);
+  }
+
+  @Post('pacientes/:id/medicamentos')
+  @ID_PACIENTE
+  @ApiOperation({
+    summary: 'Registrar medicamento',
+    description: 'Nombre obligatorio; dosis y frecuencia son opcionales.',
+  })
+  @ApiCreatedResponse({ type: MedicamentoEntity })
+  @ApiErrores(400, 404)
+  crearMedicamento(
+    @UsuarioAct() u: UsuarioActual,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CrearMedicamentoDto,
+  ) {
+    return this.service.crearMedicamento(id, u.nutricionistaId!, dto);
+  }
+
+  @Patch('medicamentos/:id')
+  @ID_MEDICAMENTO
+  @ApiOperation({
+    summary: 'Editar medicamento',
+    description:
+      'Permite corregir los datos o marcar `activo = false` para darlo de baja.',
+  })
+  @ApiOkResponse({ type: MedicamentoEntity })
+  @ApiErrores(400, 404)
+  actualizarMedicamento(
+    @UsuarioAct() u: UsuarioActual,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ActualizarMedicamentoDto,
+  ) {
+    return this.service.actualizarMedicamento(id, u.nutricionistaId!, dto);
+  }
+
+  @Delete('medicamentos/:id')
+  @ID_MEDICAMENTO
+  @ApiOperation({
+    summary: 'Dar de baja un medicamento',
+    description:
+      'Baja lógica (`activo = false`): nunca se borra, para conservar el historial clínico.',
+  })
+  @ApiOkResponse({ type: MedicamentoEntity })
+  @ApiErrores(404)
+  desactivarMedicamento(
+    @UsuarioAct() u: UsuarioActual,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.service.desactivarMedicamento(id, u.nutricionistaId!);
   }
 
   @Delete('pacientes/:id')
@@ -141,7 +200,11 @@ export class PacientesController {
 
   @Post('pacientes/:id/mediciones')
   @ID_PACIENTE
-  @ApiOperation({ summary: 'Registrar medición' })
+  @ApiOperation({
+    summary: 'Registrar medición',
+    description:
+      'Peso y talla son obligatorios. Acepta composición corporal, pliegues, perímetros, presión arterial y la `fuente` del dato.',
+  })
   @ApiCreatedResponse({ type: MedicionConImcEntity })
   @ApiErrores(400, 404)
   agregarMedicion(

@@ -115,6 +115,151 @@ describe('PacientesService', () => {
     });
   });
 
+  describe('condiciones', () => {
+    const dto = {
+      nombre: 'Ana',
+      apellido: 'López',
+      sexo: 'F' as const,
+      fechaNacimiento: '1995-04-10',
+      condiciones: ['dm2'],
+    };
+
+    it('conecta las condiciones del catálogo al crear', async () => {
+      prisma.condicion.findMany.mockResolvedValue([{ id: 'c1', codigo: 'dm2' }]);
+      prisma.paciente.create.mockResolvedValue({ id: 'p1' });
+      await svc.crear('n1', dto);
+      const { data } = prisma.paciente.create.mock.calls[0][0];
+      expect(data.condiciones).toEqual({ create: [{ condicionId: 'c1' }] });
+    });
+
+    it('rechaza códigos de condición desconocidos', async () => {
+      prisma.condicion.findMany.mockResolvedValue([]);
+      await expect(svc.crear('n1', dto)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(prisma.paciente.create).not.toHaveBeenCalled();
+    });
+
+    it('reemplaza el set completo de condiciones al actualizar', async () => {
+      prisma.condicion.findMany.mockResolvedValue([{ id: 'c1', codigo: 'dm2' }]);
+      await svc.actualizar('p1', 'n1', { condiciones: ['dm2'] });
+      expect(prisma.pacienteCondicion.deleteMany).toHaveBeenCalledWith({
+        where: { pacienteId: 'p1' },
+      });
+      expect(prisma.pacienteCondicion.createMany).toHaveBeenCalledWith({
+        data: [{ pacienteId: 'p1', condicionId: 'c1' }],
+      });
+    });
+
+    it('el detalle trae las condiciones completas y la medicación activa reciente', async () => {
+      await svc.detalle('p1', 'n1');
+      const { include } = prisma.paciente.findUnique.mock.calls[0][0];
+      expect(include.condiciones).toEqual({ include: { condicion: true } });
+      expect(include.medicamentos).toEqual({
+        where: { activo: true },
+        orderBy: { creadoEn: 'desc' },
+      });
+    });
+
+    it('el detalle devuelve las mediciones con imc y desempata por fecha de alta', async () => {
+      prisma.paciente.findUnique.mockResolvedValue({
+        id: 'p1',
+        mediciones: [
+          { pesoKg: 74, tallaCm: 160 },
+          { pesoKg: 73, tallaCm: 160 },
+        ],
+        condiciones: [],
+        medicamentos: [],
+        citas: [],
+        planes: [],
+      } as never);
+
+      const r = await svc.detalle('p1', 'n1');
+      const { include } = prisma.paciente.findUnique.mock.calls[0][0];
+
+      // Dos mediciones del mismo día deben quedar en orden determinista.
+      expect(include.mediciones.orderBy).toEqual([
+        { fecha: 'desc' },
+        { creadoEn: 'desc' },
+      ]);
+      expect(r!.mediciones.map((m) => m.imc)).toEqual([28.9, 28.5]);
+    });
+  });
+
+  it('actualizar sigue reemplazando el set de restricciones', async () => {
+    prisma.restriccion.findMany.mockResolvedValue([
+      { id: 'r1', codigo: 'lactosa' },
+    ]);
+    await svc.actualizar('p1', 'n1', { restricciones: ['lactosa'] });
+    expect(prisma.pacienteRestriccion.deleteMany).toHaveBeenCalledWith({
+      where: { pacienteId: 'p1' },
+    });
+    expect(prisma.pacienteRestriccion.createMany).toHaveBeenCalledWith({
+      data: [{ pacienteId: 'p1', restriccionId: 'r1' }],
+    });
+  });
+
+  describe('medicamentos', () => {
+    it('registra un medicamento del paciente validando el acceso', async () => {
+      prisma.medicamento.create.mockResolvedValue({ id: 'med1' });
+      await svc.crearMedicamento('p1', 'n1', {
+        nombre: 'Metformina',
+        dosis: '500 mg',
+      });
+      expect(prisma.medicamento.create).toHaveBeenCalledWith({
+        data: { nombre: 'Metformina', dosis: '500 mg', pacienteId: 'p1' },
+      });
+    });
+
+    it('no registra medicamentos para pacientes ajenos', async () => {
+      prisma.paciente.findFirst.mockResolvedValue(null);
+      await expect(
+        svc.crearMedicamento('p9', 'n1', { nombre: 'Enalapril' }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.medicamento.create).not.toHaveBeenCalled();
+    });
+
+    it('edita y da de baja lógica sin borrar el historial', async () => {
+      prisma.medicamento.findUnique.mockResolvedValue({
+        id: 'med1',
+        pacienteId: 'p1',
+      });
+      await svc.actualizarMedicamento('med1', 'n1', {
+        frecuencia: 'cada 24 h',
+      });
+      expect(prisma.medicamento.update).toHaveBeenCalledWith({
+        where: { id: 'med1' },
+        data: { frecuencia: 'cada 24 h' },
+      });
+
+      await svc.desactivarMedicamento('med1', 'n1');
+      expect(prisma.medicamento.update).toHaveBeenLastCalledWith({
+        where: { id: 'med1' },
+        data: { activo: false },
+      });
+      expect(prisma.medicamento.delete).not.toHaveBeenCalled();
+    });
+
+    it('no permite tocar medicamentos de pacientes de otra nutricionista', async () => {
+      prisma.medicamento.findUnique.mockResolvedValue({
+        id: 'med1',
+        pacienteId: 'p9',
+      });
+      prisma.paciente.findFirst.mockResolvedValue(null);
+      await expect(
+        svc.actualizarMedicamento('med1', 'n1', { dosis: '1 g' }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.medicamento.update).not.toHaveBeenCalled();
+    });
+
+    it('responde 404 si el medicamento no existe', async () => {
+      prisma.medicamento.findUnique.mockResolvedValue(null);
+      await expect(
+        svc.desactivarMedicamento('med-x', 'n1'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
   describe('mediciones', () => {
     it('agrega IMC a cada medición', async () => {
       prisma.medicion.findMany.mockResolvedValue([
@@ -155,6 +300,47 @@ describe('PacientesService', () => {
         tallaCm: 160,
       });
 
+      expect(r.imc).toBe(28.5);
+    });
+
+    it('guarda la composición corporal y la fuente sin cambiar el contrato del imc', async () => {
+      prisma.medicion.create.mockResolvedValue({
+        id: 'm1',
+        pacienteId: 'p1',
+        fecha: new Date('2026-10-29T00:00:00Z'),
+        pesoKg: 73,
+        tallaCm: 160,
+        masaMuscularKg: 28.4,
+        grasaVisceral: 8,
+        fuente: 'INBODY',
+        creadoEn: new Date('2026-10-29T00:00:00Z'),
+      });
+
+      const r = await svc.agregarMedicion('p1', 'n1', {
+        pesoKg: 73,
+        tallaCm: 160,
+        masaMuscularKg: 28.4,
+        grasaVisceral: 8,
+        anguloFase: 6.2,
+        pliegueTricipitalMm: 18,
+        perimetroBrazoCm: 30,
+        presionSistolica: 120,
+        presionDiastolica: 80,
+        fuente: 'INBODY',
+      });
+
+      const { data } = prisma.medicion.create.mock.calls[0][0];
+      expect(data).toMatchObject({
+        masaMuscularKg: 28.4,
+        grasaVisceral: 8,
+        anguloFase: 6.2,
+        pliegueTricipitalMm: 18,
+        perimetroBrazoCm: 30,
+        presionSistolica: 120,
+        presionDiastolica: 80,
+        fuente: 'INBODY',
+        pacienteId: 'p1',
+      });
       expect(r.imc).toBe(28.5);
     });
 

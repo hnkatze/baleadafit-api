@@ -66,4 +66,8 @@ export class AlimentosService {
   restricciones() {
     return this.prisma.restriccion.findMany({ orderBy: { nombre: 'asc' } });
   }
+
+  condiciones() {
+    return this.prisma.condicion.findMany({ orderBy: { nombre: 'asc' } });
+  }
 }
