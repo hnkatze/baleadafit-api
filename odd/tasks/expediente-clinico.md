@@ -22,6 +22,10 @@ El PPT de Semana 2 deja el expediente en pacientes + mediciones básicas. Un nut
 - [x] E3 — Mediciones con composición corporal y fuente en la API (S6, S7, S9) — mismo worker
 - [x] E4 — SOAP y próxima cita en la API (S8, S9) — worker `mvtu5bnx-5-rqpb`, commit `2afa627`
 - [x] E5 — README y OpenAPI al día con los campos nuevos (S9)
+- [x] F1 — Dejar de exponer notas internas y SOAP al paciente (S10) — commit `b6692f6`
+- [x] F2 — Guardar `proximaCitaSugerida` con `aFecha`, sin corrimiento por zona horaria — commit `3614ec0`
+- [x] F3 — Permitir borrar `fechaObjetivo` y `proximaCitaSugerida` con `null` — commit `3614ec0`
+- [x] F4 — Bajar el mínimo de presión diastólica a 40 — commit `3614ec0`
 
 ## Log
 
@@ -34,3 +38,6 @@ El PPT de Semana 2 deja el expediente en pacientes + mediciones básicas. Un nut
 - **L7** (evidencia contra la API viva): `GET /condiciones` devuelve 20 condiciones; el PATCH del expediente persiste objetivo, hábitos y `condiciones: [prediabetes, hta]`; un código inexistente da 400 con los códigos faltantes; la medicación se crea, se edita y la baja lógica la deja fuera de `medicamentos` (historial intacto); la medición con composición devuelve `imc` y `fuente`; y el detalle muestra como última la medición más reciente del día con su IMC.
 - **L8** (aislamiento verificado con una segunda nutricionista registrada): `GET /pacientes/:id` de un paciente ajeno da 404 y `POST /pacientes/:id/medicamentos` sobre un paciente ajeno también da 404 (un 403 anterior era solo falta de rol de la cuenta de prueba).
 - **L9** (incidente de entorno): detener el servidor de desarrollo no siempre mata el proceso hijo de `nest start --watch`; el puerto 3000 queda tomado por el build viejo y las pruebas en vivo responden con código anterior (EADDRINUSE en el log). Verificar el puerto y matar el PID huérfano antes de reiniciar. Además, correr `npm run build` con el watcher activo vuelve a romper `dist/`.
+- **L10** (verificación independiente `mvtud3g8-6-f1ae`): S1-S9 aprobados, sin fugas entre nutricionistas (medicamento ajeno = 404, sin mass assignment, transacción segura). Encontró un defecto de privacidad que rompe S10: `GET /me/citas` y `GET /me/hoy` devolvían la cita completa, así que el paciente veía las notas internas y el SOAP de su nutricionista. También encontró el corrimiento de fecha y que un `null` no borraba las fechas.
+- **L11** (correcciones F1-F4, todas reproducidas antes de tocar código): el portal del paciente ahora recibe solo `{id, fechaHora, duracionMin, motivo, estado, nutricionista.nombre}` vía `CITA_PACIENTE_SELECT`, y la documentación se partió en `CitaAgendaEntity` (paciente) y `CitaBasicaEntity` (nutritionista, con notas y SOAP). `proximaCitaSugerida: "2026-12-01T20:00:00-06:00"` pasó de guardarse como 2 de diciembre a 1 de diciembre con `aFecha`. Un `null` explícito borra `proximaCitaSugerida` y `fechaObjetivo`, y `presionDiastolica` acepta desde 40. **114 tests** verdes.
+- **L12** (pendientes anotados, fuera de este feature): validación cruzada de signos vitales (diastólica < sistólica) y de composición (masa grasa + masa muscular ≤ peso); `PATCH /pacientes/:id` con correo duplicado responde 500 en vez de 409 (defecto que ya existía en la rama base); y el campo `plan` de la cita debe rotularse "Plan de la consulta" en el portal para no confundirlo con el plan de comida.
