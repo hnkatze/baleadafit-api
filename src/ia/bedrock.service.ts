@@ -34,6 +34,12 @@ export interface EstadoIa {
 
 const REGION_POR_DEFECTO = 'us-east-1';
 const SIN_CONFIGURAR = 'IA deshabilitada o BEDROCK_MODEL_ID sin configurar.';
+/**
+ * Mensaje apto para el portal. El detalle de AWS puede traer el ARN, el número
+ * de cuenta y el usuario IAM, así que solo va al log del servidor.
+ */
+const ERROR_CONEXION =
+  'No se pudo conectar con Bedrock. Revisa las credenciales, la región y el acceso al modelo en la consola de AWS.';
 /** Prompt mínimo para verificar la conexión desde el portal. */
 const PROMPT_PRUEBA = 'Responde OK';
 
@@ -97,7 +103,11 @@ export class BedrockService {
     // Los timeouts evitan que una llamada lenta cuelgue el request HTTP.
     this.cliente ??= new BedrockRuntimeClient({
       region: this.region,
-      requestHandler: { connectionTimeout: 2000, requestTimeout: 20000 },
+      // Sin reintentos: cada intento puede tardar el requestTimeout completo y el
+      // portal necesita un límite predecible. El requestTimeout mide el socket
+      // inactivo y Converse sin streaming no envía nada hasta terminar.
+      maxAttempts: 1,
+      requestHandler: { connectionTimeout: 2000, requestTimeout: 60000 },
     });
     return this.cliente;
   }
@@ -126,10 +136,10 @@ export class BedrockService {
         .map((c) => c.text ?? '')
         .join('');
     } catch (e) {
-      const error = (e as Error).message;
-      this.logger.warn(`Bedrock falló: ${error}`);
-      this.registrar({ ok: false, error });
-      throw new IaNoDisponibleError(error);
+      // El detalle (ARN, cuenta, usuario IAM) queda en el log y no sale por la API.
+      this.logger.warn(`Bedrock falló: ${(e as Error).message}`);
+      this.registrar({ ok: false, error: ERROR_CONEXION });
+      throw new IaNoDisponibleError(ERROR_CONEXION);
     }
   }
 

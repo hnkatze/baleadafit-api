@@ -105,14 +105,14 @@ describe('BedrockService', () => {
       clienteFalso(send),
     );
 
-    await expect(svc.probar()).resolves.toEqual({
-      ok: false,
-      error: 'credenciales inválidas',
-    });
+    const resultado = await svc.probar();
+    expect(resultado.ok).toBe(false);
+    // El detalle del proveedor no se devuelve: solo un mensaje accionable.
+    expect(resultado.error).toMatch(/No se pudo conectar con Bedrock/);
+    expect(resultado.error).not.toContain('credenciales inválidas');
     const ultima = svc.estado().ultimaLlamada;
     expect(ultima).toMatchObject({
       ok: false,
-      error: 'credenciales inválidas',
     });
     expect(typeof ultima?.en).toBe('string');
   });
@@ -152,9 +152,26 @@ describe('BedrockService', () => {
     await expect(svc.generarJson('s', 'm')).rejects.toBeInstanceOf(
       IaNoDisponibleError,
     );
-    expect(svc.estado().ultimaLlamada).toMatchObject({
-      ok: false,
-      error: 'sin red',
-    });
+    expect(svc.estado().ultimaLlamada).toMatchObject({ ok: false });
+  });
+
+  it('no expone detalles internos de AWS en el estado ni en la prueba', async () => {
+    const detalleAws =
+      'AccessDeniedException: User: arn:aws:iam::123456789012:user/sofia is not authorized';
+    const svc = new BedrockService(
+      config({ BEDROCK_MODEL_ID: 'modelo' }),
+      clienteFalso(async () => {
+        throw new Error(detalleAws);
+      }),
+    );
+
+    const prueba = await svc.probar();
+    expect(prueba.ok).toBe(false);
+    expect(prueba.error ?? '').not.toContain('arn:aws');
+    expect(prueba.error ?? '').not.toContain('123456789012');
+
+    const estado = svc.estado().ultimaLlamada?.error ?? '';
+    expect(estado).not.toContain('arn:aws');
+    expect(estado).not.toContain('123456789012');
   });
 });

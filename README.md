@@ -49,7 +49,7 @@ Sin credenciales el API funciona igual: el recomendador cae al **generador por r
    - `GET /ia/estado` → `{ habilitado, modelo, region, ultimaLlamada }`. `habilitado` es `false` si `IA_HABILITADA=false` o si falta `BEDROCK_MODEL_ID`; `ultimaLlamada` es `null` hasta la primera llamada real.
    - `POST /ia/estado/probar` → envía una llamada mínima ("Responde OK", 16 tokens) y devuelve `{ ok: true }` o `{ ok: false, error }` sin lanzar error HTTP.
 
-Para que una llamada lenta no cuelgue el request, el cliente usa timeout de conexión de 2 s y de request de 20 s; si se agota, la generación del plan sigue por reglas.
+Para que una llamada lenta no cuelgue el request, el cliente usa timeout de conexión de 2 s y de request de 60 s, sin reintentos (el requestTimeout mide el socket inactivo y Converse sin streaming no envía nada hasta terminar); si se agota, la generación del plan sigue por reglas. Si la llamada falla, el portal ve un mensaje genérico y el detalle del proveedor queda solo en el log del servidor, porque puede incluir el ARN, la cuenta y el usuario de IAM.
 
 ## Correr en local
 
