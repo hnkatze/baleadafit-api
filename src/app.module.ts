@@ -4,6 +4,7 @@ import { AlimentosModule } from './alimentos/alimentos.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ConfigModule } from '@nestjs/config';
 import { PacientesModule } from './pacientes/pacientes.module.js';
+import { PlanesModule } from './planes/planes.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
 @Module({
@@ -14,6 +15,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     AuthModule,
     PacientesModule,
     AlimentosModule,
+    PlanesModule,
   ],
 })
 export class AppModule {}
