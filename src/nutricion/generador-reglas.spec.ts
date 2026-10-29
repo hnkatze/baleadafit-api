@@ -86,6 +86,39 @@ describe('generador por reglas', () => {
     }
   });
 
+  it('converge en metas chicas cuando el alimento más denso no puede ajustarse solo', () => {
+    // Reproduce el caso real del seed: papaya (62 kcal) + maní tostado (170 kcal)
+    // en una merienda de 144 kcal. Ajustar solo el maní oscila entre 116 y 160 kcal;
+    // la combinación válida es papaya 0.75 + maní 0.5 = 131.5 kcal (−8.7 %).
+    const papaya = a('Papaya', 'FRUTA', 62, ['MERIENDA_AM']);
+    const mani = a('Maní tostado', 'GRASA', 170, ['MERIENDA_AM']);
+    const local = new Map([
+      [papaya.id, papaya],
+      [mani.id, mani],
+    ]);
+
+    const items = ajustarPorciones(
+      [
+        { alimentoId: papaya.id, porciones: 0.5 },
+        { alimentoId: mani.id, porciones: 0.5 },
+      ],
+      local,
+      144,
+    );
+
+    const kcal = items.reduce(
+      (s, i) => s + local.get(i.alimentoId)!.kcal * i.porciones,
+      0,
+    );
+    expect(kcal).toBeGreaterThanOrEqual(144 * (1 - TOLERANCIA_KCAL));
+    expect(kcal).toBeLessThanOrEqual(144 * (1 + TOLERANCIA_KCAL));
+    for (const i of items) {
+      expect(i.porciones % 0.25).toBe(0);
+      expect(i.porciones).toBeGreaterThanOrEqual(0.5);
+      expect(i.porciones).toBeLessThanOrEqual(3);
+    }
+  });
+
   it('omite tiempos con 0 % en la distribución', () => {
     const plan = generarPlanPorReglas(catalogo, 1800, {
       DESAYUNO: 0.3,

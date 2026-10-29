@@ -2,11 +2,7 @@ import type {
   CategoriaAlimento,
   TipoComida,
 } from '../generated/prisma/enums.js';
-import {
-  ORDEN_TIEMPOS,
-  TOLERANCIA_KCAL,
-  type DistribucionTiempos,
-} from './nutricion.util.js';
+import { ORDEN_TIEMPOS, type DistribucionTiempos } from './nutricion.util.js';
 
 export interface AlimentoCatalogo {
   id: string;
@@ -48,6 +44,18 @@ function elegir<T>(lista: T[], semilla: number): T | undefined {
 const redondearPaso = (v: number) => Math.round(v / PASO) * PASO;
 const acotar = (v: number) => Math.min(PORCION_MAX, Math.max(PORCION_MIN, v));
 
+/** Tope de combinaciones del ajuste fino; por encima se deja la escala proporcional. */
+const MAX_COMBINACIONES = 200_000;
+
+/** Valores de porción válidos en cuartos, de PORCION_MIN a PORCION_MAX. */
+function cuartosPosibles(): number[] {
+  const valores: number[] = [];
+  const min = Math.ceil(PORCION_MIN / PASO);
+  const max = Math.floor(PORCION_MAX / PASO);
+  for (let p = min; p <= max; p++) valores.push(p * PASO);
+  return valores;
+}
+
 /**
  * Escala las porciones para acercar el total de kcal a la meta del tiempo de comida.
  * Las verduras se dejan en su porción (aportan poco y conviene no reducirlas).
@@ -82,21 +90,51 @@ export function ajustarPorciones(
     }
   }
 
-  // Ajuste fino: sumar o restar ¼ de porción al alimento más denso hasta entrar en tolerancia.
-  for (let intento = 0; intento < 24; intento++) {
-    const diff = total() - kcalMeta;
-    if (Math.abs(diff) <= kcalMeta * TOLERANCIA_KCAL) break;
-    const candidatos = conAlimento
-      .filter(escalable)
-      .filter((i) =>
-        diff > 0
-          ? i.porciones - PASO >= PORCION_MIN
-          : i.porciones + PASO <= PORCION_MAX,
-      )
-      .sort((x, y) => y.a.kcal - x.a.kcal);
-    const objetivo = candidatos[0];
-    if (!objetivo) break;
-    objetivo.porciones += diff > 0 ? -PASO : PASO;
+  // Ajuste fino: se prueban las combinaciones de cuartos de los alimentos
+  // escalables y se devuelve la que deja el tiempo de comida más cerca de la
+  // meta (desempate: la más próxima a la escala proporcional). Antes se sumaba
+  // o restaba ¼ al alimento más denso, lo que en metas chicas oscilaba entre
+  // dos estados y dejaba el tiempo hasta 20 % fuera de la tolerancia.
+  const escalables = conAlimento.filter(escalable);
+  if (escalables.length > 0) {
+    const opciones = cuartosPosibles();
+    const combinaciones = opciones.length ** escalables.length;
+    if (combinaciones <= MAX_COMBINACIONES) {
+      const base = escalables.map((i) => i.porciones);
+      const actual = [...base];
+      const kcalFija = conAlimento
+        .filter((i) => !escalable(i))
+        .reduce((s, i) => s + i.a.kcal * i.porciones, 0);
+      const distancia = (v: number[]) =>
+        v.reduce((s, porcion, k) => s + (porcion - base[k]) ** 2, 0);
+
+      let mejor = base;
+      let mejorDiff = Math.abs(total() - kcalMeta);
+
+      const evaluar = () => {
+        const kcal =
+          kcalFija + escalables.reduce((s, i, k) => s + i.a.kcal * actual[k], 0);
+        const diff = Math.abs(kcal - kcalMeta);
+        if (
+          diff < mejorDiff ||
+          (diff === mejorDiff && distancia(actual) < distancia(mejor))
+        ) {
+          mejorDiff = diff;
+          mejor = [...actual];
+        }
+      };
+      const buscar = (idx: number) => {
+        if (idx === escalables.length) return evaluar();
+        for (const p of opciones) {
+          actual[idx] = p;
+          buscar(idx + 1);
+        }
+      };
+      buscar(0);
+      escalables.forEach((i, k) => {
+        i.porciones = mejor[k];
+      });
+    }
   }
 
   return conAlimento.map(({ alimentoId, porciones }) => ({
