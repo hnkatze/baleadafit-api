@@ -123,6 +123,42 @@ describe('RecomendadorService', () => {
     expect(bedrock.generarJson).not.toHaveBeenCalled();
   });
 
+  it('manda los nutrientes clínicos de cada alimento en el catálogo', async () => {
+    const generar = vi.fn(async () => ({ tiempos: [] }));
+    const svc = new RecomendadorService({
+      generarJson: generar,
+    } as unknown as BedrockService);
+
+    await svc.generar({
+      ...entrada(),
+      catalogo: [
+        {
+          id: 'frijol',
+          nombre: 'Frijoles parados',
+          categoria: 'LEGUMINOSA',
+          porcionDescripcion: '1 taza',
+          kcal: 180,
+          proteinaG: 11,
+          carbohidratoG: 30,
+          grasaG: 1,
+          tiposComida: ['ALMUERZO'],
+          fibraG: 8,
+          sodioMg: 420,
+          potasioMg: 610,
+          fosforoMg: 180,
+          azucaresG: 2,
+          grasasSatG: 0.3,
+          indiceGlucemico: 30,
+        },
+      ],
+    });
+
+    const mensaje = generar.mock.calls[0][1] as string;
+    expect(mensaje).toMatch(/Na 420mg/);
+    expect(mensaje).toMatch(/K 610mg/);
+    expect(mensaje).toMatch(/IG 30/);
+  });
+
   it('manda el perfil clínico del paciente a la IA', async () => {
     const generar = vi.fn(async () => ({ tiempos: [] }));
     const svc = new RecomendadorService({

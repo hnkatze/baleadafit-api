@@ -261,8 +261,17 @@ export class RecomendadorService {
       )
       .join('\n');
     const catalogo = e.catalogo
-      .map((a) =>
-        [
+      .map((a) => {
+        const clinicos = [
+          a.sodioMg != null ? `Na ${a.sodioMg}mg` : '',
+          a.potasioMg != null ? `K ${a.potasioMg}mg` : '',
+          a.fosforoMg != null ? `P ${a.fosforoMg}mg` : '',
+          a.fibraG != null ? `fibra ${a.fibraG}g` : '',
+          a.azucaresG != null ? `azúcares ${a.azucaresG}g` : '',
+          a.grasasSatG != null ? `sat ${a.grasasSatG}g` : '',
+          a.indiceGlucemico != null ? `IG ${a.indiceGlucemico}` : '',
+        ].filter(Boolean);
+        return [
           a.id,
           a.nombre,
           a.porcionDescripcion,
@@ -271,8 +280,9 @@ export class RecomendadorService {
           `C${a.carbohidratoG}`,
           `G${a.grasaG}`,
           a.tiposComida.join('/'),
-        ].join(' | '),
-      )
+          ...(clinicos.length ? [clinicos.join(', ')] : []),
+        ].join(' | ');
+      })
       .join('\n');
     return [
       `Meta del paciente: ${e.meta}.`,
@@ -286,7 +296,7 @@ export class RecomendadorService {
         : '',
       `Kcal por tiempo de comida:\n${metas}`,
       'Entre 2 y 4 alimentos por tiempo principal y 1 o 2 por merienda. Usa cada alimento en los tiempos que indica su columna final.',
-      `Catálogo (id | nombre | porción | kcal | proteína g | carbohidrato g | grasa g | tiempos):\n${catalogo}`,
+      `Catálogo (id | nombre | porción | kcal | proteína g | carbohidrato g | grasa g | tiempos | nutrientes clínicos por porción):\n${catalogo}`,
     ]
       .filter(Boolean)
       .join('\n\n');

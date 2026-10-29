@@ -16,6 +16,20 @@ export class TotalesEntity {
   carbohidratoG: number;
   /** @example 45.7 */
   grasaG: number;
+  /** @example 12.4 */
+  fibraG: number;
+  /** @example 1480 */
+  sodioMg: number;
+  /** @example 2650 */
+  potasioMg: number;
+  /** @example 980 */
+  fosforoMg: number;
+  /** @example 24.6 */
+  azucaresG: number;
+  /** @example 14.2 */
+  grasasSatG: number;
+  /** @example 62.5 */
+  cargaGlucemica: number;
 }
 
 export class PlanItemEntity {

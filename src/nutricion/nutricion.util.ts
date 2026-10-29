@@ -174,6 +174,13 @@ export interface NutrientesPorPorcion {
   proteinaG: number;
   carbohidratoG: number;
   grasaG: number;
+  fibraG?: number | null;
+  sodioMg?: number | null;
+  potasioMg?: number | null;
+  fosforoMg?: number | null;
+  azucaresG?: number | null;
+  grasasSatG?: number | null;
+  indiceGlucemico?: number | null;
 }
 
 export interface Totales {
@@ -181,25 +188,64 @@ export interface Totales {
   proteinaG: number;
   carbohidratoG: number;
   grasaG: number;
+  fibraG: number;
+  sodioMg: number;
+  potasioMg: number;
+  fosforoMg: number;
+  azucaresG: number;
+  grasasSatG: number;
+  /// Suma de índice glucémico × carbohidratos / 100 por cada item con IG.
+  cargaGlucemica: number;
 }
 
 export function sumarNutrientes(
   items: { porciones: number; alimento: NutrientesPorPorcion }[],
 ): Totales {
+  // Un nutriente sin dato aporta 0: el total es un piso de lo conocido.
   const t = items.reduce(
     (acc, { porciones, alimento: a }) => ({
       kcal: acc.kcal + a.kcal * porciones,
       proteinaG: acc.proteinaG + a.proteinaG * porciones,
       carbohidratoG: acc.carbohidratoG + a.carbohidratoG * porciones,
       grasaG: acc.grasaG + a.grasaG * porciones,
+      fibraG: acc.fibraG + (a.fibraG ?? 0) * porciones,
+      sodioMg: acc.sodioMg + (a.sodioMg ?? 0) * porciones,
+      potasioMg: acc.potasioMg + (a.potasioMg ?? 0) * porciones,
+      fosforoMg: acc.fosforoMg + (a.fosforoMg ?? 0) * porciones,
+      azucaresG: acc.azucaresG + (a.azucaresG ?? 0) * porciones,
+      grasasSatG: acc.grasasSatG + (a.grasasSatG ?? 0) * porciones,
+      cargaGlucemica:
+        acc.cargaGlucemica +
+        (a.indiceGlucemico
+          ? (a.indiceGlucemico * a.carbohidratoG * porciones) / 100
+          : 0),
     }),
-    { kcal: 0, proteinaG: 0, carbohidratoG: 0, grasaG: 0 },
+    {
+      kcal: 0,
+      proteinaG: 0,
+      carbohidratoG: 0,
+      grasaG: 0,
+      fibraG: 0,
+      sodioMg: 0,
+      potasioMg: 0,
+      fosforoMg: 0,
+      azucaresG: 0,
+      grasasSatG: 0,
+      cargaGlucemica: 0,
+    },
   );
   return {
     kcal: Math.round(t.kcal),
     proteinaG: redondear(t.proteinaG),
     carbohidratoG: redondear(t.carbohidratoG),
     grasaG: redondear(t.grasaG),
+    fibraG: redondear(t.fibraG),
+    sodioMg: Math.round(t.sodioMg),
+    potasioMg: Math.round(t.potasioMg),
+    fosforoMg: Math.round(t.fosforoMg),
+    azucaresG: redondear(t.azucaresG),
+    grasasSatG: redondear(t.grasasSatG),
+    cargaGlucemica: redondear(t.cargaGlucemica),
   };
 }
 

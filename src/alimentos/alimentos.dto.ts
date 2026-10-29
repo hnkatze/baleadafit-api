@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -65,6 +66,64 @@ export class CrearAlimentoDto {
   @IsNumber()
   @Min(0)
   fibraG?: number;
+
+  /**
+   * Sodio en miligramos por porción. Estimado: verificar con INCAP.
+   * @example 420
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(2000)
+  sodioMg?: number;
+
+  /**
+   * Potasio en miligramos por porción.
+   * @example 610
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(2000)
+  potasioMg?: number;
+
+  /**
+   * Fósforo en miligramos por porción.
+   * @example 180
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(800)
+  fosforoMg?: number;
+
+  /**
+   * Azúcares totales en gramos por porción (incluye los naturales).
+   * @example 6
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  azucaresG?: number;
+
+  /**
+   * Grasa saturada en gramos por porción.
+   * @example 3.5
+   */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  grasasSatG?: number;
+
+  /**
+   * Índice glucémico de la porción (0-110). Nulo en alimentos sin carbohidratos.
+   * @example 55
+   */
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(110)
+  indiceGlucemico?: number | null;
 
   /**
    * Tiempos de comida en los que se puede sugerir.

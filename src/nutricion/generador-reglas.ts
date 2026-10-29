@@ -18,6 +18,14 @@ export interface AlimentoCatalogo {
   carbohidratoG: number;
   grasaG: number;
   tiposComida: TipoComida[];
+  // Nutrientes clínicos (opcionales): viajan al agente y a los filtros por condición.
+  fibraG?: number | null;
+  sodioMg?: number | null;
+  potasioMg?: number | null;
+  fosforoMg?: number | null;
+  azucaresG?: number | null;
+  grasasSatG?: number | null;
+  indiceGlucemico?: number | null;
 }
 
 export interface ItemPropuesto {

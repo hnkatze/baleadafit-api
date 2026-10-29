@@ -88,11 +88,59 @@ describe('nutricion.util', () => {
         alimento: { kcal: 200, proteinaG: 10, carbohidratoG: 20, grasaG: 8 },
       },
     ]);
-    expect(t).toEqual({
+    expect(t).toMatchObject({
       kcal: 230,
       proteinaG: 8.4,
       carbohidratoG: 37,
       grasaG: 5.6,
+    });
+    // Sin datos clínicos cargados, los nutrientes nuevos aportan 0.
+    expect(t).toMatchObject({
+      fibraG: 0,
+      sodioMg: 0,
+      potasioMg: 0,
+      fosforoMg: 0,
+      azucaresG: 0,
+      grasasSatG: 0,
+      cargaGlucemica: 0,
+    });
+  });
+
+  it('suma los nutrientes clínicos y la carga glucémica', () => {
+    const t = sumarNutrientes([
+      {
+        porciones: 1,
+        alimento: {
+          kcal: 180,
+          proteinaG: 11,
+          carbohidratoG: 30,
+          grasaG: 1,
+          fibraG: 8,
+          sodioMg: 420,
+          potasioMg: 610,
+          fosforoMg: 180,
+          azucaresG: 2,
+          grasasSatG: 0.3,
+          indiceGlucemico: 30,
+        },
+      },
+      {
+        // Sin nutrientes clínicos: aporta 0 a los totales nuevos.
+        porciones: 2,
+        alimento: { kcal: 150, proteinaG: 28, carbohidratoG: 0, grasaG: 3.5 },
+      },
+    ]);
+
+    expect(t).toMatchObject({
+      kcal: 480,
+      fibraG: 8,
+      sodioMg: 420,
+      potasioMg: 610,
+      fosforoMg: 180,
+      azucaresG: 2,
+      grasasSatG: 0.3,
+      // Carga glucémica = 30 (IG) × 30 g de carbohidrato / 100 = 9
+      cargaGlucemica: 9,
     });
   });
 
