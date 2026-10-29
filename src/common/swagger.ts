@@ -109,6 +109,7 @@ export function crearDocumentoOpenApi(app: INestApplication): OpenAPIObject {
     .build();
   return SwaggerModule.createDocument(app, config, {
     extraModels: [ErrorRespuesta],
+    autoTagControllers: false,
   });
 }
 

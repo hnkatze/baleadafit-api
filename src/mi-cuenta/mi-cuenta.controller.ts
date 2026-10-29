@@ -1,150 +1,29 @@
+import { Body, Controller, Get, Put, Query } from '@nestjs/common';
 import {
-  Body,
-  Controller,
-  Get,
-  Injectable,
-  Module,
-  NotFoundException,
-  Put,
-  Query,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import {
-  IsBoolean,
-  IsDateString,
-  IsOptional,
-  IsString,
-  IsUUID,
-  MaxLength,
-} from 'class-validator';
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { UsuarioActual } from '../auth/auth.types.js';
 import { Roles, UsuarioAct } from '../auth/decorators.js';
-import { aFecha, hoyIso, sumarDias } from '../common/fechas.js';
-import { PacientesModule } from '../pacientes/pacientes.module.js';
+import { ApiErrores } from '../common/swagger.js';
+import {
+  MedicionConImcEntity,
+  RegistroComidaConTipoEntity,
+  RegistroComidaEntity,
+} from '../pacientes/pacientes.entity.js';
 import { PacientesService } from '../pacientes/pacientes.service.js';
-import { PlanesModule } from '../planes/planes.module.js';
-import { PlanesService } from '../planes/planes.service.js';
-import { PrismaService } from '../prisma/prisma.service.js';
-
-export class RegistrarComidaDto {
-  @IsUUID()
-  tiempoComidaId: string;
-
-  /** YYYY-MM-DD. Por defecto, hoy. */
-  @IsOptional()
-  @IsDateString()
-  fecha?: string;
-
-  @IsBoolean()
-  cumplido: boolean;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  comentario?: string;
-}
-
-/** Lo que ve y registra el paciente en la app. Siempre limitado a sus propios datos. */
-@Injectable()
-export class MiCuentaService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly planes: PlanesService,
-  ) {}
-
-  async planActivo(pacienteId: string) {
-    const plan = await this.prisma.planAlimenticio.findFirst({
-      where: { pacienteId, estado: 'ACTIVO' },
-      select: { id: true },
-    });
-    return plan ? this.planes.detalleConTotales(plan.id) : null;
-  }
-
-  /** Pantalla "Hoy": comidas del plan activo, si ya las registró y la próxima cita. */
-  async hoy(pacienteId: string, fecha = hoyIso()) {
-    const dia = aFecha(fecha);
-    const [plan, registros, proximaCita] = await Promise.all([
-      this.planActivo(pacienteId),
-      this.prisma.registroComida.findMany({
-        where: { pacienteId, fecha: dia },
-      }),
-      this.prisma.cita.findFirst({
-        where: {
-          pacienteId,
-          estado: 'PROGRAMADA',
-          fechaHora: { gte: new Date() },
-        },
-        orderBy: { fechaHora: 'asc' },
-      }),
-    ]);
-    const tiempos = (plan?.tiempos ?? []).map((t) => ({
-      ...t,
-      registro: registros.find((r) => r.tiempoComidaId === t.id) ?? null,
-    }));
-    return {
-      fecha,
-      plan: plan && {
-        id: plan.id,
-        nombre: plan.nombre,
-        kcalObjetivo: plan.kcalObjetivo,
-        totales: plan.totales,
-      },
-      tiempos,
-      cumplidos: tiempos.filter((t) => t.registro?.cumplido).length,
-      proximaCita,
-    };
-  }
-
-  citas(pacienteId: string) {
-    return this.prisma.cita.findMany({
-      where: { pacienteId },
-      orderBy: { fechaHora: 'desc' },
-      include: { nutricionista: { select: { nombre: true } } },
-    });
-  }
-
-  async registrar(pacienteId: string, dto: RegistrarComidaDto) {
-    const tiempo = await this.prisma.tiempoComida.findFirst({
-      where: { id: dto.tiempoComidaId, plan: { pacienteId } },
-    });
-    if (!tiempo)
-      throw new NotFoundException(
-        'Tiempo de comida no encontrado en tus planes.',
-      );
-    const fecha = aFecha(dto.fecha ?? hoyIso());
-    return this.prisma.registroComida.upsert({
-      where: {
-        pacienteId_tiempoComidaId_fecha: {
-          pacienteId,
-          tiempoComidaId: tiempo.id,
-          fecha,
-        },
-      },
-      create: {
-        pacienteId,
-        tiempoComidaId: tiempo.id,
-        fecha,
-        cumplido: dto.cumplido,
-        comentario: dto.comentario,
-      },
-      update: { cumplido: dto.cumplido, comentario: dto.comentario },
-    });
-  }
-
-  registros(pacienteId: string, desde?: string, hasta?: string) {
-    const fin = aFecha(hasta ?? hoyIso());
-    const inicio = desde ? aFecha(desde) : sumarDias(fin, -6);
-    return this.prisma.registroComida.findMany({
-      where: { pacienteId, fecha: { gte: inicio, lte: fin } },
-      orderBy: { fecha: 'desc' },
-      include: { tiempoComida: { select: { tipo: true } } },
-    });
-  }
-}
+import { PlanDetalleEntity } from '../planes/planes.entity.js';
+import { RegistrarComidaDto } from './mi-cuenta.dto.js';
+import { CitaPacienteEntity, HoyEntity } from './mi-cuenta.entity.js';
+import { MiCuentaService } from './mi-cuenta.service.js';
 
 @ApiTags('mi cuenta (paciente)')
 @ApiBearerAuth()
 @Roles('paciente')
+@ApiErrores()
 @Controller('me')
 export class MiCuentaController {
   constructor(
@@ -153,32 +32,80 @@ export class MiCuentaController {
   ) {}
 
   @Get('hoy')
+  @ApiOperation({
+    summary: 'Pantalla Hoy',
+    description:
+      'Comidas del plan activo con su registro del día, comidas cumplidas y próxima cita.',
+  })
+  @ApiQuery({
+    name: 'fecha',
+    required: false,
+    description: 'YYYY-MM-DD (por defecto hoy)',
+    example: '2026-10-28',
+  })
+  @ApiOkResponse({ type: HoyEntity })
   hoy(@UsuarioAct() u: UsuarioActual, @Query('fecha') fecha?: string) {
     return this.service.hoy(u.pacienteId!, fecha);
   }
 
   @Get('plan')
+  @ApiOperation({
+    summary: 'Mi plan activo',
+    description:
+      'Plan completo con totales. Responde `null` si la nutricionista aún no activa uno.',
+  })
+  @ApiOkResponse({
+    type: PlanDetalleEntity,
+    description: 'Plan activo o null.',
+  })
   plan(@UsuarioAct() u: UsuarioActual) {
     return this.service.planActivo(u.pacienteId!);
   }
 
   @Get('mediciones')
+  @ApiOperation({
+    summary: 'Mi progreso',
+    description: 'Mediciones con IMC, de la más antigua a la más reciente.',
+  })
+  @ApiOkResponse({ type: [MedicionConImcEntity] })
   mediciones(@UsuarioAct() u: UsuarioActual) {
     return this.pacientes.listarMediciones(u.pacienteId!);
   }
 
   @Get('citas')
+  @ApiOperation({
+    summary: 'Mis citas',
+    description: 'Todas, de la más reciente a la más antigua.',
+  })
+  @ApiOkResponse({ type: [CitaPacienteEntity] })
   citas(@UsuarioAct() u: UsuarioActual) {
     return this.service.citas(u.pacienteId!);
   }
 
-  /** Marca un tiempo de comida como cumplido o no (crea o actualiza el registro del día). */
   @Put('registros')
+  @ApiOperation({
+    summary: 'Registrar comida',
+    description:
+      'Marca un tiempo de comida como cumplido o no en una fecha. Si ya existe, lo actualiza.',
+  })
+  @ApiOkResponse({ type: RegistroComidaEntity })
+  @ApiErrores(400, 404)
   registrar(@UsuarioAct() u: UsuarioActual, @Body() dto: RegistrarComidaDto) {
     return this.service.registrar(u.pacienteId!, dto);
   }
 
   @Get('registros')
+  @ApiOperation({
+    summary: 'Mi diario de comidas',
+    description: 'Por defecto, los últimos 7 días.',
+  })
+  @ApiQuery({ name: 'desde', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({
+    name: 'hasta',
+    required: false,
+    description: 'YYYY-MM-DD (por defecto hoy)',
+  })
+  @ApiOkResponse({ type: [RegistroComidaConTipoEntity] })
   registros(
     @UsuarioAct() u: UsuarioActual,
     @Query('desde') desde?: string,
@@ -187,10 +114,3 @@ export class MiCuentaController {
     return this.service.registros(u.pacienteId!, desde, hasta);
   }
 }
-
-@Module({
-  imports: [PlanesModule, PacientesModule],
-  controllers: [MiCuentaController],
-  providers: [MiCuentaService],
-})
-export class MiCuentaModule {}

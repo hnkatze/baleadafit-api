@@ -11,25 +11,49 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { UsuarioActual } from '../auth/auth.types.js';
 import { Roles, UsuarioAct } from '../auth/decorators.js';
+import { ApiErrores } from '../common/swagger.js';
 import { TipoComida } from '../generated/prisma/enums.js';
 import {
   ActualizarPlanDto,
   GenerarPlanDto,
   ReemplazarItemsDto,
 } from './planes.dto.js';
+import { PlanDetalleEntity, PlanEntity } from './planes.entity.js';
 import { PlanesService } from './planes.service.js';
 
-@ApiTags('planes (nutricionista)')
+const ID_PLAN = ApiParam({
+  name: 'id',
+  description: 'ID del plan',
+  format: 'uuid',
+});
+
+@ApiTags('planes')
 @ApiBearerAuth()
 @Roles('nutricionista')
+@ApiErrores()
 @Controller()
 export class PlanesController {
   constructor(private readonly service: PlanesService) {}
 
   @Get('pacientes/:id/planes')
+  @ApiParam({ name: 'id', description: 'ID del paciente', format: 'uuid' })
+  @ApiOperation({
+    summary: 'Planes del paciente',
+    description: 'Del más reciente al más antiguo, sin detalle.',
+  })
+  @ApiOkResponse({ type: [PlanEntity] })
+  @ApiErrores(404)
   listar(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
@@ -37,8 +61,23 @@ export class PlanesController {
     return this.service.listar(id, u.nutricionistaId!);
   }
 
-  /** Recomendador híbrido: calcula kcal, Bedrock propone, el backend valida. Crea un BORRADOR. */
   @Post('pacientes/:id/planes/generar')
+  @ApiParam({ name: 'id', description: 'ID del paciente', format: 'uuid' })
+  @ApiOperation({
+    summary: 'Generar plan con el recomendador',
+    description: [
+      'Crea un plan en `BORRADOR`:',
+      '1. Calcula kcal y macros con Mifflin-St Jeor (o usa `kcalObjetivo`).',
+      '2. Filtra el catálogo por las restricciones del paciente.',
+      '3. Si `usarIa` (por defecto), AWS Bedrock propone alimentos y porciones.',
+      '4. El backend descarta alimentos inexistentes y ajusta porciones a ±10 % por tiempo de comida.',
+      '5. Si la IA no está disponible usa reglas (`origen = REGLAS`).',
+      '',
+      'Requiere al menos una medición del paciente.',
+    ].join('\n'),
+  })
+  @ApiCreatedResponse({ type: PlanDetalleEntity })
+  @ApiErrores(400, 404)
   generar(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
@@ -48,6 +87,14 @@ export class PlanesController {
   }
 
   @Get('planes/:id')
+  @ID_PLAN
+  @ApiOperation({
+    summary: 'Detalle del plan',
+    description:
+      'Tiempos de comida con alimentos, totales y desviación contra la meta.',
+  })
+  @ApiOkResponse({ type: PlanDetalleEntity })
+  @ApiErrores(404)
   detalle(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
@@ -56,6 +103,14 @@ export class PlanesController {
   }
 
   @Patch('planes/:id')
+  @ID_PLAN
+  @ApiOperation({
+    summary: 'Editar datos del plan',
+    description:
+      'Nombre, metas y justificación. No permitido en planes archivados.',
+  })
+  @ApiOkResponse({ type: PlanDetalleEntity })
+  @ApiErrores(400, 404)
   actualizar(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
@@ -65,6 +120,15 @@ export class PlanesController {
   }
 
   @Put('planes/:id/tiempos/:tipo/items')
+  @ID_PLAN
+  @ApiParam({ name: 'tipo', enum: TipoComida, enumName: 'TipoComida' })
+  @ApiOperation({
+    summary: 'Reemplazar alimentos de un tiempo de comida',
+    description:
+      'Edición manual: reemplaza la lista completa del tiempo indicado.',
+  })
+  @ApiOkResponse({ type: PlanDetalleEntity })
+  @ApiErrores(400, 404)
   reemplazarItems(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
@@ -75,6 +139,14 @@ export class PlanesController {
   }
 
   @Post('planes/:id/activar')
+  @ID_PLAN
+  @ApiOperation({
+    summary: 'Aprobar y activar el plan',
+    description:
+      'Queda `ACTIVO` y visible en la app del paciente; el plan activo anterior pasa a `ARCHIVADO`.',
+  })
+  @ApiCreatedResponse({ type: PlanDetalleEntity })
+  @ApiErrores(400, 404)
   activar(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
@@ -84,6 +156,13 @@ export class PlanesController {
 
   @Delete('planes/:id')
   @HttpCode(204)
+  @ID_PLAN
+  @ApiOperation({
+    summary: 'Eliminar borrador',
+    description: 'Solo planes en `BORRADOR`.',
+  })
+  @ApiNoContentResponse({ description: 'Eliminado.' })
+  @ApiErrores(400, 404)
   eliminar(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
