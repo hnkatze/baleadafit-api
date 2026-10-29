@@ -10,6 +10,13 @@
  * grasa saturada e índice glucémico): son estimaciones de receta por porción,
  * no mediciones de laboratorio, y hay que verificarlas contra INCAP.
  *
+ * Los valores nutricionales viven en versiones (S1, S2, S7): este seed solo
+ * agrega una versión nueva cuando los valores del catálogo cambian respecto de
+ * la versión vigente, y cierra la anterior. Volver a correrlo no crea versiones
+ * ni duplica filas. La revisión de la tabla se puede indicar con
+ * `TABLA_NUTRICIONAL` (por defecto "Inicial", el mismo rótulo que usó el
+ * backfill de la migración).
+ *
  * Ejecutar: npx prisma db seed
  */
 import 'dotenv/config';
@@ -1091,6 +1098,139 @@ function validarCoherencia(lista: Fila[]) {
   }
 }
 
+// ─── Versiones de los valores nutricionales (S1, S2, S7) ─────────────────
+// El alimento guarda la identidad; los valores nutricionales viven en
+// versiones con vigencia. El seed compara contra la versión vigente —no contra
+// las columnas del alimento— y solo versiona cuando algo cambió de verdad.
+const TABLA_NUTRICIONAL = process.env.TABLA_NUTRICIONAL ?? 'Inicial';
+
+/** Tolerancia al comparar flotantes (g, mg e índice glucémico). */
+const TOLERANCIA_VALORES = 0.01;
+
+/** `vigenteDesde`/`vigenteHasta` son DATE: medianoche UTC del día de hoy. */
+function hoyUtc() {
+  return new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
+}
+
+type ValoresVersion = {
+  porcionDescripcion: string;
+  porcionGramos: number;
+  kcal: number;
+  proteinaG: number;
+  carbohidratoG: number;
+  grasaG: number;
+  fibraG: number | null;
+  sodioMg: number | null;
+  potasioMg: number | null;
+  fosforoMg: number | null;
+  azucaresG: number | null;
+  grasasSatG: number | null;
+  indiceGlucemico: number | null;
+};
+
+const CAMPOS_NUMERICOS = [
+  'porcionGramos',
+  'kcal',
+  'proteinaG',
+  'carbohidratoG',
+  'grasaG',
+  'fibraG',
+  'sodioMg',
+  'potasioMg',
+  'fosforoMg',
+  'azucaresG',
+  'grasasSatG',
+  'indiceGlucemico',
+] as const;
+
+/** Un nulo solo coincide con otro nulo; los números, dentro de la tolerancia. */
+function numerosDifieren(actual: number | null, nuevo: number | null) {
+  if (actual === null || nuevo === null) return actual !== nuevo;
+  return Math.abs(actual - nuevo) > TOLERANCIA_VALORES;
+}
+
+/**
+ * `true` si la versión vigente quedó desactualizada respecto del seed.
+ * Compara porción y todos los valores nutricionales; el resto del alimento
+ * (nombre, categoría, tiempos de comida, restricciones) es identidad y no se
+ * versiona.
+ */
+function valoresDifieren(actual: ValoresVersion, nuevo: ValoresVersion) {
+  if (actual.porcionDescripcion !== nuevo.porcionDescripcion) return true;
+  return CAMPOS_NUMERICOS.some((campo) =>
+    numerosDifieren(actual[campo], nuevo[campo]),
+  );
+}
+
+function datosVersion(
+  alimentoId: string,
+  version: number,
+  valores: ValoresVersion,
+) {
+  return {
+    alimentoId,
+    version,
+    tabla: TABLA_NUTRICIONAL,
+    fuente: FUENTE,
+    vigenteDesde: hoyUtc(),
+    ...valores,
+  };
+}
+
+// Estados posibles al asegurar la versión de un alimento.
+type ResultadoVersion = 'inicial' | 'nueva' | 'sin-cambios';
+
+/**
+ * Asegura que el alimento tenga una versión vigente con los valores del seed.
+ *
+ * - Sin versiones: crea la 1.
+ * - Con versión vigente idéntica: no hace nada (idempotencia).
+ * - Con versión vigente distinta: cierra la anterior con `vigenteHasta` de hoy
+ *   y crea la siguiente (`max + 1`), sin tocar el pasado.
+ * - Sin versión vigente (historial cerrado): crea la siguiente.
+ */
+async function asegurarVersion(
+  alimentoId: string,
+  valores: ValoresVersion,
+): Promise<ResultadoVersion> {
+  // Las versiones son consecutivas, así que la última es la candidata a vigente.
+  const ultima = await prisma.alimentoVersion.findFirst({
+    where: { alimentoId },
+    orderBy: { version: 'desc' },
+  });
+
+  if (!ultima) {
+    await prisma.alimentoVersion.create({
+      data: datosVersion(alimentoId, 1, valores),
+    });
+    return 'inicial';
+  }
+
+  const siguiente = ultima.version + 1;
+
+  if (ultima.vigenteHasta === null) {
+    if (!valoresDifieren(ultima, valores)) return 'sin-cambios';
+
+    // Cierra la vigente y abre la nueva en una sola operación: nunca hay dos
+    // versiones vigentes ni un alimento sin vigente.
+    await prisma.$transaction([
+      prisma.alimentoVersion.update({
+        where: { id: ultima.id },
+        data: { vigenteHasta: hoyUtc() },
+      }),
+      prisma.alimentoVersion.create({
+        data: datosVersion(alimentoId, siguiente, valores),
+      }),
+    ]);
+    return 'nueva';
+  }
+
+  await prisma.alimentoVersion.create({
+    data: datosVersion(alimentoId, siguiente, valores),
+  });
+  return 'nueva';
+}
+
 function resumenPorCategoria(lista: Fila[]) {
   const conteo = new Map<string, number>();
   for (const [, categoria] of lista) {
@@ -1124,6 +1264,12 @@ async function main() {
     });
   }
 
+  const versiones: Record<ResultadoVersion, number> = {
+    inicial: 0,
+    nueva: 0,
+    'sin-cambios': 0,
+  };
+
   for (const [
     nombre,
     categoria,
@@ -1154,11 +1300,30 @@ async function main() {
       fuente: FUENTE,
       ...clinicos,
     };
-    await prisma.alimento.upsert({
+    const guardado = await prisma.alimento.upsert({
       where: { nombre },
       create: { nombre, ...data },
       update: data,
     });
+
+    // La versión se llena con lo que el seed acaba de escribir, así que catálogo
+    // y versión vigente no pueden quedar desalineados.
+    const resultado = await asegurarVersion(guardado.id, {
+      porcionDescripcion,
+      porcionGramos,
+      kcal,
+      proteinaG,
+      carbohidratoG,
+      grasaG,
+      fibraG: clinicos.fibraG,
+      sodioMg: clinicos.sodioMg,
+      potasioMg: clinicos.potasioMg,
+      fosforoMg: clinicos.fosforoMg,
+      azucaresG: clinicos.azucaresG,
+      grasasSatG: clinicos.grasasSatG,
+      indiceGlucemico: clinicos.indiceGlucemico,
+    });
+    versiones[resultado] += 1;
   }
 
   const tipicos = alimentos.filter(([, , , , , , , , , , tipico]) => tipico === true).length;
@@ -1173,6 +1338,18 @@ async function main() {
   );
   console.log(`Conteo por categoría:\n${resumenPorCategoria(alimentos)}`);
   console.log(`Marcados como típicos hondureños: ${tipicos}.`);
+
+  const conVersionVigente = await prisma.alimentoVersion.groupBy({
+    by: ['alimentoId'],
+    where: { vigenteHasta: null },
+  });
+  const totalVersiones = await prisma.alimentoVersion.count();
+  console.log(
+    `Versiones (S7): ${versiones.inicial} iniciales, ${versiones.nueva} nuevas por cambio de valores, ` +
+      `${versiones['sin-cambios']} sin cambios. ` +
+      `Alimentos con versión vigente: ${conVersionVigente.length}/${alimentos.length} ` +
+      `(${totalVersiones} versiones en total, tabla "${TABLA_NUTRICIONAL}").`,
+  );
   console.log(
     `Alimentos con nutrientes clínicos completos: ${conNutrientes.length}/${alimentos.length} ` +
       `(${conFibra} con fibra, ${conIndiceGlucemico} con índice glucémico y ${conNutrientes.length - conIndiceGlucemico} sin IG por no aportar carbohidratos).`,
