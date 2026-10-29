@@ -215,10 +215,9 @@ export class PacienteListadoEntity extends PacienteEntity {
   planActivo: PlanActivoRefEntity | null;
 }
 
-export class CitaBasicaEntity {
+/// Cita mínima de agenda: es lo que también ve el paciente.
+export class CitaAgendaEntity {
   id: string;
-  pacienteId: string;
-  nutricionistaId: string;
   fechaHora: Date;
   /** @example 45 */
   duracionMin: number;
@@ -226,7 +225,38 @@ export class CitaBasicaEntity {
   motivo: string | null;
   @ApiProperty({ enum: EstadoCita, enumName: 'EstadoCita' })
   estado: EstadoCita;
+}
+
+/// Cita con lo clínico: notas internas, SOAP y próxima fecha. Solo la nutricionista.
+export class CitaBasicaEntity extends CitaAgendaEntity {
+  pacienteId: string;
+  nutricionistaId: string;
   notas: string | null;
+  /**
+   * SOAP de la consulta: lo que el paciente refiere.
+   * @example "Refiere hambre a media tarde y poca sed."
+   */
+  subjetivo: string | null;
+  /**
+   * SOAP: lo medido y observado en la consulta.
+   * @example "Peso 78.4 kg, cintura 92 cm, presión 118/76."
+   */
+  objetivo: string | null;
+  /**
+   * SOAP: interpretación del caso.
+   * @example "Adherencia parcial al plan; pérdida de 1.2 kg en 4 semanas."
+   */
+  analisis: string | null;
+  /**
+   * SOAP: conducta y próxima indicación.
+   * @example "Agregar merienda de fruta con yogur y control en 4 semanas."
+   */
+  plan: string | null;
+  /**
+   * Fecha sugerida de la próxima cita (solo fecha).
+   * @example "2026-12-01T00:00:00.000Z"
+   */
+  proximaCitaSugerida: Date | null;
   creadoEn: Date;
 }
 

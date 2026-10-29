@@ -4,6 +4,18 @@ import { PlanesService } from '../planes/planes.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { RegistrarComidaDto } from './mi-cuenta.dto.js';
 
+/**
+ * Campos de una cita que el paciente puede ver. Nunca salen las notas internas
+ * de la nutricionista (`notas`) ni el SOAP de la consulta.
+ */
+export const CITA_PACIENTE_SELECT = {
+  id: true,
+  fechaHora: true,
+  duracionMin: true,
+  motivo: true,
+  estado: true,
+} as const;
+
 /** Lo que ve y registra el paciente en la app. Siempre limitado a sus propios datos. */
 @Injectable()
 export class MiCuentaService {
@@ -35,6 +47,7 @@ export class MiCuentaService {
           fechaHora: { gte: new Date() },
         },
         orderBy: { fechaHora: 'asc' },
+        select: CITA_PACIENTE_SELECT,
       }),
     ]);
     const tiempos = (plan?.tiempos ?? []).map((t) => ({
@@ -59,7 +72,10 @@ export class MiCuentaService {
     return this.prisma.cita.findMany({
       where: { pacienteId },
       orderBy: { fechaHora: 'desc' },
-      include: { nutricionista: { select: { nombre: true } } },
+      select: {
+        ...CITA_PACIENTE_SELECT,
+        nutricionista: { select: { nombre: true } },
+      },
     });
   }
 

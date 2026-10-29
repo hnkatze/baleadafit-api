@@ -1,7 +1,10 @@
 import { NotFoundException } from '@nestjs/common';
 import type { PlanesService } from '../planes/planes.service.js';
 import { crearPrismaMock, type PrismaMock } from '../testing/prisma-mock.js';
-import { MiCuentaService } from './mi-cuenta.service.js';
+import {
+  CITA_PACIENTE_SELECT,
+  MiCuentaService,
+} from './mi-cuenta.service.js';
 
 describe('MiCuentaService', () => {
   let prisma: PrismaMock;
@@ -51,6 +54,45 @@ describe('MiCuentaService', () => {
     ]);
     expect(r.cumplidos).toBe(1);
     expect(r.proximaCita).toEqual({ id: 'c1' });
+  });
+
+  it('la pantalla Hoy no expone notas internas ni SOAP en la próxima cita', async () => {
+    prisma.planAlimenticio.findFirst.mockResolvedValue(null);
+    prisma.registroComida.findMany.mockResolvedValue([]);
+    prisma.cita.findFirst.mockResolvedValue({ id: 'c1' });
+
+    await svc.hoy('p1', '2026-10-28');
+
+    const { select } = prisma.cita.findFirst.mock.calls[0][0];
+    expect(Object.keys(select).sort()).toEqual([
+      'duracionMin',
+      'estado',
+      'fechaHora',
+      'id',
+      'motivo',
+    ]);
+  });
+
+  it('el listado de citas del paciente tampoco expone notas ni SOAP', async () => {
+    prisma.cita.findMany.mockResolvedValue([]);
+
+    await svc.citas('p1');
+
+    const { select } = prisma.cita.findMany.mock.calls[0][0];
+    for (const interno of ['notas', 'subjetivo', 'objetivo', 'analisis', 'plan']) {
+      expect(select).not.toHaveProperty(interno);
+    }
+    expect(select).toMatchObject({ id: true, fechaHora: true, motivo: true });
+  });
+
+  it('el select del paciente no declara ningún campo interno', () => {
+    expect(Object.keys(CITA_PACIENTE_SELECT).sort()).toEqual([
+      'duracionMin',
+      'estado',
+      'fechaHora',
+      'id',
+      'motivo',
+    ]);
   });
 
   it('la pantalla Hoy funciona sin plan activo', async () => {

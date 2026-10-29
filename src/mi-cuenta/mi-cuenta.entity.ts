@@ -1,6 +1,6 @@
 /* Modelos de respuesta para la documentación de Swagger (no se instancian). */
 import {
-  CitaBasicaEntity,
+  CitaAgendaEntity,
   RegistroComidaEntity,
 } from '../pacientes/pacientes.entity.js';
 import { TiempoComidaEntity, TotalesEntity } from '../planes/planes.entity.js';
@@ -27,7 +27,7 @@ export class HoyEntity {
   tiempos: TiempoHoyEntity[];
   /** @example 2 */
   cumplidos: number;
-  proximaCita: CitaBasicaEntity | null;
+  proximaCita: CitaAgendaEntity | null;
 }
 
 export class NutricionistaDeCitaEntity {
@@ -35,6 +35,6 @@ export class NutricionistaDeCitaEntity {
   nombre: string;
 }
 
-export class CitaPacienteEntity extends CitaBasicaEntity {
+export class CitaPacienteEntity extends CitaAgendaEntity {
   nutricionista: NutricionistaDeCitaEntity;
 }
