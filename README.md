@@ -86,6 +86,15 @@ Authorization: Bearer dev:<uid>:<correo>
 
 Ejemplo: primero `POST /auth/registro-nutricionista` con `dev:nutri-1:sofia@demo.hn`; luego crea un paciente con correo `ana@demo.hn` y entra como `dev:pac-1:ana@demo.hn` para ver la app del paciente.
 
+### Sesión en el cliente
+
+El API **no emite ni renueva tokens**: solo verifica el ID token de Firebase en cada petición y no guarda refresh tokens. La sesión se mantiene del lado del cliente:
+
+- **Portal web (Next.js):** `onAuthStateChanged` / `onIdTokenChanged` del SDK de Firebase; antes de una llamada, `await user.getIdToken()` (el SDK la renueva sola cuando le quedan menos de 5 minutos).
+- **App móvil (Flutter):** `FirebaseAuth.instance.idTokenChanges()` y `await user.getIdToken()` por petición.
+
+Con eso la sesión se mantiene indefinidamente sin que el backend tenga que rotar nada. La contrapartida, decidida a conciencia, es que **no se puede revocar una sesión desde el API**: para forzar un cierre hay que deshabilitar la cuenta en Firebase, que corta la renovación en la siguiente hora.
+
 ## Autenticación y roles
 
 Un guard global verifica el ID token de Firebase y resuelve el rol:
