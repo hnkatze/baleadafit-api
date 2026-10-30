@@ -13,13 +13,13 @@ El catálogo sabe kcal y macros, pero no sodio, potasio, fósforo, azúcares ni 
 
 ## Tasks
 
-- [ ] N1 — Modelo y migración: nutrientes clínicos en `alimento` (S1, S4)
+- [x] N1 — Modelo y migración: nutrientes clínicos en `alimento` (S1, S4) — commit `e17e92a`
 - [x] N2 — Seed: valores para los 150 alimentos con validación de coherencia (S1, S2) — commit del seed con los seis nutrientes más fibra
 - [x] N2b — Completar la fibra de los 150 alimentos (quedó nula en la primera pasada; la detectó el orquestador revisando la base)
-- [ ] N3 — Totales del plan y de la ficha con los nutrientes nuevos y carga glucémica (S3, S6)
-- [ ] N4 — Catálogo: DTO, validaciones y Swagger (S5)
-- [ ] N5 — Reglas y agente: usar los nutrientes por condición (S3, siguiente slice)
-- [ ] N6 — README y OpenAPI al día
+- [x] N3 — Totales del plan y de la ficha con los nutrientes nuevos y carga glucémica (S3, S6) — commit `71a5a90`
+- [x] N4 — Catálogo: DTO, validaciones y Swagger (S5) — commits `71a5a90` y `3218021`
+- [ ] N5 — Reglas y agente: usar los nutrientes por condición (S3) — **bloqueada**: espera que el dueño defina los topes clínicos
+- [x] N6 — README y OpenAPI al día — commit `3218021`
 
 ## Log
 
