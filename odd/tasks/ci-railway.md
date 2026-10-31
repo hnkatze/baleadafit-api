@@ -16,7 +16,7 @@ La API corre en local y las pruebas son 162 unitarias + 8 e2e, pero nada las cor
 
 - [x] R1 — `Dockerfile` + `.dockerignore` con migraciones al arrancar (S4, S5, S6) — commit `1131c66`
 - [x] R2 — `.github/workflows/ci.yml` con validación y deploy a `main` (S1, S2, S3) — commit `aa7c450`
-- [x] R3 — README: sección de deploy reescrita con la cadena real (S7) — este commit
+- [x] R3 — README: sección de deploy reescrita con la cadena real (S7) — commit `dd04b25`
 - [x] R4 — Verificación local: build de producción + arranque + lint/pruebas/e2e (S6) — ver L7
 - [x] R6 — Hallazgos del verificador independiente: schema-engine en la imagen, CI en cada push, `permissions`, README (S1, S4, S5) — ver L10 y L11
 - [x] R5 — Despliegue real en Railway (S2) — proyecto `baleadafit-api`, dominio `baleadafit-api-production.up.railway.app`, ver L13 a L15 y L17
