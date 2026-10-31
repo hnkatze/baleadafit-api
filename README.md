@@ -220,9 +220,38 @@ Ninguna requiere base de datos: los servicios se prueban con `crearPrismaMock()`
 | `npm run db:migrate` / `db:deploy` / `db:seed` / `db:studio` | Prisma |
 | `npm run openapi` | Exporta `docs/openapi.json` (después de `build`) |
 
+## Integración continua
+
+`.github/workflows/ci.yml` corre en cada push y en cada pull request:
+
+1. `npm ci`
+2. `npm run lint`
+3. `npm test`
+4. `npm run test:e2e`
+5. `npm run build`
+
+Ningún paso necesita base de datos: las pruebas unitarias usan dobles y el e2e levanta la app con una `DATABASE_URL` de mentira.
+
+Si la rama es `main`, después del paso 5 el job `deploy` sube la imagen a Railway con `railway up --ci`. Ese `--ci` transmite solo el log del build y hace fallar el job cuando el build falla, así que un deploy roto no queda en verde. En cualquier otra rama o en un pull request el job de deploy no corre.
+
 ## Deploy en Railway
 
-1. Crear un servicio Postgres y un servicio desde este repo.
-2. Variables: `DATABASE_URL` (referencia al Postgres), Firebase, AWS, `NODE_ENV=production` y `CORS_ORIGINS`.
-3. Build: `npm run build`. Start: `npm run db:deploy && npm run start:prod`.
-4. Correr el seed una vez: `npm run db:seed`.
+La API corre en un servicio de Railway construido desde el `Dockerfile` del repo, con un servicio Postgres aparte. El contenedor corre `npx prisma migrate deploy` antes de arrancar `node dist/main.js`; si la migración falla, el contenedor no arranca y el deploy queda marcado como fallido en vez de servir tráfico con el esquema viejo.
+
+**Una vez, a mano:**
+
+1. Crear el proyecto en Railway con dos servicios: Postgres y la API.
+2. En el servicio de la API, cargar las variables: `DATABASE_URL` (referencia al Postgres), `NODE_ENV=production`, `CORS_ORIGINS` con el dominio del portal, Firebase (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) y AWS (`AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `BEDROCK_MODEL_ID`). `PORT` lo inyecta Railway.
+3. En **Project Settings → Tokens** crear un **Project Token** y guardarlo en GitHub: *Settings → Secrets and variables → Actions* como secreto `RAILWAY_TOKEN`.
+4. Si el servicio no se llama `baleadafit-api`, crear la variable de repositorio `RAILWAY_SERVICE` con su nombre (o su id).
+5. Correr el seed una sola vez (`npm run db:seed`) apuntando `DATABASE_URL` a la base de Railway.
+
+Después de eso, cada push a `main` que pase lint, pruebas y build despliega solo.
+
+**Ajustes que no viven en el repo:**
+
+- *Healthcheck path*: `/` (es el endpoint público que responde `{ servicio, estado }`).
+- *Restart policy*: `ON_FAILURE`.
+- Las migraciones corren al arrancar, así que el servicio está pensado para **una sola réplica**. Con dos o más, dos contenedores podrían migrar a la vez: en ese caso la migración se mueve al *Pre-Deploy Command* del dashboard (`npm run db:deploy`).
+
+No se usa `railway.json` ni `railway.toml`: Railway deprecó Config as Code, los servicios nuevos ya no pueden adoptarlo y deja de leerse el 2026-12-01.
