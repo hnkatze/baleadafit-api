@@ -232,7 +232,7 @@ Ninguna requiere base de datos: los servicios se prueban con `crearPrismaMock()`
 
 Ningún paso necesita base de datos: las pruebas unitarias usan dobles y el e2e levanta la app con una `DATABASE_URL` de mentira.
 
-Si la rama es `main`, después del paso 5 el job `deploy` sube la imagen a Railway con `railway up --ci`. Ese `--ci` transmite solo el log del build y hace fallar el job cuando el build falla, así que un deploy roto no queda en verde. En cualquier otra rama o en un pull request el job de deploy no corre.
+Si la rama es `main`, después del paso 5 el job `deploy` sube la imagen a Railway con `railway up --ci`. Ese `--ci` transmite solo el log del build y pone el job en rojo si el build falla; no espera a que la aplicación arranque, así que una migración o un arranque fallido se ve en el deploy de Railway, no en GitHub. En cualquier otra rama o en un pull request solo corre la validación.
 
 ## Deploy en Railway
 
@@ -244,7 +244,7 @@ La API corre en un servicio de Railway construido desde el `Dockerfile` del repo
 2. En el servicio de la API, cargar las variables: `DATABASE_URL` (referencia al Postgres), `NODE_ENV=production`, `CORS_ORIGINS` con el dominio del portal, Firebase (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) y AWS (`AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `BEDROCK_MODEL_ID`). `PORT` lo inyecta Railway.
 3. En **Project Settings → Tokens** crear un **Project Token** y guardarlo en GitHub: *Settings → Secrets and variables → Actions* como secreto `RAILWAY_TOKEN`.
 4. Si el servicio no se llama `baleadafit-api`, crear la variable de repositorio `RAILWAY_SERVICE` con su nombre (o su id).
-5. Correr el seed una sola vez (`npm run db:seed`) apuntando `DATABASE_URL` a la base de Railway.
+5. Correr el seed una sola vez (`npm run db:seed`) apuntando `DATABASE_URL` a la base de Railway. Desde la máquina local la referencia interna (`*.railway.internal`) no resuelve: hay que usar `DATABASE_PUBLIC_URL`.
 
 Después de eso, cada push a `main` que pase lint, pruebas y build despliega solo.
 

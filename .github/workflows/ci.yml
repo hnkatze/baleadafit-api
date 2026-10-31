@@ -2,14 +2,17 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
-# Un push nuevo en la misma rama cancela la corrida anterior.
+# Los pushes a main no se cancelan entre sí: cortar un `railway up` a mitad de la
+# subida deja el deploy a medias. En el resto de las ramas sí se cancela.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
 
 env:
   NODE_VERSION: '24'
@@ -54,14 +57,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Exigir el proyecto y el token de Railway
+      - name: Exigir el token de Railway
         run: |
           if [ -z "$RAILWAY_TOKEN" ]; then
             echo "::error::Falta el secreto RAILWAY_TOKEN. Se crea en Railway: Project Settings -> Tokens."
-            exit 1
-          fi
-          if [ -z "$RAILWAY_SERVICE" ]; then
-            echo "::error::Falta la variable RAILWAY_SERVICE (nombre o id del servicio)."
             exit 1
           fi
 
@@ -72,7 +71,8 @@ jobs:
       - name: Instalar el CLI de Railway
         run: npm install --global @railway/cli@5
 
-      # --ci transmite solo el log del build y falla si el build falla, así el
-      # job no queda en verde con un deploy roto.
+      # --ci transmite solo el log del build y falla si el build falla. No espera
+      # a que la app arranque: si la migración o el arranque fallan, se ve en el
+      # deploy de Railway, no acá.
       - name: Deploy
         run: railway up --service "$RAILWAY_SERVICE" --ci
