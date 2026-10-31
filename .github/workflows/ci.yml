@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Un push nuevo en la misma rama cancela la corrida anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  validacion:
+    name: Lint, pruebas y build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # El postinstall del proyecto corre `prisma generate`.
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Pruebas unitarias
+        run: npm test
+
+      - name: Pruebas e2e
+        run: npm run test:e2e
+
+      - name: Build
+        run: npm run build
+
+  deploy:
+    name: Deploy a Railway
+    needs: validacion
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE || 'baleadafit-api' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Exigir el proyecto y el token de Railway
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::Falta el secreto RAILWAY_TOKEN. Se crea en Railway: Project Settings -> Tokens."
+            exit 1
+          fi
+          if [ -z "$RAILWAY_SERVICE" ]; then
+            echo "::error::Falta la variable RAILWAY_SERVICE (nombre o id del servicio)."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Instalar el CLI de Railway
+        run: npm install --global @railway/cli@5
+
+      # --ci transmite solo el log del build y falla si el build falla, así el
+      # job no queda en verde con un deploy roto.
+      - name: Deploy
+        run: railway up --service "$RAILWAY_SERVICE" --ci
