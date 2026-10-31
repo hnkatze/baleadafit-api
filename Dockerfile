@@ -45,6 +45,9 @@ COPY --chown=node:node --from=build /app/dist ./dist
 COPY --chown=node:node package.json package-lock.json prisma.config.ts tsconfig.json ./
 COPY --chown=node:node prisma ./prisma
 
+# Puerto por defecto fuera de Railway. En Railway la variable PORT viene
+# inyectada (hoy 8080) y el dominio del servicio tiene que apuntar a ese mismo
+# puerto; apuntando a otro, el edge responde 502 "Application failed to respond".
 ENV PORT=3000
 EXPOSE 3000
 USER node

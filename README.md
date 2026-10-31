@@ -250,6 +250,7 @@ Después de eso, cada push a `main` que pase lint, pruebas y build despliega sol
 
 **Ajustes que no viven en el repo:**
 
+- *Puerto del dominio*: el servicio escucha en el puerto que Railway inyecta en `PORT` (hoy 8080). El dominio de la API tiene que apuntar a ese mismo puerto; apuntando a otro, el edge contesta `502 Application failed to respond`.
 - *Healthcheck path*: `/` (es el endpoint público que responde `{ servicio, estado }`).
 - *Restart policy*: `ON_FAILURE`.
 - Las migraciones corren al arrancar, así que el servicio está pensado para **una sola réplica**. Con dos o más, dos contenedores podrían migrar a la vez: en ese caso la migración se mueve al *Pre-Deploy Command* del dashboard (`npm run db:deploy`).
