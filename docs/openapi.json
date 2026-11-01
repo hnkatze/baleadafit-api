@@ -35,7 +35,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -96,7 +113,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -106,7 +140,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -116,7 +167,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -126,7 +194,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "CONFLICTO",
+                        "mensaje": "Conflicto con el estado actual."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -187,7 +272,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -197,7 +299,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -308,7 +427,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -318,7 +454,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -377,7 +530,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -387,7 +557,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -397,7 +584,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -407,7 +611,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "CONFLICTO",
+                        "mensaje": "Conflicto con el estado actual."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -469,7 +690,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -479,7 +717,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -489,7 +744,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -551,7 +823,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -561,7 +850,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -571,7 +877,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -588,7 +911,7 @@
         ]
       },
       "patch": {
-        "description": "Si se envía `restricciones` o `condiciones`, reemplaza la lista completa de esa relación.",
+        "description": "Si se envía `restricciones` o `condiciones`, reemplaza la lista completa de esa relación. Responde 409 si el `correo` ya lo usa otro paciente.",
         "operationId": "PacientesController_actualizar",
         "parameters": [
           {
@@ -641,7 +964,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -651,7 +991,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -661,7 +1018,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -671,7 +1045,51 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicto con el estado actual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "CONFLICTO",
+                        "mensaje": "Conflicto con el estado actual."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -731,7 +1149,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -741,7 +1176,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -751,7 +1203,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -823,7 +1292,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -833,7 +1319,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -843,7 +1346,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -853,7 +1373,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -925,7 +1462,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -935,7 +1489,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -945,7 +1516,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -955,7 +1543,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1015,7 +1620,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1025,7 +1647,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1035,7 +1674,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1137,7 +1793,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1147,7 +1820,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1157,7 +1847,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1227,7 +1934,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1237,7 +1961,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1247,7 +1988,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1257,7 +2015,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1298,7 +2073,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1308,7 +2100,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1318,7 +2127,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1380,7 +2206,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1390,7 +2233,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1400,7 +2260,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1410,7 +2287,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1492,7 +2386,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1502,7 +2413,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1512,7 +2440,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1666,7 +2611,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1676,7 +2638,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1686,7 +2665,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1745,7 +2741,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1755,7 +2768,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1765,7 +2795,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1775,7 +2822,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "CONFLICTO",
+                        "mensaje": "Conflicto con el estado actual."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1836,7 +2900,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1846,7 +2927,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1856,7 +2954,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1926,7 +3041,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1936,7 +3068,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1946,7 +3095,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1956,7 +3122,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2058,7 +3241,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2068,7 +3268,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2078,7 +3295,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2132,7 +3366,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2142,7 +3393,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2196,7 +3464,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2206,7 +3491,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2308,7 +3610,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2318,7 +3637,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2328,7 +3664,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2400,7 +3753,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2410,7 +3780,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2420,7 +3807,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2430,7 +3834,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2492,7 +3913,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2502,7 +3940,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2512,7 +3967,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2582,7 +4054,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2592,7 +4081,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2602,7 +4108,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2612,7 +4135,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2652,7 +4192,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2662,7 +4219,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2672,7 +4246,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2682,7 +4273,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2762,7 +4370,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2772,7 +4397,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2782,7 +4424,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2792,7 +4451,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2854,7 +4530,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2864,7 +4557,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2874,7 +4584,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2884,7 +4611,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2935,7 +4679,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2945,7 +4706,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2996,7 +4774,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3006,7 +4801,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3138,7 +4950,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3148,7 +4977,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3158,7 +5004,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3217,7 +5080,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3227,7 +5107,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3237,7 +5134,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3247,7 +5161,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3257,7 +5188,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "CONFLICTO",
+                        "mensaje": "Conflicto con el estado actual."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3329,7 +5277,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3339,7 +5304,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3349,7 +5331,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3359,7 +5358,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3369,7 +5385,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "CONFLICTO",
+                        "mensaje": "Conflicto con el estado actual."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3431,7 +5464,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3441,7 +5491,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3492,7 +5559,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3502,7 +5586,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3594,7 +5695,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3604,7 +5722,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3696,7 +5831,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3706,7 +5858,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3767,7 +5936,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3777,7 +5963,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3787,7 +5990,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3797,7 +6017,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3905,7 +6142,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3915,7 +6169,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorRespuesta"
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -3935,7 +6206,7 @@
   },
   "info": {
     "title": "BaleadaFit API",
-    "description": "\nAPI de **BaleadaFit**: nutrición clínica con comida hondureña.\n\nUna sola app móvil con dos roles:\n- **Nutricionista**: pacientes, mediciones, catálogo, planes y agenda.\n- **Paciente**: plan del día, progreso, citas y registro de comidas (rutas `/me`).\n\n### Autenticación\nEl API **no emite ni renueva tokens**: solo verifica el ID token de Firebase que el\ncliente manda en `Authorization: Bearer <token>`. La cuenta la crea el cliente con el SDK\nde Firebase, con **Google** o con **correo y contraseña**; para el API los dos flujos son\nel mismo token.\n\n`GET /auth/me` devuelve el rol (`nutricionista`, `paciente` o `sin_perfil`).\nUna cuenta sin perfil usa `POST /auth/registro-nutricionista`, que **exige el correo\nverificado**: con Google siempre lo está, con correo y contraseña hay que abrir el enlace\nque envía Firebase. Un paciente queda vinculado automáticamente al iniciar sesión con el\ncorreo verificado que registró su nutricionista.\n\nVincular Google a una cuenta de correo y contraseña es del lado del cliente\n(`linkWithPopup`): el `uid` no cambia y el API no se entera.\n\nEn desarrollo, con `AUTH_DEV_BYPASS=true` (se ignora en producción), se acepta\n`Bearer dev:<uid>:<correo>`.\n\n### Recomendador\n`POST /pacientes/{id}/planes/generar` calcula kcal y macros (Mifflin-St Jeor), pide a\nAWS Bedrock una propuesta con el catálogo filtrado por restricciones y la valida\n(±10 % por tiempo de comida). Si la IA no está disponible usa reglas.\n",
+    "description": "\nAPI de **BaleadaFit**: nutrición clínica con comida hondureña.\n\nUna sola app móvil con dos roles:\n- **Nutricionista**: pacientes, mediciones, catálogo, planes y agenda.\n- **Paciente**: plan del día, progreso, citas y registro de comidas (rutas `/me`).\n\n### Autenticación\nEl API **no emite ni renueva tokens**: solo verifica el ID token de Firebase que el\ncliente manda en `Authorization: Bearer <token>`. La cuenta la crea el cliente con el SDK\nde Firebase, con **Google** o con **correo y contraseña**; para el API los dos flujos son\nel mismo token.\n\n`GET /auth/me` devuelve el rol (`nutricionista`, `paciente` o `sin_perfil`).\nUna cuenta sin perfil usa `POST /auth/registro-nutricionista`, que **exige el correo\nverificado**: con Google siempre lo está, con correo y contraseña hay que abrir el enlace\nque envía Firebase. Un paciente queda vinculado automáticamente al iniciar sesión con el\ncorreo verificado que registró su nutricionista.\n\nVincular Google a una cuenta de correo y contraseña es del lado del cliente\n(`linkWithPopup`): el `uid` no cambia y el API no se entera.\n\nEn desarrollo, con `AUTH_DEV_BYPASS=true` (se ignora en producción), se acepta\n`Bearer dev:<uid>:<correo>`.\n\n### Respuestas\nTodas las respuestas JSON tienen la misma forma. Éxito:\n\n```json\n{ \"ok\": true, \"data\": { \"...\": \"lo que devuelve el endpoint\" } }\n```\n\nError, conservando el status HTTP (400, 401, 403, 404, 409 y 500):\n\n```json\n{\n  \"ok\": false,\n  \"error\": {\n    \"codigo\": \"NO_ENCONTRADO\",\n    \"mensaje\": \"Paciente no encontrado.\",\n    \"detalles\": [\"sólo en fallos de validación\"]\n  }\n}\n```\n\n**Decidí por `codigo`, no por `mensaje`**: el mensaje es para mostrar al usuario y\npuede cambiar; el código no.\n\n| `codigo` | status | cuándo |\n| --- | --- | --- |\n| `VALIDACION` | 400 | falta un campo o no cumple el formato; los errores por campo vienen en `detalles` |\n| `NO_AUTENTICADO` | 401 | falta el token o es inválido |\n| `SIN_PERMISO` | 403 | el rol no alcanza, o el correo no está verificado |\n| `NO_ENCONTRADO` | 404 | no existe, o no pertenece al usuario |\n| `CONFLICTO` | 409 | choca con el estado actual (por ejemplo, un correo que ya usa otro paciente) |\n| `CURSOR_INVALIDO` | 400 | el cursor no corresponde a esta lista: pedir la primera página sin cursor |\n| `ERROR_HTTP` | 4xx | cualquier otro fallo del cliente |\n| `ERROR_INTERNO` | 500 | el detalle queda en el log, nunca en el body |\n\nLos documentos de Swagger (`/docs` y `/docs-json`) no llevan el sobre.\n\n### Paginación\nLas listas que crecen se paginan, y **el cliente elige el modo por query params**.\nLos dos juntos responden 400 `VALIDACION`.\n\n- **`?offset=0&limit=20`** — modo del portal, para tablas con número de página.\n  `meta` trae `total` y `hasMore` (`hasMore = offset + filas < total`).\n- **`?cursor=<nextCursor>&limit=20`** — modo de la app, para scroll infinito.\n  `meta` trae `nextCursor` (`null` en la última página) y **no paga un COUNT**.\n\n`limit` va de 1 a 100, con 20 por defecto. Sin parámetros devuelve la primera\npágina. Las filas van en `data` y la paginación en `meta`:\n\n```json\n{\n  \"ok\": true,\n  \"data\": [],\n  \"meta\": { \"limit\": 20, \"offset\": 0, \"total\": 137, \"hasMore\": true }\n}\n```\n\n**Paginadas**: `/pacientes`, `/alimentos`, `/alimentos/{id}/versiones`,\n`/citas`, `/pacientes/{id}/planes`, `/pacientes/{id}/mediciones`,\n`/me/mediciones`, `/me/citas` y `/me/registros`.\n\n**No paginadas**: los catálogos fijos (`/restricciones`, `/condiciones`) y los\nendpoints de detalle.\n\n### Recomendador\n`POST /pacientes/{id}/planes/generar` calcula kcal y macros (Mifflin-St Jeor), pide a\nAWS Bedrock una propuesta con el catálogo filtrado por restricciones y la valida\n(±10 % por tiempo de comida). Si la IA no está disponible usa reglas.\n",
     "version": "0.1.0",
     "contact": {}
   },
@@ -3984,6 +6255,53 @@
       }
     },
     "schemas": {
+      "CodigoFalla": {
+        "type": "string",
+        "enum": [
+          "VALIDACION",
+          "NO_AUTENTICADO",
+          "SIN_PERMISO",
+          "NO_ENCONTRADO",
+          "CONFLICTO",
+          "CURSOR_INVALIDO",
+          "ERROR_HTTP",
+          "ERROR_INTERNO"
+        ],
+        "description": "Código estable del fallo, para decidir sin leer el mensaje."
+      },
+      "DetalleFallaEntity": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "example": "NO_ENCONTRADO",
+            "description": "Código estable del fallo, para decidir sin leer el mensaje.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CodigoFalla"
+              }
+            ]
+          },
+          "mensaje": {
+            "type": "string",
+            "example": "Paciente no encontrado.",
+            "description": "Mensaje listo para mostrar al usuario."
+          },
+          "detalles": {
+            "example": [
+              "pesoKg must not be greater than 400"
+            ],
+            "description": "Errores por campo. Sólo en fallos de validación.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "codigo",
+          "mensaje"
+        ]
+      },
       "MeEntity": {
         "type": "object",
         "properties": {
@@ -4041,69 +6359,6 @@
         "required": [
           "limit",
           "hasMore"
-        ]
-      },
-      "CodigoFalla": {
-        "type": "string",
-        "enum": [
-          "VALIDACION",
-          "NO_AUTENTICADO",
-          "SIN_PERMISO",
-          "NO_ENCONTRADO",
-          "CONFLICTO",
-          "CURSOR_INVALIDO",
-          "ERROR_HTTP",
-          "ERROR_INTERNO"
-        ],
-        "description": "Código estable del fallo, para decidir sin leer el mensaje."
-      },
-      "DetalleFallaEntity": {
-        "type": "object",
-        "properties": {
-          "codigo": {
-            "example": "NO_ENCONTRADO",
-            "description": "Código estable del fallo, para decidir sin leer el mensaje.",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/CodigoFalla"
-              }
-            ]
-          },
-          "mensaje": {
-            "type": "string",
-            "example": "Paciente no encontrado.",
-            "description": "Mensaje listo para mostrar al usuario."
-          },
-          "detalles": {
-            "example": [
-              "pesoKg must not be greater than 400"
-            ],
-            "description": "Errores por campo. Sólo en fallos de validación.",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "codigo",
-          "mensaje"
-        ]
-      },
-      "ErrorRespuesta": {
-        "type": "object",
-        "properties": {
-          "ok": {
-            "type": "boolean",
-            "example": false
-          },
-          "error": {
-            "$ref": "#/components/schemas/DetalleFallaEntity"
-          }
-        },
-        "required": [
-          "ok",
-          "error"
         ]
       },
       "NutricionistaEntity": {
@@ -8481,6 +10736,22 @@
         "required": [
           "tiempoComidaId",
           "cumplido"
+        ]
+      },
+      "ErrorRespuesta": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "$ref": "#/components/schemas/DetalleFallaEntity"
+          }
+        },
+        "required": [
+          "ok",
+          "error"
         ]
       }
     }
