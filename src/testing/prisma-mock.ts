@@ -48,5 +48,8 @@ export function crearPrismaMock(): PrismaMock & PrismaService {
 }
 
 /** Error con el código de Prisma para restricciones únicas. */
-export const errorUnico = () =>
-  Object.assign(new Error('Unique constraint'), { code: 'P2002' });
+export const errorUnico = (target?: string[]) =>
+  Object.assign(new Error('Unique constraint'), {
+    code: 'P2002',
+    ...(target ? { meta: { target } } : {}),
+  });

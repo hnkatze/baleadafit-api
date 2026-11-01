@@ -124,10 +124,10 @@ export class PacientesController {
   @ApiOperation({
     summary: 'Actualizar paciente',
     description:
-      'Si se envía `restricciones` o `condiciones`, reemplaza la lista completa de esa relación.',
+      'Si se envía `restricciones` o `condiciones`, reemplaza la lista completa de esa relación. Responde 409 si el `correo` ya lo usa otro paciente.',
   })
   @ApiSobreOk(PacienteConCondicionesEntity)
-  @ApiErrores(400, 404)
+  @ApiErrores(400, 404, 409)
   actualizar(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,

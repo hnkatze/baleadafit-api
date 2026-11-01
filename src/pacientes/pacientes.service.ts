@@ -30,6 +30,22 @@ import type {
 } from './pacientes.dto.js';
 import type { PerfilClinico } from './perfil-clinico.js';
 
+/**
+ * Campos que chocaron en un error de unicidad de Prisma, o `null` si el error
+ * no es de unicidad.
+ *
+ * Se mira `meta.target` a propósito: dentro de la transacción de actualizar
+ * también pueden chocar las tablas de unión, y decirle "correo duplicado" a
+ * cualquiera de esos sería mentir.
+ */
+function camposDuplicados(e: unknown): string[] | null {
+  const error = e as { code?: string; meta?: { target?: unknown } };
+  if (error.code !== 'P2002') return null;
+  return Array.isArray(error.meta?.target)
+    ? (error.meta.target as string[])
+    : [];
+}
+
 @Injectable()
 export class PacientesService {
   constructor(
@@ -163,7 +179,9 @@ export class PacientesService {
         },
       });
     } catch (e) {
-      if ((e as { code?: string }).code === 'P2002') {
+      const campos = camposDuplicados(e);
+      // Sin `target` (o vacío) se asume el caso documentado: el correo del alta.
+      if (campos && (campos.length === 0 || campos.includes('correo'))) {
         throw new ConflictException('Ya tienes un paciente con ese correo.');
       }
       throw e;
@@ -176,41 +194,63 @@ export class PacientesService {
     dto: ActualizarPacienteDto,
   ) {
     await this.acceso.pacienteDeNutricionista(id, nutricionistaId);
-    const { restricciones, condiciones, fechaNacimiento, fechaObjetivo, ...datos } =
-      dto;
-    return this.prisma.$transaction(async (tx) => {
-      if (restricciones) {
-        const ids = await this.idsRestricciones(restricciones);
-        await tx.pacienteRestriccion.deleteMany({ where: { pacienteId: id } });
-        await tx.pacienteRestriccion.createMany({
-          data: ids.map((restriccionId) => ({ pacienteId: id, restriccionId })),
+    const {
+      restricciones,
+      condiciones,
+      fechaNacimiento,
+      fechaObjetivo,
+      ...datos
+    } = dto;
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        if (restricciones) {
+          const ids = await this.idsRestricciones(restricciones);
+          await tx.pacienteRestriccion.deleteMany({
+            where: { pacienteId: id },
+          });
+          await tx.pacienteRestriccion.createMany({
+            data: ids.map((restriccionId) => ({
+              pacienteId: id,
+              restriccionId,
+            })),
+          });
+        }
+        if (condiciones) {
+          const ids = await this.idsCondiciones(condiciones);
+          await tx.pacienteCondicion.deleteMany({ where: { pacienteId: id } });
+          await tx.pacienteCondicion.createMany({
+            data: ids.map((condicionId) => ({ pacienteId: id, condicionId })),
+          });
+        }
+        return tx.paciente.update({
+          where: { id },
+          data: {
+            ...datos,
+            ...(fechaNacimiento
+              ? { fechaNacimiento: aFecha(fechaNacimiento) }
+              : {}),
+            // Un `null` explícito borra el objetivo; `undefined` lo deja como está.
+            ...(fechaObjetivo === undefined
+              ? {}
+              : {
+                  fechaObjetivo: fechaObjetivo ? aFecha(fechaObjetivo) : null,
+                }),
+          },
+          include: {
+            restricciones: { include: { restriccion: true } },
+            condiciones: { include: { condicion: true } },
+          },
         });
-      }
-      if (condiciones) {
-        const ids = await this.idsCondiciones(condiciones);
-        await tx.pacienteCondicion.deleteMany({ where: { pacienteId: id } });
-        await tx.pacienteCondicion.createMany({
-          data: ids.map((condicionId) => ({ pacienteId: id, condicionId })),
-        });
-      }
-      return tx.paciente.update({
-        where: { id },
-        data: {
-          ...datos,
-          ...(fechaNacimiento
-            ? { fechaNacimiento: aFecha(fechaNacimiento) }
-            : {}),
-          // Un `null` explícito borra el objetivo; `undefined` lo deja como está.
-          ...(fechaObjetivo === undefined
-            ? {}
-            : { fechaObjetivo: fechaObjetivo ? aFecha(fechaObjetivo) : null }),
-        },
-        include: {
-          restricciones: { include: { restriccion: true } },
-          condiciones: { include: { condicion: true } },
-        },
       });
-    });
+    } catch (e) {
+      // `correo` es único: cambiar a uno que ya usa otro paciente es un conflicto
+      // del cliente, no un error del servidor.
+      const campos = camposDuplicados(e);
+      if (campos && (campos.length === 0 || campos.includes('correo'))) {
+        throw new ConflictException('Ya tienes un paciente con ese correo.');
+      }
+      throw e;
+    }
   }
 
   /** Baja lógica: se conserva el historial clínico. */
@@ -248,10 +288,7 @@ export class PacientesService {
   }
 
   /** Baja lógica: `activo = false` conserva lo recetado en el historial. */
-  async desactivarMedicamento(
-    medicamentoId: string,
-    nutricionistaId: string,
-  ) {
+  async desactivarMedicamento(medicamentoId: string, nutricionistaId: string) {
     await this.medicamentoPropio(medicamentoId, nutricionistaId);
     return this.prisma.medicamento.update({
       where: { id: medicamentoId },

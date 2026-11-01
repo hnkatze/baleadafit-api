@@ -126,7 +126,9 @@ describe('PacientesService', () => {
     };
 
     it('conecta las condiciones del catálogo al crear', async () => {
-      prisma.condicion.findMany.mockResolvedValue([{ id: 'c1', codigo: 'dm2' }]);
+      prisma.condicion.findMany.mockResolvedValue([
+        { id: 'c1', codigo: 'dm2' },
+      ]);
       prisma.paciente.create.mockResolvedValue({ id: 'p1' });
       await svc.crear('n1', dto);
       const { data } = prisma.paciente.create.mock.calls[0][0];
@@ -142,7 +144,9 @@ describe('PacientesService', () => {
     });
 
     it('reemplaza el set completo de condiciones al actualizar', async () => {
-      prisma.condicion.findMany.mockResolvedValue([{ id: 'c1', codigo: 'dm2' }]);
+      prisma.condicion.findMany.mockResolvedValue([
+        { id: 'c1', codigo: 'dm2' },
+      ]);
       await svc.actualizar('p1', 'n1', { condiciones: ['dm2'] });
       expect(prisma.pacienteCondicion.deleteMany).toHaveBeenCalledWith({
         where: { pacienteId: 'p1' },
@@ -194,6 +198,28 @@ describe('PacientesService', () => {
 
     const { data } = prisma.paciente.update.mock.calls[0][0];
     expect(data.fechaObjetivo).toBeNull();
+  });
+
+  it('responde 409 y no 500 cuando el correo ya es de otro paciente', async () => {
+    prisma.paciente.update.mockRejectedValue(errorUnico(['correo']));
+
+    await expect(
+      svc.actualizar('p1', 'n1', { correo: 'ana@correo.hn' }),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('no disfraza de correo duplicado un choque de otra tabla', async () => {
+    prisma.paciente.update.mockRejectedValue(
+      Object.assign(new Error('Unique constraint'), {
+        code: 'P2002',
+        meta: { target: ['pacienteId', 'restriccionId'] },
+      }),
+    );
+
+    const error = svc.actualizar('p1', 'n1', {});
+
+    await expect(error).rejects.not.toBeInstanceOf(ConflictException);
+    await expect(error).rejects.toThrow('Unique constraint');
   });
 
   describe('contexto clínico para el recomendador', () => {
@@ -269,7 +295,11 @@ describe('PacientesService', () => {
       prisma.medicamento.findMany.mockResolvedValue([]);
       prisma.pacienteRestriccion.findMany.mockResolvedValue([]);
       prisma.medicion.findMany.mockResolvedValue([
-        { fecha: new Date('2026-09-03T00:00:00.000Z'), pesoKg: 76, tallaCm: 160 },
+        {
+          fecha: new Date('2026-09-03T00:00:00.000Z'),
+          pesoKg: 76,
+          tallaCm: 160,
+        },
         {
           fecha: new Date('2026-10-01T00:00:00.000Z'),
           pesoKg: 72,
@@ -309,7 +339,11 @@ describe('PacientesService', () => {
         pctGrasa: 33,
         masaMagraKg: 48.2,
       });
-      expect(f.progreso).toMatchObject({ pesoInicial: 76, pesoActual: 72, deltaKg: -4 });
+      expect(f.progreso).toMatchObject({
+        pesoInicial: 76,
+        pesoActual: 72,
+        deltaKg: -4,
+      });
       expect(f.situacion.condiciones).toHaveLength(1);
       expect(f.requerimiento).toMatchObject({ kcalObjetivo: 1440 });
       expect(f.adherencia30d).toMatchObject({ porcentaje: 0.3, total: 20 });
