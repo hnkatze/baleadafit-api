@@ -26,7 +26,7 @@ Los endpoints de lista devuelven el array completo y cada respuesta tiene una fo
 - [x] T6 — README con el sobre y los dos modos + `npm run openapi` regenerado (S9)
 - [x] T7 — Cierre: lint, unitarias, e2e y build verdes; resolver el árbol sucio (auth sin commitear y `docs/openapi.json` compartido)
 - [x] T6b — `PaginacionDto` movido a `src/common/paginacion.dto.ts` porque el plugin de Swagger ignora los archivos que no terminan en `.dto.ts`/`.entity.ts` (S9)
-- [ ] T8 — Commitear el feature — **bloqueada**: espera la decisión del dueño sobre el trabajo de auth sin commitear (L8, L13)
+- [x] T8 — Commits: `13c8629` (auth, en `feat/ci-railway`), `75596c4` (sobre y motor, en `feat/paginacion-y-sobre`), `8c60248` (las 9 listas), `f0b5039` (README y OpenAPI)
 
 ## Log
 
@@ -45,3 +45,5 @@ Los endpoints de lista devuelven el array completo y cada respuesta tiene una fo
 - **L13** (estado del árbol): el feature no se commiteó. `docs/openapi.json` y `README.md` se regeneraron/editaron con el trabajo de auth presente en el árbol, así que un commit de este feature arrastraría cambios ajenos. Antes de commitear hay que decidir qué pasa con `src/auth/*` (dos opciones: se commitea primero como su propio work unit, o se revierte del árbol para que este feature quede aislado).
 - **L14** (verificación independiente NO disponible): el subagente verificador falló con `assistant reported an error` y, por regla, no se reintenta. Los chequeos que iba a hacer se hicieron a mano: las 8 consultas que cubren las 9 listas tienen `id` como último término del `orderBy` (`pacientes.service.ts:57,281`, `alimentos.service.ts:33,136`, `citas.service.ts:46`, `planes.service.ts:78`, `mi-cuenta.service.ts:77,130`), `limit` está acotado por `@Max(100)` en el DTO antes de llegar a Prisma (`paginacion.dto.ts:27`), y `catalogoParaPaciente` no pagina (`alimentos.service.ts:57`).
 - **L15** (gates del cierre): `npm run lint` 0 errores (quedan 6 warnings previos), `npm test` **181/181** (162 previas + 19 nuevas), `npm run test:e2e` **8/8**, `npm run build` limpio, `tsc --noEmit` sin errores en los archivos del feature.
+- **L16** (commits, decidido por el dueño: "Auth primero como commit propio, despues el feature"): `13c8629` en `feat/ci-railway` con el auth; después rama nueva `feat/paginacion-y-sobre` con `75596c4` (sobre, filtro y motor de paginación), `8c60248` (las 9 listas y los decoradores) y `f0b5039` (README y OpenAPI). Para que `13c8629` compilara solo se revirtió temporalmente el cambio de decorador de `auth.controller.ts` y se volvió a aplicar en `8c60248`.
+- **L17** (carga de revisión): el feature son 33 archivos y 2716 líneas, pero 1378 de ellas son el `docs/openapi.json` regenerado. El código real son unos 1300, repartidos en 3 commits. Ojo: el commit `f0b5039` también documenta el correo verificado porque `README.md`, `src/common/swagger.ts` y `docs/openapi.json` estaban compartidos con el auth y separarlos exigía editar a mano un archivo generado.
