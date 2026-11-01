@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AccesoService } from '../common/acceso.service.js';
+import { PaginacionDto, paginar } from '../common/paginacion.js';
 import type { TipoComida } from '../generated/prisma/enums.js';
 import { AlimentosService } from '../alimentos/alimentos.service.js';
 import {
@@ -64,11 +65,21 @@ export class PlanesService {
     private readonly recomendador: RecomendadorService,
   ) {}
 
-  async listar(pacienteId: string, nutricionistaId: string) {
+  async listar(
+    pacienteId: string,
+    nutricionistaId: string,
+    pedido: PaginacionDto = new PaginacionDto(),
+  ) {
     await this.acceso.pacienteDeNutricionista(pacienteId, nutricionistaId);
-    return this.prisma.planAlimenticio.findMany({
-      where: { pacienteId },
-      orderBy: { creadoEn: 'desc' },
+    return paginar(pedido, {
+      filas: (args) =>
+        this.prisma.planAlimenticio.findMany({
+          where: { pacienteId },
+          orderBy: [{ creadoEn: 'desc' }, { id: 'desc' }],
+          ...args,
+        }),
+      total: () => this.prisma.planAlimenticio.count({ where: { pacienteId } }),
+      id: (p) => p.id,
     });
   }
 

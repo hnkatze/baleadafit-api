@@ -9,11 +9,10 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiCreatedResponse,
-  ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { ApiSobreCreado, ApiSobreOk } from '../common/respuesta.js';
 import { ApiErrores } from '../common/swagger.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RegistroNutricionistaDto } from './auth.dto.js';
@@ -33,7 +32,7 @@ export class AuthController {
     description:
       'Primera llamada de la app después del login. Según `rol` muestra la navegación de nutricionista, la del paciente o el registro (`sin_perfil`).',
   })
-  @ApiOkResponse({ type: MeEntity })
+  @ApiSobreOk(MeEntity)
   @ApiErrores(401)
   async me(@UsuarioAct() u: UsuarioActual) {
     if (u.rol === 'nutricionista') {
@@ -61,7 +60,7 @@ export class AuthController {
     description:
       'Crea el perfil de nutricionista para una cuenta de Firebase sin perfil. Usa el uid y el correo del token. Exige el correo verificado: con Google siempre lo está, con correo y contraseña hay que confirmar el enlace que envía Firebase.',
   })
-  @ApiCreatedResponse({ type: NutricionistaEntity })
+  @ApiSobreCreado(NutricionistaEntity)
   @ApiErrores(400, 401, 403, 409)
   async registrarNutricionista(
     @UsuarioAct() u: UsuarioActual,

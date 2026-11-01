@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { aFecha, hoyIso, sumarDias } from '../common/fechas.js';
+import { PaginacionDto, paginar } from '../common/paginacion.js';
 import { PlanesService } from '../planes/planes.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { RegistrarComidaDto } from './mi-cuenta.dto.js';
@@ -68,14 +69,20 @@ export class MiCuentaService {
     };
   }
 
-  citas(pacienteId: string) {
-    return this.prisma.cita.findMany({
-      where: { pacienteId },
-      orderBy: { fechaHora: 'desc' },
-      select: {
-        ...CITA_PACIENTE_SELECT,
-        nutricionista: { select: { nombre: true } },
-      },
+  citas(pacienteId: string, pedido: PaginacionDto = new PaginacionDto()) {
+    return paginar(pedido, {
+      filas: (args) =>
+        this.prisma.cita.findMany({
+          where: { pacienteId },
+          orderBy: [{ fechaHora: 'desc' }, { id: 'desc' }],
+          select: {
+            ...CITA_PACIENTE_SELECT,
+            nutricionista: { select: { nombre: true } },
+          },
+          ...args,
+        }),
+      total: () => this.prisma.cita.count({ where: { pacienteId } }),
+      id: (c) => c.id,
     });
   }
 
@@ -107,13 +114,25 @@ export class MiCuentaService {
     });
   }
 
-  registros(pacienteId: string, desde?: string, hasta?: string) {
+  registros(
+    pacienteId: string,
+    desde?: string,
+    hasta?: string,
+    pedido: PaginacionDto = new PaginacionDto(),
+  ) {
     const fin = aFecha(hasta ?? hoyIso());
     const inicio = desde ? aFecha(desde) : sumarDias(fin, -6);
-    return this.prisma.registroComida.findMany({
-      where: { pacienteId, fecha: { gte: inicio, lte: fin } },
-      orderBy: { fecha: 'desc' },
-      include: { tiempoComida: { select: { tipo: true } } },
+    const where = { pacienteId, fecha: { gte: inicio, lte: fin } };
+    return paginar(pedido, {
+      filas: (args) =>
+        this.prisma.registroComida.findMany({
+          where,
+          orderBy: [{ fecha: 'desc' }, { id: 'desc' }],
+          include: { tiempoComida: { select: { tipo: true } } },
+          ...args,
+        }),
+      total: () => this.prisma.registroComida.count({ where }),
+      id: (r) => r.id,
     });
   }
 }

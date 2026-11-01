@@ -10,12 +10,11 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiCreatedResponse,
-  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { ApiSobreCreado, ApiSobreOk } from '../common/respuesta.js';
 import type { UsuarioActual } from '../auth/auth.types.js';
 import { Roles, UsuarioAct } from '../auth/decorators.js';
 import { ApiErrores } from '../common/swagger.js';
@@ -41,7 +40,7 @@ export class CitasController {
     description:
       'Citas de la nutricionista ordenadas por fecha, con filtros opcionales.',
   })
-  @ApiOkResponse({ type: [CitaEntity] })
+  @ApiSobreOk(CitaEntity, { esLista: true, paginada: true })
   @ApiErrores(400)
   listar(@UsuarioAct() u: UsuarioActual, @Query() q: BuscarCitasDto) {
     return this.service.listar(u.nutricionistaId!, q);
@@ -52,7 +51,7 @@ export class CitasController {
     summary: 'Programar cita',
     description: 'Responde 409 si se traslapa con otra cita programada.',
   })
-  @ApiCreatedResponse({ type: CitaEntity })
+  @ApiSobreCreado(CitaEntity)
   @ApiErrores(400, 404, 409)
   crear(@UsuarioAct() u: UsuarioActual, @Body() dto: CrearCitaDto) {
     return this.service.crear(u.nutricionistaId!, dto);
@@ -64,7 +63,7 @@ export class CitasController {
     summary: 'Reprogramar, completar o cancelar',
     description: 'Para cancelar, enviar `estado: "CANCELADA"`.',
   })
-  @ApiOkResponse({ type: CitaEntity })
+  @ApiSobreOk(CitaEntity)
   @ApiErrores(400, 404, 409)
   actualizar(
     @UsuarioAct() u: UsuarioActual,

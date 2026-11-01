@@ -19,6 +19,7 @@ import {
   ultimaComposicion,
 } from './ficha.util.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { PaginacionDto, Pagina, paginar } from '../common/paginacion.js';
 import type {
   ActualizarMedicamentoDto,
   ActualizarPacienteDto,
@@ -47,23 +48,34 @@ export class PacientesService {
         { correo: { contains: q, mode: 'insensitive' } },
       ];
     }
-    const pacientes = await this.prisma.paciente.findMany({
-      where,
-      orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
-      include: {
-        mediciones: { orderBy: { fecha: 'desc' }, take: 1 },
-        planes: {
-          where: { estado: 'ACTIVO' },
-          select: { id: true, nombre: true },
-          take: 1,
-        },
-      },
+    const pagina = await paginar(f, {
+      filas: (args) =>
+        this.prisma.paciente.findMany({
+          where,
+          // `id` cierra el orden: sin desempate único el cursor puede saltear o
+          // repetir filas cuando dos pacientes comparten apellido y nombre.
+          orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }, { id: 'asc' }],
+          include: {
+            mediciones: { orderBy: { fecha: 'desc' }, take: 1 },
+            planes: {
+              where: { estado: 'ACTIVO' },
+              select: { id: true, nombre: true },
+              take: 1,
+            },
+          },
+          ...args,
+        }),
+      total: () => this.prisma.paciente.count({ where }),
+      id: (p) => p.id,
     });
-    return pacientes.map(({ mediciones, planes, ...p }) => ({
-      ...p,
-      ultimaMedicion: mediciones[0] ?? null,
-      planActivo: planes[0] ?? null,
-    }));
+    return new Pagina(
+      pagina.items.map(({ mediciones, planes, ...p }) => ({
+        ...p,
+        ultimaMedicion: mediciones[0] ?? null,
+        planActivo: planes[0] ?? null,
+      })),
+      pagina.meta,
+    );
   }
 
   async detalle(id: string, nutricionistaId: string) {
@@ -249,17 +261,33 @@ export class PacientesService {
 
   // ─── Mediciones ──────────────────────────────────────────────────────────
 
-  async mediciones(pacienteId: string, nutricionistaId: string) {
+  async mediciones(
+    pacienteId: string,
+    nutricionistaId: string,
+    pedido: PaginacionDto = new PaginacionDto(),
+  ) {
     await this.acceso.pacienteDeNutricionista(pacienteId, nutricionistaId);
-    return this.listarMediciones(pacienteId);
+    return this.listarMediciones(pacienteId, pedido);
   }
 
-  async listarMediciones(pacienteId: string) {
-    const lista = await this.prisma.medicion.findMany({
-      where: { pacienteId },
-      orderBy: { fecha: 'asc' },
+  async listarMediciones(
+    pacienteId: string,
+    pedido: PaginacionDto = new PaginacionDto(),
+  ) {
+    const pagina = await paginar(pedido, {
+      filas: (args) =>
+        this.prisma.medicion.findMany({
+          where: { pacienteId },
+          orderBy: [{ fecha: 'asc' }, { creadoEn: 'asc' }, { id: 'asc' }],
+          ...args,
+        }),
+      total: () => this.prisma.medicion.count({ where: { pacienteId } }),
+      id: (m) => m.id,
     });
-    return lista.map((m) => ({ ...m, imc: imc(m.pesoKg, m.tallaCm) }));
+    return new Pagina(
+      pagina.items.map((m) => ({ ...m, imc: imc(m.pesoKg, m.tallaCm) })),
+      pagina.meta,
+    );
   }
 
   async agregarMedicion(

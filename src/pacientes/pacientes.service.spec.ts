@@ -42,9 +42,10 @@ describe('PacientesService', () => {
       expect(where.OR[1]).toEqual({
         apellido: { contains: 'López', mode: 'insensitive' },
       });
-      expect(r).toEqual([
+      expect(r.items).toEqual([
         { id: 'p1', ultimaMedicion: { pesoKg: 70 }, planActivo: null },
       ]);
+      expect(r.meta).toMatchObject({ limit: 20, offset: 0 });
     });
 
     it('incluye inactivos si se pide', async () => {
@@ -433,7 +434,9 @@ describe('PacientesService', () => {
       prisma.medicion.findMany.mockResolvedValue([
         { pesoKg: 70, tallaCm: 175 },
       ]);
-      const [m] = await svc.mediciones('p1', 'n1');
+      const {
+        items: [m],
+      } = await svc.mediciones('p1', 'n1');
       expect(m.imc).toBe(22.9);
     });
 

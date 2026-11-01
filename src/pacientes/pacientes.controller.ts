@@ -12,16 +12,16 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiCreatedResponse,
   ApiNoContentResponse,
-  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { ApiSobreCreado, ApiSobreOk } from '../common/respuesta.js';
 import type { UsuarioActual } from '../auth/auth.types.js';
 import { Roles, UsuarioAct } from '../auth/decorators.js';
+import { PaginacionDto } from '../common/paginacion.js';
 import { ApiErrores } from '../common/swagger.js';
 import {
   ActualizarMedicamentoDto,
@@ -70,7 +70,7 @@ export class PacientesController {
     description:
       'Pacientes de la nutricionista con su última medición y plan activo. Busca por nombre, apellido o correo.',
   })
-  @ApiOkResponse({ type: [PacienteListadoEntity] })
+  @ApiSobreOk(PacienteListadoEntity, { esLista: true, paginada: true })
   listar(@UsuarioAct() u: UsuarioActual, @Query() q: BuscarPacientesDto) {
     return this.service.listar(u.nutricionistaId!, q);
   }
@@ -81,7 +81,7 @@ export class PacientesController {
     description:
       'Con `correo`, el paciente queda vinculado al iniciar sesión en la app con ese correo verificado.',
   })
-  @ApiCreatedResponse({ type: PacienteConCondicionesEntity })
+  @ApiSobreCreado(PacienteConCondicionesEntity)
   @ApiErrores(400, 409)
   crear(@UsuarioAct() u: UsuarioActual, @Body() dto: CrearPacienteDto) {
     return this.service.crear(u.nutricionistaId!, dto);
@@ -94,7 +94,7 @@ export class PacientesController {
     description:
       'Todo lo que muestra la pantalla del expediente en una sola llamada: cabecera con IMC clasificado y masa magra, progreso contra el objetivo, situación clínica, hábitos, requerimiento, adherencia de los últimos 30 días, alertas calculadas por el sistema, evolución completa, consultas (pasadas con SOAP y próximas) y planes con la tabla con la que se calcularon.',
   })
-  @ApiOkResponse({ type: FichaPacienteEntity })
+  @ApiSobreOk(FichaPacienteEntity)
   @ApiErrores(404)
   ficha(
     @UsuarioAct() u: UsuarioActual,
@@ -110,7 +110,7 @@ export class PacientesController {
     description:
       'Datos clínicos y hábitos, restricciones, condiciones, medicación vigente, últimas 10 mediciones, próximas citas y planes.',
   })
-  @ApiOkResponse({ type: PacienteDetalleEntity })
+  @ApiSobreOk(PacienteDetalleEntity)
   @ApiErrores(404)
   detalle(
     @UsuarioAct() u: UsuarioActual,
@@ -126,7 +126,7 @@ export class PacientesController {
     description:
       'Si se envía `restricciones` o `condiciones`, reemplaza la lista completa de esa relación.',
   })
-  @ApiOkResponse({ type: PacienteConCondicionesEntity })
+  @ApiSobreOk(PacienteConCondicionesEntity)
   @ApiErrores(400, 404)
   actualizar(
     @UsuarioAct() u: UsuarioActual,
@@ -142,7 +142,7 @@ export class PacientesController {
     summary: 'Registrar medicamento',
     description: 'Nombre obligatorio; dosis y frecuencia son opcionales.',
   })
-  @ApiCreatedResponse({ type: MedicamentoEntity })
+  @ApiSobreCreado(MedicamentoEntity)
   @ApiErrores(400, 404)
   crearMedicamento(
     @UsuarioAct() u: UsuarioActual,
@@ -159,7 +159,7 @@ export class PacientesController {
     description:
       'Permite corregir los datos o marcar `activo = false` para darlo de baja.',
   })
-  @ApiOkResponse({ type: MedicamentoEntity })
+  @ApiSobreOk(MedicamentoEntity)
   @ApiErrores(400, 404)
   actualizarMedicamento(
     @UsuarioAct() u: UsuarioActual,
@@ -176,7 +176,7 @@ export class PacientesController {
     description:
       'Baja lógica (`activo = false`): nunca se borra, para conservar el historial clínico.',
   })
-  @ApiOkResponse({ type: MedicamentoEntity })
+  @ApiSobreOk(MedicamentoEntity)
   @ApiErrores(404)
   desactivarMedicamento(
     @UsuarioAct() u: UsuarioActual,
@@ -191,7 +191,7 @@ export class PacientesController {
     summary: 'Dar de baja al paciente',
     description: 'Baja lógica (`activo = false`); el historial se conserva.',
   })
-  @ApiOkResponse({ type: PacienteEntity })
+  @ApiSobreOk(PacienteEntity)
   @ApiErrores(404)
   desactivar(
     @UsuarioAct() u: UsuarioActual,
@@ -206,13 +206,14 @@ export class PacientesController {
     summary: 'Historial de mediciones',
     description: 'De la más antigua a la más reciente, con IMC.',
   })
-  @ApiOkResponse({ type: [MedicionConImcEntity] })
+  @ApiSobreOk(MedicionConImcEntity, { esLista: true, paginada: true })
   @ApiErrores(404)
   mediciones(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
+    @Query() q: PaginacionDto,
   ) {
-    return this.service.mediciones(id, u.nutricionistaId!);
+    return this.service.mediciones(id, u.nutricionistaId!, q);
   }
 
   @Post('pacientes/:id/mediciones')
@@ -222,7 +223,7 @@ export class PacientesController {
     description:
       'Peso y talla son obligatorios. Acepta composición corporal, pliegues, perímetros, presión arterial y la `fuente` del dato.',
   })
-  @ApiCreatedResponse({ type: MedicionConImcEntity })
+  @ApiSobreCreado(MedicionConImcEntity)
   @ApiErrores(400, 404)
   agregarMedicion(
     @UsuarioAct() u: UsuarioActual,
@@ -252,7 +253,7 @@ export class PacientesController {
     description:
       'Mifflin-St Jeor con la medición más reciente × factor de actividad ± ajuste por meta. Requiere al menos una medición.',
   })
-  @ApiOkResponse({ type: RequerimientoEntity })
+  @ApiSobreOk(RequerimientoEntity)
   @ApiErrores(400, 404)
   requerimiento(
     @UsuarioAct() u: UsuarioActual,
@@ -280,7 +281,7 @@ export class PacientesController {
     description: 'YYYY-MM-DD (por defecto hoy)',
     example: '2026-10-28',
   })
-  @ApiOkResponse({ type: AdherenciaEntity })
+  @ApiSobreOk(AdherenciaEntity)
   @ApiErrores(404)
   adherencia(
     @UsuarioAct() u: UsuarioActual,

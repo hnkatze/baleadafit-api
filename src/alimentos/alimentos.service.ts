@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { aFecha, hoyIso } from '../common/fechas.js';
+import { PaginacionDto, paginar } from '../common/paginacion.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { cambianValores, datosVersion } from './alimento-version.js';
@@ -17,7 +18,7 @@ import type {
 export class AlimentosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  listar(f: BuscarAlimentosDto) {
+  async listar(f: BuscarAlimentosDto) {
     const where: Prisma.AlimentoWhereInput = { activo: true };
     if (f.q?.trim())
       where.nombre = { contains: f.q.trim(), mode: 'insensitive' };
@@ -25,22 +26,38 @@ export class AlimentosService {
     if (f.tipoComida) where.tiposComida = { has: f.tipoComida };
     if (f.soloTipicos) where.esTipicoHn = true;
     if (f.excluir?.length) where.NOT = { contiene: { hasSome: f.excluir } };
-    return this.prisma.alimento.findMany({
-      where,
-      orderBy: [{ categoria: 'asc' }, { nombre: 'asc' }],
+    return paginar(f, {
+      filas: (args) =>
+        this.prisma.alimento.findMany({
+          where,
+          orderBy: [{ categoria: 'asc' }, { nombre: 'asc' }, { id: 'asc' }],
+          ...args,
+        }),
+      total: () => this.prisma.alimento.count({ where }),
+      id: (a) => a.id,
     });
   }
 
-  /** Catálogo apto para un paciente: excluye lo que choca con sus restricciones. */
+  /**
+   * Catálogo apto para un paciente: excluye lo que choca con sus restricciones.
+   *
+   * No se pagina: el recomendador necesita el catálogo completo para elegir, así
+   * que pedir una página acá recortaría las opciones del plan.
+   */
   async catalogoParaPaciente(pacienteId: string) {
     const restricciones = await this.prisma.pacienteRestriccion.findMany({
       where: { pacienteId },
       include: { restriccion: { select: { codigo: true } } },
     });
     const codigos = restricciones.map((r) => r.restriccion.codigo);
+    const where: Prisma.AlimentoWhereInput = { activo: true };
+    if (codigos.length) where.NOT = { contiene: { hasSome: codigos } };
     return {
       restricciones: codigos,
-      alimentos: await this.listar({ excluir: codigos }),
+      alimentos: await this.prisma.alimento.findMany({
+        where,
+        orderBy: [{ categoria: 'asc' }, { nombre: 'asc' }, { id: 'asc' }],
+      }),
     };
   }
 
@@ -103,35 +120,45 @@ export class AlimentosService {
   }
 
   /** Historial de valores del alimento: de la versión más nueva a la más vieja. */
-  async versiones(alimentoId: string) {
+  async versiones(
+    alimentoId: string,
+    pedido: PaginacionDto = new PaginacionDto(),
+  ) {
     const alimento = await this.prisma.alimento.findUnique({
       where: { id: alimentoId },
       select: { id: true },
     });
     if (!alimento) throw new NotFoundException('Alimento no encontrado.');
-    return this.prisma.alimentoVersion.findMany({
-      where: { alimentoId },
-      orderBy: { version: 'desc' },
-      select: {
-        version: true,
-        tabla: true,
-        fuente: true,
-        vigenteDesde: true,
-        vigenteHasta: true,
-        porcionDescripcion: true,
-        porcionGramos: true,
-        kcal: true,
-        proteinaG: true,
-        carbohidratoG: true,
-        grasaG: true,
-        fibraG: true,
-        sodioMg: true,
-        potasioMg: true,
-        fosforoMg: true,
-        azucaresG: true,
-        grasasSatG: true,
-        indiceGlucemico: true,
-      },
+    return paginar(pedido, {
+      filas: (args) =>
+        this.prisma.alimentoVersion.findMany({
+          where: { alimentoId },
+          orderBy: [{ version: 'desc' }, { id: 'desc' }],
+          select: {
+            id: true,
+            version: true,
+            tabla: true,
+            fuente: true,
+            vigenteDesde: true,
+            vigenteHasta: true,
+            porcionDescripcion: true,
+            porcionGramos: true,
+            kcal: true,
+            proteinaG: true,
+            carbohidratoG: true,
+            grasaG: true,
+            fibraG: true,
+            sodioMg: true,
+            potasioMg: true,
+            fosforoMg: true,
+            azucaresG: true,
+            grasasSatG: true,
+            indiceGlucemico: true,
+          },
+          ...args,
+        }),
+      total: () => this.prisma.alimentoVersion.count({ where: { alimentoId } }),
+      id: (v) => v.id,
     });
   }
 

@@ -40,6 +40,8 @@ export class AlimentoEntity {
 
 /** Historial de valores de un alimento: una fila por revisión de la tabla. */
 export class AlimentoVersionEntity {
+  /** ID de la versión: es también el cursor de la lista paginada. */
+  id: string;
   /** Consecutivo por alimento. @example 2 */
   version: number;
   /** Revisión de la tabla usada. @example "INCAP 2026" */

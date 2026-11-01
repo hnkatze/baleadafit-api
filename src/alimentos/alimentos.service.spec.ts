@@ -203,10 +203,10 @@ describe('AlimentosService', () => {
 
     const historial = await svc.versiones('a1');
 
-    expect(historial.map((v) => v.version)).toEqual([2, 1]);
+    expect(historial.items.map((v) => v.version)).toEqual([2, 1]);
     expect(prisma.alimentoVersion.findMany.mock.calls[0][0]).toMatchObject({
       where: { alimentoId: 'a1' },
-      orderBy: { version: 'desc' },
+      orderBy: [{ version: 'desc' }, { id: 'desc' }],
     });
   });
 

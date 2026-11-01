@@ -10,18 +10,19 @@ import {
   Patch,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiCreatedResponse,
   ApiNoContentResponse,
-  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { ApiSobreCreado, ApiSobreOk } from '../common/respuesta.js';
 import type { UsuarioActual } from '../auth/auth.types.js';
 import { Roles, UsuarioAct } from '../auth/decorators.js';
+import { PaginacionDto } from '../common/paginacion.js';
 import { ApiErrores } from '../common/swagger.js';
 import { TipoComida } from '../generated/prisma/enums.js';
 import {
@@ -52,13 +53,14 @@ export class PlanesController {
     summary: 'Planes del paciente',
     description: 'Del más reciente al más antiguo, sin detalle.',
   })
-  @ApiOkResponse({ type: [PlanEntity] })
+  @ApiSobreOk(PlanEntity, { esLista: true, paginada: true })
   @ApiErrores(404)
   listar(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
+    @Query() q: PaginacionDto,
   ) {
-    return this.service.listar(id, u.nutricionistaId!);
+    return this.service.listar(id, u.nutricionistaId!, q);
   }
 
   @Post('pacientes/:id/planes/generar')
@@ -77,7 +79,7 @@ export class PlanesController {
       'Requiere al menos una medición del paciente.',
     ].join('\n'),
   })
-  @ApiCreatedResponse({ type: PlanDetalleEntity })
+  @ApiSobreCreado(PlanDetalleEntity)
   @ApiErrores(400, 404)
   generar(
     @UsuarioAct() u: UsuarioActual,
@@ -94,7 +96,7 @@ export class PlanesController {
     description:
       'Tiempos de comida con alimentos, totales y desviación contra la meta. Cada ítem declara la versión del alimento que usó y los totales salen de esa versión: editar el alimento no cambia un plan existente.',
   })
-  @ApiOkResponse({ type: PlanDetalleEntity })
+  @ApiSobreOk(PlanDetalleEntity)
   @ApiErrores(404)
   detalle(
     @UsuarioAct() u: UsuarioActual,
@@ -110,7 +112,7 @@ export class PlanesController {
     description:
       'Nombre, metas y justificación. No permitido en planes archivados.',
   })
-  @ApiOkResponse({ type: PlanDetalleEntity })
+  @ApiSobreOk(PlanDetalleEntity)
   @ApiErrores(400, 404)
   actualizar(
     @UsuarioAct() u: UsuarioActual,
@@ -128,7 +130,7 @@ export class PlanesController {
     description:
       'Edición manual: reemplaza la lista completa del tiempo indicado. Los ítems nuevos quedan atados a la versión vigente de cada alimento.',
   })
-  @ApiOkResponse({ type: PlanDetalleEntity })
+  @ApiSobreOk(PlanDetalleEntity)
   @ApiErrores(400, 404)
   reemplazarItems(
     @UsuarioAct() u: UsuarioActual,
@@ -146,7 +148,7 @@ export class PlanesController {
     description:
       'Queda `ACTIVO` y visible en la app del paciente; el plan activo anterior pasa a `ARCHIVADO`.',
   })
-  @ApiCreatedResponse({ type: PlanDetalleEntity })
+  @ApiSobreCreado(PlanDetalleEntity)
   @ApiErrores(400, 404)
   activar(
     @UsuarioAct() u: UsuarioActual,

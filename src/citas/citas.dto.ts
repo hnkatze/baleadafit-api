@@ -11,6 +11,7 @@ import {
   Min,
 } from 'class-validator';
 import { EstadoCita } from '../generated/prisma/enums.js';
+import { PaginacionDto } from '../common/paginacion.js';
 
 export class CrearCitaDto {
   /** ID del paciente. */
@@ -97,7 +98,7 @@ export class ActualizarCitaDto extends PartialType(CrearCitaDto) {
   proximaCitaSugerida?: string | null;
 }
 
-export class BuscarCitasDto {
+export class BuscarCitasDto extends PaginacionDto {
   /** @example "2026-11-01T00:00:00-06:00" */
   @IsOptional()
   @IsDateString()

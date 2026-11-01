@@ -15,6 +15,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { CategoriaAlimento, TipoComida } from '../generated/prisma/enums.js';
+import { PaginacionDto } from '../common/paginacion.js';
 
 export class CrearAlimentoDto {
   /** @example "Baleada sencilla" */
@@ -162,7 +163,7 @@ export class ActualizarAlimentoDto extends PartialType(CrearAlimentoDto) {
   activo?: boolean;
 }
 
-export class BuscarAlimentosDto {
+export class BuscarAlimentosDto extends PaginacionDto {
   /** @example "baleada" */
   @IsOptional()
   @IsString()

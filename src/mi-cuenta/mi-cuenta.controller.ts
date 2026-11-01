@@ -1,13 +1,14 @@
 import { Body, Controller, Get, Put, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { ApiSobreOk } from '../common/respuesta.js';
 import type { UsuarioActual } from '../auth/auth.types.js';
 import { Roles, UsuarioAct } from '../auth/decorators.js';
+import { PaginacionDto } from '../common/paginacion.js';
 import { ApiErrores } from '../common/swagger.js';
 import {
   MedicionConImcEntity,
@@ -43,7 +44,7 @@ export class MiCuentaController {
     description: 'YYYY-MM-DD (por defecto hoy)',
     example: '2026-10-28',
   })
-  @ApiOkResponse({ type: HoyEntity })
+  @ApiSobreOk(HoyEntity)
   hoy(@UsuarioAct() u: UsuarioActual, @Query('fecha') fecha?: string) {
     return this.service.hoy(u.pacienteId!, fecha);
   }
@@ -54,10 +55,7 @@ export class MiCuentaController {
     description:
       'Plan completo con totales. Responde `null` si la nutricionista aún no activa uno.',
   })
-  @ApiOkResponse({
-    type: PlanDetalleEntity,
-    description: 'Plan activo o null.',
-  })
+  @ApiSobreOk(PlanDetalleEntity, { descripcion: 'Plan activo o null.' })
   plan(@UsuarioAct() u: UsuarioActual) {
     return this.service.planActivo(u.pacienteId!);
   }
@@ -67,9 +65,12 @@ export class MiCuentaController {
     summary: 'Mi progreso',
     description: 'Mediciones con IMC, de la más antigua a la más reciente.',
   })
-  @ApiOkResponse({ type: [MedicionConImcEntity] })
-  mediciones(@UsuarioAct() u: UsuarioActual) {
-    return this.pacientes.listarMediciones(u.pacienteId!);
+  @ApiSobreOk(MedicionConImcEntity, { esLista: true, paginada: true })
+  mediciones(
+    @UsuarioAct() u: UsuarioActual,
+    @Query() q: PaginacionDto,
+  ) {
+    return this.pacientes.listarMediciones(u.pacienteId!, q);
   }
 
   @Get('citas')
@@ -77,9 +78,9 @@ export class MiCuentaController {
     summary: 'Mis citas',
     description: 'Todas, de la más reciente a la más antigua.',
   })
-  @ApiOkResponse({ type: [CitaPacienteEntity] })
-  citas(@UsuarioAct() u: UsuarioActual) {
-    return this.service.citas(u.pacienteId!);
+  @ApiSobreOk(CitaPacienteEntity, { esLista: true, paginada: true })
+  citas(@UsuarioAct() u: UsuarioActual, @Query() q: PaginacionDto) {
+    return this.service.citas(u.pacienteId!, q);
   }
 
   @Put('registros')
@@ -88,7 +89,7 @@ export class MiCuentaController {
     description:
       'Marca un tiempo de comida como cumplido o no en una fecha. Si ya existe, lo actualiza.',
   })
-  @ApiOkResponse({ type: RegistroComidaEntity })
+  @ApiSobreOk(RegistroComidaEntity)
   @ApiErrores(400, 404)
   registrar(@UsuarioAct() u: UsuarioActual, @Body() dto: RegistrarComidaDto) {
     return this.service.registrar(u.pacienteId!, dto);
@@ -105,12 +106,13 @@ export class MiCuentaController {
     required: false,
     description: 'YYYY-MM-DD (por defecto hoy)',
   })
-  @ApiOkResponse({ type: [RegistroComidaConTipoEntity] })
+  @ApiSobreOk(RegistroComidaConTipoEntity, { esLista: true, paginada: true })
   registros(
     @UsuarioAct() u: UsuarioActual,
+    @Query() q: PaginacionDto,
     @Query('desde') desde?: string,
     @Query('hasta') hasta?: string,
   ) {
-    return this.service.registros(u.pacienteId!, desde, hasta);
+    return this.service.registros(u.pacienteId!, desde, hasta, q);
   }
 }

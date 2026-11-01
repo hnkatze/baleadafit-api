@@ -10,13 +10,13 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiCreatedResponse,
-  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { ApiSobreCreado, ApiSobreOk } from '../common/respuesta.js';
 import { Roles } from '../auth/decorators.js';
+import { PaginacionDto } from '../common/paginacion.js';
 import { ApiErrores } from '../common/swagger.js';
 import {
   CondicionEntity,
@@ -50,7 +50,7 @@ export class AlimentosController {
     description:
       'Catálogo activo. `excluir=lactosa,gluten` quita los alimentos que contienen esas etiquetas.',
   })
-  @ApiOkResponse({ type: [AlimentoEntity] })
+  @ApiSobreOk(AlimentoEntity, { esLista: true, paginada: true })
   @ApiErrores(400)
   listar(@Query() q: BuscarAlimentosDto) {
     return this.service.listar(q);
@@ -59,7 +59,7 @@ export class AlimentosController {
   @Get('alimentos/:id')
   @ID_ALIMENTO
   @ApiOperation({ summary: 'Detalle de un alimento' })
-  @ApiOkResponse({ type: AlimentoEntity })
+  @ApiSobreOk(AlimentoEntity)
   @ApiErrores(404)
   detalle(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.detalle(id);
@@ -71,7 +71,7 @@ export class AlimentosController {
     summary: 'Agregar alimento',
     description: 'Solo nutricionistas. Valores por porción.',
   })
-  @ApiCreatedResponse({ type: AlimentoEntity })
+  @ApiSobreCreado(AlimentoEntity)
   @ApiErrores(400, 409)
   crear(@Body() dto: CrearAlimentoDto) {
     return this.service.crear(dto);
@@ -85,7 +85,7 @@ export class AlimentosController {
     description:
       'Solo nutricionistas. `activo = false` lo saca del catálogo sin borrarlo.',
   })
-  @ApiOkResponse({ type: AlimentoEntity })
+  @ApiSobreOk(AlimentoEntity)
   @ApiErrores(400, 404)
   actualizar(
     @Param('id', ParseUUIDPipe) id: string,
@@ -102,10 +102,13 @@ export class AlimentosController {
     description:
       'Solo nutricionistas. Qué valores tuvo el alimento y desde/hasta cuándo estuvieron vigentes, de la versión más nueva a la más vieja.',
   })
-  @ApiOkResponse({ type: [AlimentoVersionEntity] })
+  @ApiSobreOk(AlimentoVersionEntity, { esLista: true, paginada: true })
   @ApiErrores(404)
-  versiones(@Param('id', ParseUUIDPipe) id: string) {
-    return this.service.versiones(id);
+  versiones(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() q: PaginacionDto,
+  ) {
+    return this.service.versiones(id, q);
   }
 
   @Get('restricciones')
@@ -113,7 +116,7 @@ export class AlimentosController {
     summary: 'Listar restricciones alimentarias',
     description: 'Sus `codigo` se usan al crear pacientes y en `excluir`.',
   })
-  @ApiOkResponse({ type: [RestriccionEntity] })
+  @ApiSobreOk(RestriccionEntity, { esLista: true })
   restricciones() {
     return this.service.restricciones();
   }
@@ -124,7 +127,7 @@ export class AlimentosController {
     description:
       'Catálogo de condiciones (diabetes, HTA, ERC…). Sus `codigo` se usan en `condiciones` al crear o actualizar pacientes.',
   })
-  @ApiOkResponse({ type: [CondicionEntity] })
+  @ApiSobreOk(CondicionEntity, { esLista: true })
   condiciones() {
     return this.service.condiciones();
   }

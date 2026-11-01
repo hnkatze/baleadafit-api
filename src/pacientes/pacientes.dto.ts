@@ -23,6 +23,7 @@ import {
   NivelActividad,
   Sexo,
 } from '../generated/prisma/enums.js';
+import { PaginacionDto } from '../common/paginacion.js';
 
 export class CrearPacienteDto {
   /** @example "Ana" */
@@ -210,7 +211,7 @@ export class CrearPacienteDto {
 
 export class ActualizarPacienteDto extends PartialType(CrearPacienteDto) {}
 
-export class BuscarPacientesDto {
+export class BuscarPacientesDto extends PaginacionDto {
   /**
    * Busca en nombre, apellido o correo.
    * @example "López"

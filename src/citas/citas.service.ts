@@ -7,6 +7,7 @@ import { AccesoService } from '../common/acceso.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { aFecha } from '../common/fechas.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { paginar } from '../common/paginacion.js';
 import type {
   ActualizarCitaDto,
   BuscarCitasDto,
@@ -36,10 +37,18 @@ export class CitasService {
         ...(f.hasta ? { lte: new Date(f.hasta) } : {}),
       };
     }
-    return this.prisma.cita.findMany({
-      where,
-      orderBy: { fechaHora: 'asc' },
-      include: INCLUDE_PACIENTE,
+    return paginar(f, {
+      filas: (args) =>
+        this.prisma.cita.findMany({
+          where,
+          // Desempate único: dos citas a la misma hora necesitan orden estable
+          // para que el cursor no saltee ni repita filas.
+          orderBy: [{ fechaHora: 'asc' }, { id: 'asc' }],
+          include: INCLUDE_PACIENTE,
+          ...args,
+        }),
+      total: () => this.prisma.cita.count({ where }),
+      id: (c) => c.id,
     });
   }
 
