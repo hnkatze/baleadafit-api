@@ -116,7 +116,8 @@ Las listas que crecen se paginan, y **el cliente elige el modo por query params*
 Los dos juntos responden 400 \`VALIDACION\`.
 
 - **\`?offset=0&limit=20\`** — modo del portal, para tablas con número de página.
-  \`meta\` trae \`total\` y \`hasMore\` (\`hasMore = offset + filas < total\`).
+  \`meta\` trae \`total\`, \`hasMore\` (\`hasMore = offset + filas < total\`) y también
+  \`nextCursor\`, que es con lo que la app arranca el scroll infinito.
 - **\`?cursor=<nextCursor>&limit=20\`** — modo de la app, para scroll infinito.
   \`meta\` trae \`nextCursor\` (\`null\` en la última página) y **no paga un COUNT**.
 
@@ -127,7 +128,7 @@ página. Las filas van en \`data\` y la paginación en \`meta\`:
 {
   "ok": true,
   "data": [],
-  "meta": { "limit": 20, "offset": 0, "total": 137, "hasMore": true }
+  "meta": { "limit": 20, "offset": 0, "total": 137, "nextCursor": "ZjQ3ZmYxYzIt", "hasMore": true }
 }
 \`\`\`
 

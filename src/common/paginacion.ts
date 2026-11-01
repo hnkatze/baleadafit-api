@@ -157,10 +157,17 @@ export async function paginar<T>(
     consulta.filas({ take: limit, skip: offset }),
     consulta.total(),
   ]);
+  const ultima = filas.at(-1);
+  const hasMore = offset + filas.length < total;
   return new Pagina(filas, {
     limit,
     offset,
     total,
-    hasMore: offset + filas.length < total,
+    // `nextCursor` viaja también en modo offset a propósito: es lo único que le
+    // permite a la app arrancar el scroll infinito. Sin esto la primera página
+    // llega sin cursor y el cliente tendría que codificar un id a mano, que es
+    // justo lo que el cursor opaco evita.
+    nextCursor: hasMore && ultima ? codificar(consulta.id(ultima)) : null,
+    hasMore,
   });
 }

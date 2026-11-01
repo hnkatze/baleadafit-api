@@ -39,6 +39,7 @@ describe('paginar', () => {
         limit: 2,
         offset: 2,
         total: 5,
+        nextCursor: codificar(OTRA.id),
         hasMore: true,
       });
     });
@@ -60,12 +61,22 @@ describe('paginar', () => {
       expect(pagina.meta).toMatchObject({ limit: 20, offset: 0, hasMore: false });
     });
 
-    it('no calcula nextCursor: en modo offset la página se pide con offset', async () => {
+    it('también devuelve nextCursor, para que la app pueda arrancar el scroll infinito', async () => {
+      // Sin este cursor la primera página no le sirve a la app: no tendría con
+      // qué pedir la siguiente sin codificar un id a mano.
       const c = consulta([FILA], 9);
 
       const pagina = await paginar(pedido({ limit: 1 }), c);
 
-      expect(pagina.meta).not.toHaveProperty('nextCursor');
+      expect(pagina.meta.nextCursor).toBe(codificar(FILA.id));
+    });
+
+    it('cierra con nextCursor null cuando ya no hay más filas', async () => {
+      const c = consulta([FILA], 1);
+
+      const pagina = await paginar(pedido({ limit: 1 }), c);
+
+      expect(pagina.meta.nextCursor).toBeNull();
     });
   });
 
