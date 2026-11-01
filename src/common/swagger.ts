@@ -10,21 +10,16 @@ import {
   SwaggerModule,
   type OpenAPIObject,
 } from '@nestjs/swagger';
+import { MetaPaginacionEntity } from './paginacion.js';
+import { DetalleFallaEntity } from './respuesta.js';
 
-/** Formato de todos los errores de la API. */
+/** Formato de todos los errores de la API: el sobre de error. */
 export class ErrorRespuesta {
-  @ApiProperty({ example: 400 })
-  statusCode: number;
+  @ApiProperty({ example: false })
+  ok: false;
 
-  @ApiProperty({
-    oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
-    example: ['pesoKg must not be greater than 400'],
-    description: 'Mensaje o lista de errores de validación.',
-  })
-  message: string | string[];
-
-  @ApiProperty({ example: 'Bad Request' })
-  error: string;
+  @ApiProperty({ type: () => DetalleFallaEntity })
+  error: DetalleFallaEntity;
 }
 
 type CodigoError = 400 | 401 | 403 | 404 | 409;
@@ -44,7 +39,8 @@ const RESPUESTAS: Record<CodigoError, () => MethodDecorator & ClassDecorator> =
     403: () =>
       ApiForbiddenResponse({
         type: ErrorRespuesta,
-        description: 'El rol del usuario no tiene acceso.',
+        description:
+          'Sin acceso: el rol del usuario no alcanza o el correo no está verificado.',
       }),
     404: () =>
       ApiNotFoundResponse({
@@ -72,12 +68,22 @@ Una sola app móvil con dos roles:
 - **Paciente**: plan del día, progreso, citas y registro de comidas (rutas \`/me\`).
 
 ### Autenticación
-Envía el ID token de Firebase en \`Authorization: Bearer <token>\`.
-\`GET /auth/me\` devuelve el rol (\`nutricionista\`, \`paciente\` o \`sin_perfil\`).
-Una cuenta nueva usa \`POST /auth/registro-nutricionista\`; un paciente queda vinculado
-automáticamente al iniciar sesión con el correo que registró su nutricionista.
+El API **no emite ni renueva tokens**: solo verifica el ID token de Firebase que el
+cliente manda en \`Authorization: Bearer <token>\`. La cuenta la crea el cliente con el SDK
+de Firebase, con **Google** o con **correo y contraseña**; para el API los dos flujos son
+el mismo token.
 
-En desarrollo, con \`AUTH_DEV_BYPASS=true\`, se acepta \`Bearer dev:<uid>:<correo>\`.
+\`GET /auth/me\` devuelve el rol (\`nutricionista\`, \`paciente\` o \`sin_perfil\`).
+Una cuenta sin perfil usa \`POST /auth/registro-nutricionista\`, que **exige el correo
+verificado**: con Google siempre lo está, con correo y contraseña hay que abrir el enlace
+que envía Firebase. Un paciente queda vinculado automáticamente al iniciar sesión con el
+correo verificado que registró su nutricionista.
+
+Vincular Google a una cuenta de correo y contraseña es del lado del cliente
+(\`linkWithPopup\`): el \`uid\` no cambia y el API no se entera.
+
+En desarrollo, con \`AUTH_DEV_BYPASS=true\` (se ignora en producción), se acepta
+\`Bearer dev:<uid>:<correo>\`.
 
 ### Recomendador
 \`POST /pacientes/{id}/planes/generar\` calcula kcal y macros (Mifflin-St Jeor), pide a
@@ -108,7 +114,7 @@ export function crearDocumentoOpenApi(app: INestApplication): OpenAPIObject {
     )
     .build();
   return SwaggerModule.createDocument(app, config, {
-    extraModels: [ErrorRespuesta],
+    extraModels: [ErrorRespuesta, DetalleFallaEntity, MetaPaginacionEntity],
     autoTagControllers: false,
   });
 }

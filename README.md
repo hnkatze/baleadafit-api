@@ -68,7 +68,7 @@ npm run start:dev
 
 ### Documentación de la API
 
-Swagger documenta cada endpoint con su resumen, parámetros, ejemplos, modelo de respuesta y errores (400, 401, 403, 404, 409 con formato `ErrorRespuesta`). Usa **Authorize** con un ID token de Firebase, o con `dev:<uid>:<correo>` en desarrollo.
+Swagger documenta cada endpoint con su resumen, parámetros, ejemplos, modelo de respuesta y errores (400, 401, 403, 404, 409 con el sobre `{ ok: false, error }` que se explica en [Respuestas y paginación](#respuestas-y-paginación)). Usa **Authorize** con un ID token de Firebase, o con `dev:<uid>:<correo>` en desarrollo.
 
 `docs/openapi.json` tiene la especificación versionada; sirve para generar el cliente de la app. Para regenerarla:
 
@@ -97,21 +97,49 @@ Con eso la sesión se mantiene indefinidamente sin que el backend tenga que rota
 
 ## Autenticación y roles
 
-Un guard global verifica el ID token de Firebase y resuelve el rol:
+El API **no emite ni renueva tokens** ni guarda contraseñas: solo verifica el ID token de Firebase en cada petición. La cuenta la crea el cliente con el SDK de Firebase, por uno de dos caminos, y para el API los dos producen el mismo token:
+
+| Flujo | Cómo se crea la cuenta | `email_verified` en el token |
+|---|---|---|
+| Google | `signInWithPopup` con `GoogleAuthProvider` (web) o el provider de Google (Flutter) | siempre `true`: Google ya confirmó el correo |
+| Correo y contraseña | `createUserWithEmailAndPassword` + `sendEmailVerification` | `true` recién cuando el usuario abre el enlace del correo |
+
+La consola de Firebase necesita dos ajustes para el flujo de correo:
+
+- **Authentication → Sign-in method → Email/Password** habilitado.
+- **Authentication → Settings → "One account per email address"** habilitado. Sin esto, quien se registra con correo y después entra con Google obtiene un `uid` distinto con el mismo correo: cae en `sin_perfil` y el registro le responde `409` porque el correo ya está tomado. Es un callejón sin salida.
+
+Además, el dominio del portal tiene que estar en **Authentication → Settings → Authorized domains**; si no, el login con Google falla con `auth/unauthorized-domain`.
+
+### Vinculación entre flujos
+
+Vincular Google a una cuenta de correo y contraseña es **del lado del cliente**: `linkWithPopup(user, new GoogleAuthProvider())`. El `uid` no cambia, así que el `firebase_uid` guardado sigue siendo válido y el API no necesita ningún endpoint nuevo. Si el usuario no vincula y vuelve a entrar con Google, Firebase responde `auth/account-exists-with-different-credential` (con el ajuste de arriba) y la app decide si lo manda a vincular o a usar su método original.
+
+### Roles
+
+Un guard global resuelve el rol en cada petición:
 
 - Si el `uid` pertenece a una nutricionista, el rol es `nutricionista`.
-- Si pertenece a un paciente, el rol es `paciente`.
-- En el primer inicio de sesión de un paciente, se vincula por **correo verificado** con el expediente que creó su nutricionista.
-- Si no coincide con nada, el rol es `sin_perfil` y solo puede llamar a `/auth/me` y `/auth/registro-nutricionista`.
+- Si pertenece a un paciente activo, el rol es `paciente`.
+- En el primer inicio de sesión de un paciente, se vincula por **correo verificado** con el expediente que creó su nutricionista (guarda su `firebase_uid`).
+- Si no coincide con nada, el rol es `sin_perfil`, que solo puede llamar a `GET /auth/me` y `POST /auth/registro-nutricionista`.
 
 `GET /auth/me` devuelve `{ rol, perfil }`, y la app decide qué navegación mostrar según el rol.
+
+### Registro de nutricionista
+
+`POST /auth/registro-nutricionista` no crea usuarios de Firebase: crea el **perfil** de una cuenta que ya está logueada. El `uid` y el `correo` salen del token, nunca del body; el body solo lleva `nombre` (obligatorio), `colegiado` y `telefono`. El perfil es obligatorio para salir de `sin_perfil`.
+
+El endpoint **exige el correo verificado** y responde `403 Verifica tu correo antes de registrar el perfil.` si no lo está. La razón: `correo` es `@unique`, y sin esa validación cualquiera podría reclamar el correo de otra persona y dejar a la dueña real sin poder registrarse.
+
+En el cliente, antes de mostrar el formulario, conviene mirar `user.emailVerified` y ofrecer `sendEmailVerification()` en vez de dejar que el usuario llene todo para comerse un 403.
 
 ## Endpoints
 
 | Rol | Método y ruta | Descripción |
 |---|---|---|
 | todos | `GET /auth/me` | Rol y perfil |
-| sin perfil | `POST /auth/registro-nutricionista` | Crea el perfil de nutricionista |
+| sin perfil | `POST /auth/registro-nutricionista` | Crea el perfil de nutricionista (exige correo verificado) |
 | nutricionista | `GET /dashboard` | Pacientes activos, borradores, citas de hoy |
 | nutricionista | `GET/POST /pacientes`, `GET/PATCH/DELETE /pacientes/:id` | Expediente (el DELETE es baja lógica); acepta `condiciones` y devuelve condiciones, medicación vigente y las últimas mediciones |
 | nutricionista | `GET /pacientes/:id/ficha` | Ficha completa en una llamada: cabecera con IMC clasificado, progreso contra el objetivo, situación clínica, requerimiento, adherencia de 30 días, alertas, evolución, consultas y planes |
@@ -140,6 +168,80 @@ Un guard global verifica el ID token de Firebase y resuelve el rol:
 - **Evolución, consultas y planes**: todas las mediciones con IMC, consultas pasadas con su SOAP y las próximas, y los planes con las tablas nutricionales con las que se calcularon.
 
 Las alertas de nutrientes (sodio, carga glucémica) todavía no están: dependen de los umbrales por condición, que se definen como configuración clínica y no como constante escondida en el código.
+
+## Respuestas y paginación
+
+Toda respuesta JSON del API, incluidos `GET /` y `GET /dashboard`, viaja dentro de un mismo sobre: el cliente tiene un solo camino de parseo y decide si le fue bien mirando `ok`. `/docs` y `/docs-json` quedan afuera, son de Swagger y no del API.
+
+### Éxito
+
+```json
+{ "ok": true, "data": { "id": "..." } }
+```
+
+`data` trae **exactamente lo mismo que el endpoint devolvía antes** del sobre: un objeto, un `null` o un array. Las listas paginadas mantienen las filas en `data` (sigue siendo un array) y la descripción de la página va aparte, en `meta`:
+
+```json
+{ "ok": true, "data": [ "..." ], "meta": { "limit": 20, "offset": 0, "total": 137, "hasMore": true } }
+```
+
+Las respuestas sin cuerpo (204) no se envuelven.
+
+### Error
+
+```json
+{ "ok": false, "error": { "codigo": "NO_ENCONTRADO", "mensaje": "Paciente no encontrado." } }
+```
+
+El status HTTP **no cambia** (400, 401, 403, 404, 409, 500): lo que se lee para decidir es el `codigo`, porque es estable; el `mensaje` es para mostrar al usuario y puede cambiar. `detalles` sólo aparece cuando el fallo trae errores por campo.
+
+| `codigo` | Cuándo |
+|---|---|
+| `VALIDACION` | Datos inválidos (400/422): pipe de validación, `limit` fuera de rango, `cursor` y `offset` juntos |
+| `NO_AUTENTICADO` | Falta el token o no es válido (401) |
+| `SIN_PERMISO` | El rol no alcanza o el correo no está verificado (403) |
+| `NO_ENCONTRADO` | El recurso no existe o no te pertenece (404) |
+| `CONFLICTO` | La operación choca con el estado actual (409) |
+| `CURSOR_INVALIDO` | El cursor no corresponde a una fila de esa lista (400) |
+| `ERROR_HTTP` | Cualquier otro 4xx que no tenga código propio |
+| `ERROR_INTERNO` | Error inesperado (500); el detalle va al log, nunca al cliente |
+
+### Paginación
+
+Las listas paginadas aceptan dos modos y el cliente elige por query params. Nunca se mezclan: mandar `cursor` **y** `offset` responde `400 VALIDACION`.
+
+**Modo web — `?limit=&offset=`** (lo que necesita un listado con paginador y número de páginas).
+
+```json
+{ "ok": true, "data": [ "..." ], "meta": { "limit": 20, "offset": 40, "total": 137, "hasMore": true } }
+```
+
+**Modo mobile — `?cursor=&limit=`** (scroll infinito).
+
+```json
+{ "ok": true, "data": [ "..." ], "meta": { "limit": 20, "nextCursor": "ZjQ3ZmYxYzIt", "hasMore": true } }
+```
+
+- `limit` por defecto **20**, máximo **100**. `offset` es base 0 y `limit` tiene que ser un entero entre 1 y 100; si no, `400 VALIDACION`.
+- Sin `limit`, `offset` ni `cursor` la lista responde la **primera página** (equivale a `offset=0&limit=20`).
+- `nextCursor` es opaco: se manda tal cual en la siguiente llamada y vale `null` en la última página. Si el cursor no es una fila de esa lista, responde `400 CURSOR_INVALIDO`.
+- `total` sólo se calcula en modo offset. El modo cursor pide una fila extra para saber si hay siguiente y así no paga un `COUNT` en cada request del mobile.
+
+Se paginan las listas que crecen sin techo:
+
+| Lista |
+|---|
+| `GET /pacientes` |
+| `GET /alimentos` |
+| `GET /alimentos/{id}/versiones` |
+| `GET /citas` |
+| `GET /pacientes/{id}/planes` |
+| `GET /pacientes/{id}/mediciones` |
+| `GET /me/mediciones` |
+| `GET /me/citas` |
+| `GET /me/registros` |
+
+**No** se paginan los catálogos fijos (`GET /restricciones`, `GET /condiciones`) ni los endpoints de detalle (`GET /pacientes/{id}`, `GET /planes/{id}`, `GET /alimentos/{id}`, `GET /pacientes/{id}/ficha`): devuelven el objeto completo en `data`.
 
 ## Base de datos
 
