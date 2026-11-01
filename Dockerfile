@@ -42,6 +42,13 @@ RUN apt-get update \
 # prisma.config.ts) y el schema-engine ya descargado.
 COPY --chown=node:node --from=build /app/node_modules ./node_modules
 COPY --chown=node:node --from=build /app/dist ./dist
+
+# El seed (`npx prisma db seed`, que corre `tsx prisma/seed.ts`) importa
+# `src/generated/prisma/client.js`, y Prisma 7 emite ese cliente como TypeScript
+# dentro de `src/`. `nest build` lo compila a `dist/` pero no a la ruta que
+# importa el seed, así que sin esta copia el seed muere con ERR_MODULE_NOT_FOUND
+# en la imagen final y hay que generarlo a mano en cada sesión SSH.
+COPY --chown=node:node --from=build /app/src/generated ./src/generated
 COPY --chown=node:node package.json package-lock.json prisma.config.ts tsconfig.json ./
 COPY --chown=node:node prisma ./prisma
 
