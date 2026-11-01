@@ -1,9 +1,9 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from './../src/app.module.js';
-import { configurarSwagger } from './../src/common/swagger.js';
+import { configurarApp } from './../src/common/configurar-app.js';
 
 // No requiere base de datos: verifica arranque, salud, Swagger y protección de rutas.
 describe('BaleadaFit API (e2e)', () => {
@@ -15,10 +15,8 @@ describe('BaleadaFit API (e2e)', () => {
       imports: [AppModule],
     }).compile();
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    configurarSwagger(app);
+    // La misma configuración que `main.ts`: pipes, sobre, filtro y Swagger.
+    configurarApp(app);
     await app.init();
   });
 
@@ -26,7 +24,7 @@ describe('BaleadaFit API (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect({ servicio: 'baleadafit-api', estado: 'ok' });
+      .expect({ ok: true, data: { servicio: 'baleadafit-api', estado: 'ok' } });
   });
 
   it('publica la especificación OpenAPI en /docs-json', async () => {
@@ -39,14 +37,32 @@ describe('BaleadaFit API (e2e)', () => {
 
   it.each(['/pacientes', '/dashboard', '/me/hoy', '/auth/me', '/alimentos'])(
     'rechaza %s sin token',
-    (ruta) => request(app.getHttpServer()).get(ruta).expect(401),
+    (ruta) =>
+      request(app.getHttpServer())
+        .get(ruta)
+        .expect(401)
+        .expect(({ body }: { body: Record<string, unknown> }) => {
+          expect(body).toMatchObject({
+            ok: false,
+            error: { codigo: 'NO_AUTENTICADO' },
+          });
+          expect(typeof (body.error as { mensaje?: unknown }).mensaje).toBe(
+            'string',
+          );
+        }),
   );
 
   it('rechaza tokens que no son Bearer', () => {
     return request(app.getHttpServer())
       .get('/auth/me')
       .set('Authorization', 'Basic abc')
-      .expect(401);
+      .expect(401)
+      .expect(({ body }: { body: Record<string, unknown> }) => {
+        expect(body).toMatchObject({
+          ok: false,
+          error: { codigo: 'NO_AUTENTICADO' },
+        });
+      });
   });
 
   afterAll(async () => {

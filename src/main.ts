@@ -1,7 +1,7 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
-import { configurarSwagger } from './common/swagger.js';
+import { configurarApp } from './common/configurar-app.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,15 +11,7 @@ async function bootstrap() {
     .filter(Boolean);
   app.enableCors({ origin: origenes?.length ? origenes : true });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  configurarSwagger(app);
+  configurarApp(app);
 
   const puerto = process.env.PORT ?? 3000;
   // 0.0.0.0 explícito: el proxy de Railway llega por IPv4 a la red interna del
