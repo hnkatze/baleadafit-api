@@ -3,6 +3,7 @@ import {
   Body,
   ConflictException,
   Controller,
+  ForbiddenException,
   Get,
   Post,
 } from '@nestjs/common';
@@ -58,10 +59,10 @@ export class AuthController {
   @ApiOperation({
     summary: 'Registrar nutricionista',
     description:
-      'Crea el perfil de nutricionista para una cuenta de Firebase sin perfil. Usa el correo del token.',
+      'Crea el perfil de nutricionista para una cuenta de Firebase sin perfil. Usa el uid y el correo del token. Exige el correo verificado: con Google siempre lo está, con correo y contraseña hay que confirmar el enlace que envía Firebase.',
   })
   @ApiCreatedResponse({ type: NutricionistaEntity })
-  @ApiErrores(400, 401, 409)
+  @ApiErrores(400, 401, 403, 409)
   async registrarNutricionista(
     @UsuarioAct() u: UsuarioActual,
     @Body() dto: RegistroNutricionistaDto,
@@ -71,6 +72,10 @@ export class AuthController {
     }
     if (!u.email)
       throw new BadRequestException('La cuenta de Firebase no tiene correo.');
+    if (!u.emailVerificado)
+      throw new ForbiddenException(
+        'Verifica tu correo antes de registrar el perfil.',
+      );
     const existe = await this.prisma.nutricionista.findUnique({
       where: { correo: u.email },
     });

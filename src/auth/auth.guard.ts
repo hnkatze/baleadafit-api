@@ -55,7 +55,11 @@ export class AuthGuard implements CanActivate {
   }
 
   private async resolverUsuario(t: TokenVerificado): Promise<UsuarioActual> {
-    const base = { uid: t.uid, email: t.email };
+    const base = {
+      uid: t.uid,
+      email: t.email,
+      emailVerificado: t.emailVerificado,
+    };
 
     const nutri = await this.prisma.nutricionista.findUnique({
       where: { firebaseUid: t.uid },

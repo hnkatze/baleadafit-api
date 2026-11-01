@@ -104,6 +104,16 @@ describe('AuthGuard', () => {
     expect(req.usuario?.rol).toBe('sin_perfil');
   });
 
+  it('expone en el usuario si el correo del token está verificado', async () => {
+    token.emailVerificado = false;
+    const { ctx, req } = contexto({ authorization: 'Bearer t' });
+    await guard.canActivate(ctx);
+    expect(req.usuario).toMatchObject({
+      rol: 'sin_perfil',
+      emailVerificado: false,
+    });
+  });
+
   it('trata como sin perfil a un paciente dado de baja', async () => {
     prisma.paciente.findUnique.mockResolvedValue({
       id: 'p1',
