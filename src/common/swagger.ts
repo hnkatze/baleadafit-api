@@ -1,6 +1,5 @@
 import { applyDecorators, type INestApplication } from '@nestjs/common';
 import {
-  ApiExtraModels,
   ApiProperty,
   DocumentBuilder,
   SwaggerModule,
