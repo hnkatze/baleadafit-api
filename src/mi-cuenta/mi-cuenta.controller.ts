@@ -10,6 +10,7 @@ import type { UsuarioActual } from '../auth/auth.types.js';
 import { Roles, UsuarioAct } from '../auth/decorators.js';
 import { PaginacionDto } from '../common/paginacion.js';
 import { ApiErrores } from '../common/swagger.js';
+import { RegistrosDiarioQueryDto } from '../pacientes/pacientes.dto.js';
 import {
   MedicionConImcEntity,
   RegistroComidaConTipoEntity,
@@ -100,19 +101,8 @@ export class MiCuentaController {
     summary: 'Mi diario de comidas',
     description: 'Por defecto, los últimos 7 días.',
   })
-  @ApiQuery({ name: 'desde', required: false, description: 'YYYY-MM-DD' })
-  @ApiQuery({
-    name: 'hasta',
-    required: false,
-    description: 'YYYY-MM-DD (por defecto hoy)',
-  })
   @ApiSobreOk(RegistroComidaConTipoEntity, { esLista: true, paginada: true })
-  registros(
-    @UsuarioAct() u: UsuarioActual,
-    @Query() q: PaginacionDto,
-    @Query('desde') desde?: string,
-    @Query('hasta') hasta?: string,
-  ) {
-    return this.service.registros(u.pacienteId!, desde, hasta, q);
+  registros(@UsuarioAct() u: UsuarioActual, @Query() q: RegistrosDiarioQueryDto) {
+    return this.service.registros(u.pacienteId!, q.desde, q.hasta, q);
   }
 }

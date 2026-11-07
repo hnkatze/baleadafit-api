@@ -2694,7 +2694,7 @@
             "name": "desde",
             "required": false,
             "in": "query",
-            "description": "YYYY-MM-DD",
+            "description": "Formato YYYY-MM-DD. Por defecto, 7 días atrás.",
             "schema": {
               "example": "2026-10-22",
               "type": "string"
@@ -2704,7 +2704,7 @@
             "name": "hasta",
             "required": false,
             "in": "query",
-            "description": "YYYY-MM-DD (por defecto hoy)",
+            "description": "Formato YYYY-MM-DD. Por defecto, hoy.",
             "schema": {
               "example": "2026-10-28",
               "type": "string"
@@ -6452,8 +6452,9 @@
             "name": "desde",
             "required": false,
             "in": "query",
-            "description": "YYYY-MM-DD",
+            "description": "Formato YYYY-MM-DD. Por defecto, 7 días atrás.",
             "schema": {
+              "example": "2026-10-22",
               "type": "string"
             }
           },
@@ -6461,8 +6462,9 @@
             "name": "hasta",
             "required": false,
             "in": "query",
-            "description": "YYYY-MM-DD (por defecto hoy)",
+            "description": "Formato YYYY-MM-DD. Por defecto, hoy.",
             "schema": {
+              "example": "2026-10-28",
               "type": "string"
             }
           }

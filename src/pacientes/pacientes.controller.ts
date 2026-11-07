@@ -32,6 +32,7 @@ import {
   CrearMedicionDto,
   CrearPacienteDto,
   RegistrarComidaPacienteDto,
+  RegistrosDiarioQueryDto,
 } from './pacientes.dto.js';
 import {
   AdherenciaEntity,
@@ -320,32 +321,18 @@ export class PacientesController {
     description:
       'Registros del periodo, del más reciente al más antiguo, con el tipo de comida y quién la marcó. Por defecto, los últimos 7 días.',
   })
-  @ApiQuery({
-    name: 'desde',
-    required: false,
-    description: 'YYYY-MM-DD',
-    example: '2026-10-22',
-  })
-  @ApiQuery({
-    name: 'hasta',
-    required: false,
-    description: 'YYYY-MM-DD (por defecto hoy)',
-    example: '2026-10-28',
-  })
   @ApiSobreOk(RegistroComidaConTipoEntity, { esLista: true, paginada: true })
   @ApiErrores(404)
   registrosDePaciente(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
-    @Query() q: PaginacionDto,
-    @Query('desde') desde?: string,
-    @Query('hasta') hasta?: string,
+    @Query() q: RegistrosDiarioQueryDto,
   ) {
     return this.service.registrosDePaciente(
       id,
       u.nutricionistaId!,
-      desde,
-      hasta,
+      q.desde,
+      q.hasta,
       q,
     );
   }

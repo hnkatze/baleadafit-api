@@ -420,6 +420,29 @@ export class ActualizarMedicamentoDto extends PartialType(CrearMedicamentoDto) {
 }
 
 /**
+ * Query del diario de comidas: paginación más el periodo a auditar.
+ * `PaginacionDto` sola rechaza `desde`/`hasta` porque el pipe global prohíbe
+ * propiedades que el DTO no declara.
+ */
+export class RegistrosDiarioQueryDto extends PaginacionDto {
+  /**
+   * Formato YYYY-MM-DD. Por defecto, 7 días atrás.
+   * @example "2026-10-22"
+   */
+  @IsOptional()
+  @IsDateString()
+  desde?: string;
+
+  /**
+   * Formato YYYY-MM-DD. Por defecto, hoy.
+   * @example "2026-10-28"
+   */
+  @IsOptional()
+  @IsDateString()
+  hasta?: string;
+}
+
+/**
  * Marca o corrección de una comida del paciente por parte de la nutricionista.
  * Mismo shape que `PUT /me/registros` del paciente.
  */
