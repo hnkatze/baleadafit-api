@@ -1,6 +1,7 @@
 /* Modelos de respuesta para la documentación de Swagger (no se instancian). */
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  AutorRegistro,
   EstadoCita,
   EstadoFisiologico,
   EstadoPlan,
@@ -327,6 +328,17 @@ export class RegistroComidaEntity {
   cumplido: boolean;
   /** @example "Cambié el plátano por yuca" */
   comentario: string | null;
+  /**
+   * Último actor que escribió el registro: no hay historial de cambios.
+   * Si el paciente vuelve a marcar una comida que corrigió la nutricionista,
+   * la autoría regresa a `PACIENTE`.
+   */
+  @ApiProperty({
+    enum: AutorRegistro,
+    enumName: 'AutorRegistro',
+    example: 'PACIENTE',
+  })
+  autor: AutorRegistro;
   creadoEn: Date;
 }
 

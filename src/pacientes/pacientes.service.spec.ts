@@ -598,4 +598,107 @@ describe('PacientesService', () => {
     const r = await svc.adherencia('p1', 'n1');
     expect(r.adherencia).toBeNull();
   });
+
+  it('la adherencia expone quién marcó cada comida', async () => {
+    prisma.registroComida.findMany.mockResolvedValue([
+      { id: 'r1', cumplido: true, autor: 'NUTRICIONISTA' },
+    ]);
+    const r = await svc.adherencia('p1', 'n1');
+    expect(r.registros[0]).toMatchObject({ autor: 'NUTRICIONISTA' });
+  });
+
+  describe('registros de comida de la nutricionista', () => {
+    it('marca la comida del paciente con autor de nutricionista', async () => {
+      prisma.tiempoComida.findFirst.mockResolvedValue({ id: 't1' });
+      await svc.registrarComida('p1', 'n1', {
+        tiempoComidaId: 't1',
+        fecha: '2026-10-28',
+        cumplido: true,
+        comentario: 'Lo confirmé en consulta',
+      });
+      expect(prisma.tiempoComida.findFirst).toHaveBeenCalledWith({
+        where: { id: 't1', plan: { pacienteId: 'p1' } },
+      });
+      const fecha = new Date('2026-10-28T00:00:00.000Z');
+      expect(prisma.registroComida.upsert).toHaveBeenCalledWith({
+        where: {
+          pacienteId_tiempoComidaId_fecha: {
+            pacienteId: 'p1',
+            tiempoComidaId: 't1',
+            fecha,
+          },
+        },
+        create: {
+          pacienteId: 'p1',
+          tiempoComidaId: 't1',
+          fecha,
+          cumplido: true,
+          comentario: 'Lo confirmé en consulta',
+          autor: 'NUTRICIONISTA',
+        },
+        update: {
+          cumplido: true,
+          comentario: 'Lo confirmé en consulta',
+          autor: 'NUTRICIONISTA',
+        },
+      });
+    });
+
+    it('no escribe si el paciente es de otra nutricionista', async () => {
+      prisma.paciente.findFirst.mockResolvedValue(null);
+      await expect(
+        svc.registrarComida('p9', 'n1', {
+          tiempoComidaId: 't1',
+          cumplido: true,
+        }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.registroComida.upsert).not.toHaveBeenCalled();
+    });
+
+    it('no acepta un tiempo de comida de otro paciente', async () => {
+      prisma.tiempoComida.findFirst.mockResolvedValue(null);
+      await expect(
+        svc.registrarComida('p1', 'n1', {
+          tiempoComidaId: 't9',
+          cumplido: true,
+        }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.registroComida.upsert).not.toHaveBeenCalled();
+    });
+
+    it('lista los registros del paciente en la ventana pedida', async () => {
+      prisma.registroComida.findMany.mockResolvedValue([]);
+      prisma.registroComida.count.mockResolvedValue(0);
+      await svc.registrosDePaciente('p1', 'n1', '2026-10-20', '2026-10-27');
+      const args = prisma.registroComida.findMany.mock.calls[0][0];
+      expect(args.where).toEqual({
+        pacienteId: 'p1',
+        fecha: {
+          gte: new Date('2026-10-20T00:00:00.000Z'),
+          lte: new Date('2026-10-27T00:00:00.000Z'),
+        },
+      });
+      expect(args.include).toEqual({ tiempoComida: { select: { tipo: true } } });
+    });
+
+    it('el listado por defecto cubre los últimos 7 días', async () => {
+      prisma.registroComida.findMany.mockResolvedValue([]);
+      prisma.registroComida.count.mockResolvedValue(0);
+      await svc.registrosDePaciente('p1', 'n1', undefined, '2026-10-28');
+      expect(
+        prisma.registroComida.findMany.mock.calls[0][0].where.fecha,
+      ).toEqual({
+        gte: new Date('2026-10-22T00:00:00.000Z'),
+        lte: new Date('2026-10-28T00:00:00.000Z'),
+      });
+    });
+
+    it('no lista registros de un paciente ajeno', async () => {
+      prisma.paciente.findFirst.mockResolvedValue(null);
+      await expect(
+        svc.registrosDePaciente('p9', 'n1'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(prisma.registroComida.findMany).not.toHaveBeenCalled();
+    });
+  });
 });

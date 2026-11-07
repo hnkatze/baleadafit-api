@@ -11,6 +11,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -416,4 +417,32 @@ export class ActualizarMedicamentoDto extends PartialType(CrearMedicamentoDto) {
   @IsOptional()
   @IsBoolean()
   activo?: boolean;
+}
+
+/**
+ * Marca o corrección de una comida del paciente por parte de la nutricionista.
+ * Mismo shape que `PUT /me/registros` del paciente.
+ */
+export class RegistrarComidaPacienteDto {
+  /** ID del tiempo de comida del plan (viene en `GET /pacientes/{id}/planes`). */
+  @IsUUID()
+  tiempoComidaId: string;
+
+  /**
+   * Formato YYYY-MM-DD. Por defecto, hoy.
+   * @example "2026-10-28"
+   */
+  @IsOptional()
+  @IsDateString()
+  fecha?: string;
+
+  /** @example true */
+  @IsBoolean()
+  cumplido: boolean;
+
+  /** @example "Lo confirmé en consulta" */
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  comentario?: string;
 }

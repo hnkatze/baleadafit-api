@@ -27,6 +27,7 @@ import type {
   CrearMedicamentoDto,
   CrearMedicionDto,
   CrearPacienteDto,
+  RegistrarComidaPacienteDto,
 } from './pacientes.dto.js';
 import type { PerfilClinico } from './perfil-clinico.js';
 
@@ -613,6 +614,73 @@ export class PacientesService {
   }
 
   // ─── Diario del paciente (vista de la nutricionista) ────────────────────
+
+  /**
+   * Marca o corrige una comida del paciente. Mismo shape que `PUT /me/registros`:
+   * upsert sobre (paciente, tiempo, fecha) y la fila queda con autoría de nutricionista.
+   */
+  async registrarComida(
+    pacienteId: string,
+    nutricionistaId: string,
+    dto: RegistrarComidaPacienteDto,
+  ) {
+    await this.acceso.pacienteDeNutricionista(pacienteId, nutricionistaId);
+    const tiempo = await this.prisma.tiempoComida.findFirst({
+      where: { id: dto.tiempoComidaId, plan: { pacienteId } },
+    });
+    if (!tiempo)
+      throw new NotFoundException(
+        'Tiempo de comida no encontrado en los planes del paciente.',
+      );
+    const fecha = aFecha(dto.fecha ?? hoyIso());
+    return this.prisma.registroComida.upsert({
+      where: {
+        pacienteId_tiempoComidaId_fecha: {
+          pacienteId,
+          tiempoComidaId: tiempo.id,
+          fecha,
+        },
+      },
+      create: {
+        pacienteId,
+        tiempoComidaId: tiempo.id,
+        fecha,
+        cumplido: dto.cumplido,
+        comentario: dto.comentario,
+        autor: 'NUTRICIONISTA',
+      },
+      update: {
+        cumplido: dto.cumplido,
+        comentario: dto.comentario,
+        autor: 'NUTRICIONISTA',
+      },
+    });
+  }
+
+  /** Diario del paciente para corregir o auditar lo cargado. Por defecto, 7 días. */
+  async registrosDePaciente(
+    pacienteId: string,
+    nutricionistaId: string,
+    desde?: string,
+    hasta?: string,
+    pedido: PaginacionDto = new PaginacionDto(),
+  ) {
+    await this.acceso.pacienteDeNutricionista(pacienteId, nutricionistaId);
+    const fin = aFecha(hasta ?? hoyIso());
+    const inicio = desde ? aFecha(desde) : sumarDias(fin, -6);
+    const where = { pacienteId, fecha: { gte: inicio, lte: fin } };
+    return paginar(pedido, {
+      filas: (args) =>
+        this.prisma.registroComida.findMany({
+          where,
+          orderBy: [{ fecha: 'desc' }, { id: 'desc' }],
+          include: { tiempoComida: { select: { tipo: true } } },
+          ...args,
+        }),
+      total: () => this.prisma.registroComida.count({ where }),
+      id: (r) => r.id,
+    });
+  }
 
   async adherencia(
     pacienteId: string,

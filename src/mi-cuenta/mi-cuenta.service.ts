@@ -109,8 +109,13 @@ export class MiCuentaService {
         fecha,
         cumplido: dto.cumplido,
         comentario: dto.comentario,
+        autor: 'PACIENTE',
       },
-      update: { cumplido: dto.cumplido, comentario: dto.comentario },
+      update: {
+        cumplido: dto.cumplido,
+        comentario: dto.comentario,
+        autor: 'PACIENTE',
+      },
     });
   }
 

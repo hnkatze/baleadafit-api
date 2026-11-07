@@ -88,6 +88,12 @@ enum FuenteMedicion {
   OTRO
 }
 
+/// Quién marcó la comida: el propio paciente o la nutricionista en consulta.
+enum AutorRegistro {
+  PACIENTE
+  NUTRICIONISTA
+}
+
 // ─── Expediente ───────────────────────────────────────────────────────────
 
 model Nutricionista {
@@ -433,6 +439,8 @@ model RegistroComida {
   fecha          DateTime @db.Date
   cumplido       Boolean
   comentario     String?
+  /// Último actor que escribió la fila (no hay historial de cambios).
+  autor          AutorRegistro @default(PACIENTE)
   creadoEn       DateTime @default(now()) @map("creado_en")
 
   paciente     Paciente     @relation(fields: [pacienteId], references: [id], onDelete: Cascade)

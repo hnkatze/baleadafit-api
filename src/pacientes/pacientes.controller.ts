@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Query,
 } from '@nestjs/common';
 import {
@@ -30,6 +31,7 @@ import {
   CrearMedicamentoDto,
   CrearMedicionDto,
   CrearPacienteDto,
+  RegistrarComidaPacienteDto,
 } from './pacientes.dto.js';
 import {
   AdherenciaEntity,
@@ -40,6 +42,8 @@ import {
   PacienteDetalleEntity,
   PacienteEntity,
   PacienteListadoEntity,
+  RegistroComidaConTipoEntity,
+  RegistroComidaEntity,
   RequerimientoEntity,
 } from './pacientes.entity.js';
 import { PacientesService } from './pacientes.service.js';
@@ -290,5 +294,59 @@ export class PacientesController {
     @Query('hasta') hasta?: string,
   ) {
     return this.service.adherencia(id, u.nutricionistaId!, desde, hasta);
+  }
+
+  @Put('pacientes/:id/registros')
+  @ID_PACIENTE
+  @ApiOperation({
+    summary: 'Marcar una comida del paciente',
+    description:
+      'Marca o corrige una comida del diario. Es un upsert sobre (paciente, tiempo de comida, fecha), igual que `PUT /me/registros`, y la fila queda con `autor: "NUTRICIONISTA"`.',
+  })
+  @ApiSobreOk(RegistroComidaEntity)
+  @ApiErrores(400, 404)
+  registrarComida(
+    @UsuarioAct() u: UsuarioActual,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RegistrarComidaPacienteDto,
+  ) {
+    return this.service.registrarComida(id, u.nutricionistaId!, dto);
+  }
+
+  @Get('pacientes/:id/registros')
+  @ID_PACIENTE
+  @ApiOperation({
+    summary: 'Diario de comidas del paciente',
+    description:
+      'Registros del periodo, del más reciente al más antiguo, con el tipo de comida y quién la marcó. Por defecto, los últimos 7 días.',
+  })
+  @ApiQuery({
+    name: 'desde',
+    required: false,
+    description: 'YYYY-MM-DD',
+    example: '2026-10-22',
+  })
+  @ApiQuery({
+    name: 'hasta',
+    required: false,
+    description: 'YYYY-MM-DD (por defecto hoy)',
+    example: '2026-10-28',
+  })
+  @ApiSobreOk(RegistroComidaConTipoEntity, { esLista: true, paginada: true })
+  @ApiErrores(404)
+  registrosDePaciente(
+    @UsuarioAct() u: UsuarioActual,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() q: PaginacionDto,
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
+  ) {
+    return this.service.registrosDePaciente(
+      id,
+      u.nutricionistaId!,
+      desde,
+      hasta,
+      q,
+    );
   }
 }

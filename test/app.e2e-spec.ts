@@ -33,6 +33,9 @@ describe('BaleadaFit API (e2e)', () => {
       .expect(200);
     expect(res.body.info.title).toBe('BaleadaFit API');
     expect(res.body.paths['/pacientes/{id}/planes/generar']).toBeDefined();
+    // La nutricionista escribe el diario del paciente (antes solo el paciente podía).
+    expect(res.body.paths['/pacientes/{id}/registros'].put).toBeDefined();
+    expect(res.body.paths['/pacientes/{id}/registros'].get).toBeDefined();
   });
 
   it.each(['/pacientes', '/dashboard', '/me/hoy', '/auth/me', '/alimentos'])(

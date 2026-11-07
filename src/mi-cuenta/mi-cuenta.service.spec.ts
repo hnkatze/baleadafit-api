@@ -114,7 +114,7 @@ describe('MiCuentaService', () => {
       });
     });
 
-    it('crea o actualiza el registro del día', async () => {
+    it('crea o actualiza el registro del día con autoría del paciente', async () => {
       prisma.tiempoComida.findFirst.mockResolvedValue({ id: 't1' });
       await svc.registrar('p1', {
         tiempoComidaId: 't1',
@@ -137,8 +137,25 @@ describe('MiCuentaService', () => {
           fecha,
           cumplido: false,
           comentario: 'No pude',
+          autor: 'PACIENTE',
         },
-        update: { cumplido: false, comentario: 'No pude' },
+        update: {
+          cumplido: false,
+          comentario: 'No pude',
+          autor: 'PACIENTE',
+        },
+      });
+    });
+
+    it('volver a marcar una comida corregida por la nutricionista devuelve la autoría al paciente', async () => {
+      prisma.tiempoComida.findFirst.mockResolvedValue({ id: 't1' });
+      await svc.registrar('p1', {
+        tiempoComidaId: 't1',
+        fecha: '2026-10-28',
+        cumplido: true,
+      });
+      expect(prisma.registroComida.upsert.mock.calls[0][0].update).toMatchObject({
+        autor: 'PACIENTE',
       });
     });
   });
