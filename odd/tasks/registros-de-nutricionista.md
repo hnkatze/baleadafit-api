@@ -14,12 +14,13 @@ Feature #12 del backlog: hoy el único escritor de comidas es `PUT /me/registros
 
 ## Tasks
 
-- [ ] T1 · S3 — enum `AutorRegistro` + columna `autor` con default `PACIENTE` (schema + migración). Commit: —
-- [ ] T2 · S4 — `PUT /me/registros` escribe `autor = PACIENTE`. Commit: —
-- [ ] T3 · S1, S5 — `PUT /pacientes/{id}/registros` (upsert, autor NUTRICIONISTA, 404 de aislamiento). Commit: —
-- [ ] T4 · S2, S5 — `GET /pacientes/{id}/registros` paginado con ventana de 7 días. Commit: —
-- [ ] T5 · S3, S6 — `autor` en las entidades y en las respuestas de adherencia y de `/me/registros`. Commit: —
-- [ ] T6 · S7 — CONTEXTO.md, Swagger y `docs/openapi.json` al día; gate completo verde. Commit: —
+- [x] T1 · S3 — enum `AutorRegistro` + columna `autor` con default `PACIENTE` (schema + migración). Commit: e9b281f
+- [x] T2 · S4 — `PUT /me/registros` escribe `autor = PACIENTE`. Commit: e9b281f
+- [x] T3 · S1, S5 — `PUT /pacientes/{id}/registros` (upsert, autor NUTRICIONISTA, 404 de aislamiento). Commit: e9b281f
+- [x] T4 · S2, S5 — `GET /pacientes/{id}/registros` paginado con ventana de 7 días. Commit: e9b281f
+- [x] T5 · S3, S6 — `autor` en las entidades y en las respuestas de adherencia y de `/me/registros`. Commit: e9b281f
+- [x] T6 · S7 — CONTEXTO.md, Swagger y `docs/openapi.json` al día. Commit: 54ca1f3
+- [x] T7 · S2 — `desde`/`hasta` funcionando en los dos diarios (defecto de query encontrado en la verificación). Commit: bc49aa7
 
 ## Log
 
@@ -28,3 +29,7 @@ Feature #12 del backlog: hoy el único escritor de comidas es `PUT /me/registros
 - **D1** (verbo de la ruta): la propuesta del board pedía `POST`, se implementa `PUT` porque la operación es un upsert sobre `(paciente, tiempo, fecha)` — el mismo caso que ya resuelve `PUT /me/registros`. Un `POST` que actualiza mentiría sobre su idempotencia, y el cliente todavía no está escrito. Se avisa en el board.
 - **D2** (semántica de `autor`): una sola columna con el último actor que escribió la fila. No hay historial: si el paciente vuelve a marcar una comida que corrigió la nutricionista, `autor` pasa a `PACIENTE`. Queda explícito en CONTEXTO.md y en la entidad.
 - **D3** (módulo): la escritura vive en `PacientesService`, no en `MiCuentaService`, para no invertir la dependencia `mi-cuenta → pacientes`.
+- **L3** (verificación funcional contra Postgres real): `GET /me/registros?desde=2026-10-28&hasta=2026-10-28` respondía **400** `property desde should not exist`. El pipe global (`whitelist` + `forbidNonWhitelisted`) valida el query contra `PaginacionDto`, que no declara `desde` ni `hasta`; el defecto ya estaba en `main` desde que la lista se paginó, y la ruta nueva lo heredaba. Es el commit bc49aa7, con spec que reproduce el pipe real.
+- **D4** (query tipado): `RegistrosDiarioQueryDto` extiende `PaginacionDto` con `desde` y `hasta` y lo comparten los dos diarios, en vez de duplicar el DTO por módulo.
+- **L4** (evidencia de la migración): sobre una base creada con las cuatro migraciones previas y una fila de `registro_comida` insertada a mano, la migración nueva deja la fila intacta y `autor = PACIENTE`. Ninguna fila se reescribe.
+- **L5** (evidencia funcional, API local con `AUTH_DEV_BYPASS` contra esa base): `PUT /pacientes/{id}/registros` → 200 con `autor: NUTRICIONISTA`; `GET /pacientes/{id}/registros?desde&hasta` → 200 con `meta`; `GET /pacientes/{id}/adherencia` → `registros[0].autor`; `PUT` con un `tiempoComidaId` de otro paciente → 404; `PUT` del paciente sobre esa misma fila → 200 y `autor` vuelve a `PACIENTE`; `GET /me/registros?desde&hasta` → 200.
