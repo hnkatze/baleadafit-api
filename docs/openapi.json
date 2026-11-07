@@ -2474,6 +2474,367 @@
         ]
       }
     },
+    "/pacientes/{id}/registros": {
+      "put": {
+        "description": "Marca o corrige una comida del diario. Es un upsert sobre (paciente, tiempo de comida, fecha), igual que `PUT /me/registros`, y la fila queda con `autor: \"NUTRICIONISTA\"`.",
+        "operationId": "PacientesController_registrarComida",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrarComidaPacienteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RegistroComidaEntity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marcar una comida del paciente",
+        "tags": [
+          "pacientes"
+        ]
+      },
+      "get": {
+        "description": "Registros del periodo, del más reciente al más antiguo, con el tipo de comida y quién la marcó. Por defecto, los últimos 7 días.",
+        "operationId": "PacientesController_registrosDePaciente",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del paciente",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Filas por página. Por defecto 20, máximo 100.",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Filas a saltear (modo web, base 0). La primera página es `offset=0`.",
+            "schema": {
+              "minimum": 0,
+              "example": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Cursor opaco de la página anterior (modo mobile): es el `nextCursor` que\ndevolvió la llamada previa. No se puede inventar ni mezclar entre listas.",
+            "schema": {
+              "example": "ZjQ3ZmYxYzIt",
+              "type": "string"
+            }
+          },
+          {
+            "name": "desde",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD",
+            "schema": {
+              "example": "2026-10-22",
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasta",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD (por defecto hoy)",
+            "schema": {
+              "example": "2026-10-28",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RegistroComidaConTipoEntity"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaPaginacionEntity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Diario de comidas del paciente",
+        "tags": [
+          "pacientes"
+        ]
+      }
+    },
     "/alimentos": {
       "get": {
         "description": "Catálogo activo. `excluir=lactosa,gluten` quita los alimentos que contienen esas etiquetas.",
@@ -9116,6 +9477,14 @@
           "tallaCm"
         ]
       },
+      "AutorRegistro": {
+        "type": "string",
+        "enum": [
+          "PACIENTE",
+          "NUTRICIONISTA"
+        ],
+        "description": "Último actor que escribió el registro: no hay historial de cambios.\nSi el paciente vuelve a marcar una comida que corrigió la nutricionista,\nla autoría regresa a `PACIENTE`."
+      },
       "TipoComida": {
         "type": "string",
         "enum": [
@@ -9144,6 +9513,15 @@
       "RegistroComidaConTipoEntity": {
         "type": "object",
         "properties": {
+          "autor": {
+            "description": "Último actor que escribió el registro: no hay historial de cambios.\nSi el paciente vuelve a marcar una comida que corrigió la nutricionista,\nla autoría regresa a `PACIENTE`.",
+            "example": "PACIENTE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutorRegistro"
+              }
+            ]
+          },
           "tiempoComida": {
             "$ref": "#/components/schemas/TiempoComidaTipoEntity"
           },
@@ -9176,6 +9554,7 @@
           }
         },
         "required": [
+          "autor",
           "tiempoComida",
           "id",
           "pacienteId",
@@ -9225,6 +9604,85 @@
           "cumplidos",
           "adherencia",
           "registros"
+        ]
+      },
+      "RegistroComidaEntity": {
+        "type": "object",
+        "properties": {
+          "autor": {
+            "description": "Último actor que escribió el registro: no hay historial de cambios.\nSi el paciente vuelve a marcar una comida que corrigió la nutricionista,\nla autoría regresa a `PACIENTE`.",
+            "example": "PACIENTE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutorRegistro"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "tiempoComidaId": {
+            "type": "string"
+          },
+          "fecha": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-28T00:00:00.000Z"
+          },
+          "cumplido": {
+            "type": "boolean",
+            "example": true
+          },
+          "comentario": {
+            "type": "string",
+            "nullable": true,
+            "example": "Cambié el plátano por yuca"
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "autor",
+          "id",
+          "pacienteId",
+          "tiempoComidaId",
+          "fecha",
+          "cumplido",
+          "comentario",
+          "creadoEn"
+        ]
+      },
+      "RegistrarComidaPacienteDto": {
+        "type": "object",
+        "properties": {
+          "tiempoComidaId": {
+            "type": "string",
+            "description": "ID del tiempo de comida del plan (viene en `GET /pacientes/{id}/planes`).",
+            "format": "uuid"
+          },
+          "fecha": {
+            "type": "string",
+            "description": "Formato YYYY-MM-DD. Por defecto, hoy.",
+            "example": "2026-10-28"
+          },
+          "cumplido": {
+            "type": "boolean",
+            "example": true
+          },
+          "comentario": {
+            "type": "string",
+            "example": "Lo confirmé en consulta",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "tiempoComidaId",
+          "cumplido"
         ]
       },
       "CategoriaAlimento": {
@@ -10468,47 +10926,6 @@
           "nombre",
           "kcalObjetivo",
           "totales"
-        ]
-      },
-      "RegistroComidaEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "pacienteId": {
-            "type": "string"
-          },
-          "tiempoComidaId": {
-            "type": "string"
-          },
-          "fecha": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-10-28T00:00:00.000Z"
-          },
-          "cumplido": {
-            "type": "boolean",
-            "example": true
-          },
-          "comentario": {
-            "type": "string",
-            "nullable": true,
-            "example": "Cambié el plátano por yuca"
-          },
-          "creadoEn": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "pacienteId",
-          "tiempoComidaId",
-          "fecha",
-          "cumplido",
-          "comentario",
-          "creadoEn"
         ]
       },
       "TiempoHoyEntity": {

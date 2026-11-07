@@ -147,6 +147,7 @@ En el cliente, antes de mostrar el formulario, conviene mirar `user.emailVerifie
 | nutricionista | `GET/POST /pacientes/:id/mediciones`, `DELETE /mediciones/:id` | Peso, talla, % grasa, cintura (+ IMC) |
 | nutricionista | `GET /pacientes/:id/requerimiento` | kcal y macros calculados |
 | nutricionista | `GET /pacientes/:id/adherencia` | Diario del paciente y % de cumplimiento |
+| nutricionista | `PUT/GET /pacientes/:id/registros` | Marcar o corregir comidas del paciente y auditar quién las marcó (`autor`) |
 | nutricionista | `GET /pacientes/:id/planes`, `POST /pacientes/:id/planes/generar` | Planes y recomendador |
 | nutricionista | `GET/PATCH/DELETE /planes/:id`, `PUT /planes/:id/tiempos/:tipo/items`, `POST /planes/:id/activar` | Editar y aprobar planes |
 | nutricionista | `GET/POST /citas`, `PATCH /citas/:id` | Agenda (valida choques de horario) |
@@ -240,6 +241,7 @@ Se paginan las listas que crecen sin techo:
 | `GET /me/mediciones` |
 | `GET /me/citas` |
 | `GET /me/registros` |
+| `GET /pacientes/{id}/registros` |
 
 **No** se paginan los catálogos fijos (`GET /restricciones`, `GET /condiciones`) ni los endpoints de detalle (`GET /pacientes/{id}`, `GET /planes/{id}`, `GET /alimentos/{id}`, `GET /pacientes/{id}/ficha`): devuelven el objeto completo en `data`.
 

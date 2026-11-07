@@ -128,7 +128,7 @@ Cada módulo sigue la misma forma: `*.dto.ts` (entrada, con validaciones), `*.en
 | `plan_alimenticio` | Meta de kcal y macros, estado (`BORRADOR`, `ACTIVO`, `ARCHIVADO`) y origen (`MANUAL`, `REGLAS`, `IA`) | N:1 paciente |
 | `tiempo_comida` | Desayuno, merienda AM, almuerzo, merienda PM, cena, con `% kcal` | N:1 plan, único (plan, tipo) |
 | `plan_item` | Intermedia N:M con `porciones` | tiempo_comida ↔ alimento |
-| `registro_comida` | Diario del paciente: ¿cumplió este tiempo de comida este día? | único (paciente, tiempo, fecha) |
+| `registro_comida` | Diario del paciente: ¿cumplió este tiempo de comida este día? `autor` dice quién la marcó (`PACIENTE` o `NUTRICIONISTA`) | único (paciente, tiempo, fecha) |
 
 **Restricciones del catálogo:** cada alimento declara en `contiene[]` las etiquetas que tiene, por ejemplo `['gluten','lactosa']`. El paciente tiene códigos de restricción, y el catálogo apto excluye los alimentos que contengan alguno.
 
@@ -169,7 +169,14 @@ Una nutricionista **solo** ve a sus pacientes y planes. `AccesoService` responde
 Al crear o reprogramar una cita se valida que no choque con otra `PROGRAMADA` de la misma nutricionista (responde 409). Cancelar una cita no revisa choques.
 
 ### App del paciente (`/me`)
-Solo lectura de sus propios datos. La única escritura es `PUT /me/registros`, que hace un upsert del día por tiempo de comida.
+Solo lectura de sus propios datos. La única escritura es `PUT /me/registros`, que hace un upsert del día por tiempo de comida y deja `autor = PACIENTE`.
+
+### Diario escrito por la nutricionista
+La nutricionista escribe y audita el diario del paciente en el expediente:
+- `PUT /pacientes/{id}/registros` marca o corrige una comida. Es el mismo upsert —(paciente, tiempo, fecha)— que `PUT /me/registros`, y deja `autor = NUTRICIONISTA`. No es `POST`: la operación es idempotente sobre esa clave.
+- `GET /pacientes/{id}/registros?desde&hasta` lista el periodo (por defecto 7 días) con el tipo de comida y la autoría.
+- **Autoría:** `registro_comida.autor` guarda el **último** actor que escribió la fila; no hay historial. Si el paciente vuelve a marcar una comida que corrigió la nutricionista, el registro regresa a `autor = PACIENTE`. Esa es la razón por la que `GET /pacientes/{id}/adherencia` y `GET /pacientes/{id}/ficha` muestran el autor por registro.
+- Sin registros la adherencia es `null` con `total = 0`, no `0 %`: un plan `ACTIVO` no genera comidas cumplidas por sí solo.
 
 ---
 
@@ -305,7 +312,7 @@ Referencia para no romper el contrato. El esquema completo está en `docs/openap
 | #6 Inicio de la nutricionista | `GET /dashboard` |
 | #7 Lista de pacientes | `GET /pacientes?q=` |
 | #8 Crear/editar paciente | `POST /pacientes`, `PATCH /pacientes/{id}`, `DELETE /pacientes/{id}`, `GET /restricciones` |
-| #9 Expediente y mediciones | `GET /pacientes/{id}`, `GET/POST /pacientes/{id}/mediciones`, `GET /pacientes/{id}/requerimiento`, `GET /pacientes/{id}/adherencia` |
+| #9 Expediente y mediciones | `GET /pacientes/{id}`, `GET/POST /pacientes/{id}/mediciones`, `GET /pacientes/{id}/requerimiento`, `GET /pacientes/{id}/adherencia`, `PUT/GET /pacientes/{id}/registros` |
 | #10 Catálogo | `GET /alimentos`, `POST/PATCH /alimentos` |
 | #11 Generar plan | `POST /pacientes/{id}/planes/generar` |
 | #12 Editar y aprobar plan | `GET/PATCH /planes/{id}`, `PUT /planes/{id}/tiempos/{tipo}/items`, `POST /planes/{id}/activar`, `DELETE /planes/{id}` |
