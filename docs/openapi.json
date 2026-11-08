@@ -11622,6 +11622,14 @@
               }
             ]
           },
+          "rol": {
+            "description": "Perfil dueño del dispositivo. No se guarda como columna: se deriva de cuál\nde las dos claves foráneas tiene valor.",
+            "enum": [
+              "nutricionista",
+              "paciente"
+            ],
+            "type": "string"
+          },
           "creadoEn": {
             "type": "string",
             "format": "date-time"
@@ -11637,24 +11645,15 @@
           "token": {
             "type": "string",
             "description": "Token de registro de FCM."
-          },
-          "uid": {
-            "type": "string",
-            "description": "`firebase_uid` del dueño del dispositivo."
-          },
-          "rol": {
-            "type": "string",
-            "description": "Rol con el que se registró: `nutricionista` o `paciente`."
           }
         },
         "required": [
           "plataforma",
+          "rol",
           "creadoEn",
           "ultimoUso",
           "id",
-          "token",
-          "uid",
-          "rol"
+          "token"
         ]
       },
       "RegistrarDispositivoDto": {

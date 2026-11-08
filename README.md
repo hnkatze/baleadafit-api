@@ -163,7 +163,8 @@ En el cliente, antes de mostrar el formulario, conviene mirar `user.emailVerifie
 `POST /me/dispositivos` guarda el token que FCM le dio a la app, con su plataforma (`ANDROID`, `IOS` o `WEB`). La app lo vuelve a llamar en cada arranque de sesión, porque el token cambia cuando se reinstala.
 
 - La clave es el **token**, no el usuario: repetir la llamada no duplica filas y refresca `ultimoUso`. Si el mismo celular se loguea con otra cuenta, el token **pasa a esa cuenta** en vez de quedar duplicado o huérfano.
-- El dueño (`uid` de Firebase) y el `rol` los pone el servidor desde el token de autenticación. Mandarlos en el body da `400`: son datos de confianza, no una declaración del cliente.
+- El dispositivo cuelga del **perfil** que hizo la llamada (`paciente` o `nutricionista`), con `onDelete: Cascade`: si se borra el perfil, sus dispositivos se van con él. Un `CHECK` en la migración impide las filas ambiguas (con los dos perfiles o con ninguno), porque Prisma no expresa esa restricción en el schema.
+- El `rol` no es una columna: se deriva de cuál de los dos perfiles tiene valor, así que no puede contradecirse. El perfil lo resuelve el servidor desde el token de autenticación; mandar `rol` o `pacienteId` en el body da `400`.
 - `DELETE /me/dispositivos/:token` filtra por token **y** dueño en la misma consulta, así que el token de otra cuenta responde `404` sin borrar nada y sin revelar si existe.
 - Esta entrega **no envía notificaciones**. Es el corte 1 de la fase #25: deja el registro listo para que el envío por FCM (corte 2) tenga a quién mandarle.
 

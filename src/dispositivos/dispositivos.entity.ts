@@ -9,10 +9,12 @@ export class DispositivoEntity {
   token: string;
   @ApiProperty({ enum: Plataforma, enumName: 'Plataforma' })
   plataforma: Plataforma;
-  /** `firebase_uid` del dueño del dispositivo. */
-  uid: string;
-  /** Rol con el que se registró: `nutricionista` o `paciente`. */
-  rol: string;
+  /**
+   * Perfil dueño del dispositivo. No se guarda como columna: se deriva de cuál
+   * de las dos claves foráneas tiene valor.
+   */
+  @ApiProperty({ enum: ['nutricionista', 'paciente'] })
+  rol: 'nutricionista' | 'paciente';
   @ApiProperty({ type: String, format: 'date-time' })
   creadoEn: Date;
   /** Última vez que la app registró este token. */

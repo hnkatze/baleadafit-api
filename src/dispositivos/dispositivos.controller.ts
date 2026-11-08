@@ -72,7 +72,7 @@ export class DispositivosController {
   })
   @ApiSobreOk(DispositivoEntity, { esLista: true })
   listar(@UsuarioAct() u: UsuarioActual) {
-    return this.service.listar(u.uid);
+    return this.service.listar(u);
   }
 
   @Delete('dispositivos/:token')
@@ -85,6 +85,6 @@ export class DispositivosController {
   @ApiSobreOk(DispositivoEliminadoEntity)
   @ApiErrores(400, 404)
   eliminar(@UsuarioAct() u: UsuarioActual, @Param('token') token: string) {
-    return this.service.eliminar(u.uid, token);
+    return this.service.eliminar(u, token);
   }
 }

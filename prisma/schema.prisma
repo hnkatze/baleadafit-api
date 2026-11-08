@@ -115,6 +115,7 @@ model Nutricionista {
   pacientes Paciente[]
   citas     Cita[]
   planes    PlanAlimenticio[]
+  dispositivos Dispositivo[]
 
   @@map("nutricionista")
 }
@@ -164,6 +165,7 @@ model Paciente {
   condiciones   PacienteCondicion[]
   medicamentos  Medicamento[]
   registros     RegistroComida[]
+  dispositivos  Dispositivo[]
 
   @@unique([nutricionistaId, correo])
   @@index([nutricionistaId, activo])
@@ -457,21 +459,23 @@ model RegistroComida {
   @@map("registro_comida")
 }
 
-/// Token de push de un dispositivo. El dueño es el `uid` de Firebase, no el perfil:
-/// un paciente sin vincular todavía no tiene fila en `paciente` y el token igual sirve.
+/// Token de push de un dispositivo. Cuelga del perfil que lo registró, nunca de
+/// los dos a la vez: la migración agrega un CHECK que lo garantiza.
 model Dispositivo {
-  id         String     @id @default(uuid()) @db.Uuid
+  id              String     @id @default(uuid()) @db.Uuid
   /// Token de registro de FCM. Es único: el mismo dispositivo no se registra dos veces.
-  token      String     @unique
-  plataforma Plataforma
-  /// `firebase_uid` del usuario autenticado que lo registró.
-  uid        String     @map("uid")
-  /// Rol con el que se registró, para poder filtrar a quién se le manda.
-  rol        String
-  creadoEn   DateTime   @default(now()) @map("creado_en")
+  token           String     @unique
+  plataforma      Plataforma
+  nutricionistaId String?    @map("nutricionista_id") @db.Uuid
+  pacienteId      String?    @map("paciente_id") @db.Uuid
+  creadoEn        DateTime   @default(now()) @map("creado_en")
   /// Se refresca en cada registro, para saber qué dispositivos siguen vivos.
-  ultimoUso  DateTime   @default(now()) @map("ultimo_uso")
+  ultimoUso       DateTime   @default(now()) @map("ultimo_uso")
 
-  @@index([uid])
+  nutricionista Nutricionista? @relation(fields: [nutricionistaId], references: [id], onDelete: Cascade)
+  paciente      Paciente?      @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
+  @@index([nutricionistaId])
+  @@index([pacienteId])
   @@map("dispositivo")
 }

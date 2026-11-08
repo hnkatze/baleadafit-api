@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { describe, expect, it } from 'vitest';
@@ -15,9 +15,27 @@ const PACIENTE: UsuarioActual = {
   emailVerificado: true,
   rol: 'paciente',
   pacienteId: 'paciente-1',
+  nutricionistaId: 'nutri-1',
+};
+
+const NUTRICIONISTA: UsuarioActual = {
+  uid: 'uid-nutri',
+  emailVerificado: true,
+  rol: 'nutricionista',
+  nutricionistaId: 'nutri-1',
 };
 
 const TOKEN = 'fMEr1:APA91bH-token-de-prueba-1234567890';
+
+const FILA = {
+  id: 'd-1',
+  token: TOKEN,
+  plataforma: Plataforma.ANDROID,
+  nutricionistaId: null,
+  pacienteId: 'paciente-1',
+  creadoEn: new Date('2026-11-08T04:00:00Z'),
+  ultimoUso: new Date('2026-11-08T04:00:00Z'),
+};
 
 const dto = (cambios: Partial<RegistrarDispositivoDto> = {}) =>
   Object.assign(new RegistrarDispositivoDto(), {
@@ -45,28 +63,67 @@ async function validar(cuerpo: Record<string, unknown>) {
 }
 
 describe('DispositivosService', () => {
-  it('registra el token con el dueño y el rol que salen del token de Firebase', async () => {
+  it('cuelga el dispositivo del paciente que lo registra', async () => {
     const { prisma, service } = armar();
-    prisma.dispositivo.create.mockResolvedValue({ id: 'd-1', token: TOKEN });
+    prisma.dispositivo.create.mockResolvedValue(FILA);
 
     const { dispositivo, creado } = await service.registrar(PACIENTE, dto());
 
     expect(creado).toBe(true);
-    expect(dispositivo).toEqual({ id: 'd-1', token: TOKEN });
-    expect(prisma.dispositivo.create).toHaveBeenCalledWith({
+    expect(prisma.dispositivo.create.mock.calls).toEqual([
+      [
+        {
+          data: {
+            token: TOKEN,
+            plataforma: Plataforma.ANDROID,
+            nutricionistaId: null,
+            pacienteId: 'paciente-1',
+          },
+        },
+      ],
+    ]);
+    expect(dispositivo.rol).toBe('paciente');
+  });
+
+  it('cuelga el dispositivo de la nutricionista cuando el rol es nutricionista', async () => {
+    const { prisma, service } = armar();
+    prisma.dispositivo.create.mockResolvedValue({
+      ...FILA,
+      pacienteId: null,
+      nutricionistaId: 'nutri-1',
+    });
+
+    const { dispositivo } = await service.registrar(NUTRICIONISTA, dto());
+
+    expect(prisma.dispositivo.create.mock.calls[0][0]).toEqual({
       data: {
         token: TOKEN,
         plataforma: Plataforma.ANDROID,
-        uid: 'uid-paciente',
-        rol: 'paciente',
+        nutricionistaId: 'nutri-1',
+        pacienteId: null,
       },
     });
+    expect(dispositivo.rol).toBe('nutricionista');
   });
 
-  it('repetir el registro refresca el mismo token en vez de crear otra fila', async () => {
+  it('no deja registrar a un usuario sin perfil y no toca la base', async () => {
+    const { prisma, service } = armar();
+    const sinPerfil: UsuarioActual = {
+      uid: 'uid-sin',
+      emailVerificado: true,
+      rol: 'sin_perfil',
+    };
+
+    await expect(service.registrar(sinPerfil, dto())).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(prisma.dispositivo.create.mock.calls).toEqual([]);
+  });
+
+  it('repetir el registro refresca el token y deja de crear', async () => {
     const { prisma, service } = armar();
     prisma.dispositivo.create.mockRejectedValue(errorUnico('token'));
-    prisma.dispositivo.update.mockResolvedValue({ id: 'd-1' });
+    prisma.dispositivo.update.mockResolvedValue(FILA);
 
     const { creado } = await service.registrar(
       PACIENTE,
@@ -74,34 +131,38 @@ describe('DispositivosService', () => {
     );
 
     expect(creado).toBe(false);
-    expect(prisma.dispositivo.update).toHaveBeenCalledWith({
-      where: { token: TOKEN },
-      data: {
-        plataforma: Plataforma.WEB,
-        uid: 'uid-paciente',
-        rol: 'paciente',
-        ultimoUso: expect.any(Date),
-      },
+    const llamada = prisma.dispositivo.update.mock.calls[0][0] as {
+      where: unknown;
+      data: Record<string, unknown>;
+    };
+    expect(llamada.where).toEqual({ token: TOKEN });
+    expect(llamada.data).toEqual({
+      plataforma: Plataforma.WEB,
+      nutricionistaId: null,
+      pacienteId: 'paciente-1',
+      ultimoUso: expect.any(Date),
     });
   });
 
-  it('un token que ya estaba en otra cuenta pasa al usuario que lo registra', async () => {
+  it('un token que ya estaba en otra cuenta pasa al perfil que lo registra', async () => {
     const { prisma, service } = armar();
     prisma.dispositivo.create.mockRejectedValue(errorUnico('token'));
-    prisma.dispositivo.update.mockResolvedValue({ id: 'd-1' });
+    prisma.dispositivo.update.mockResolvedValue({
+      ...FILA,
+      pacienteId: null,
+      nutricionistaId: 'nutri-1',
+    });
 
-    await service.registrar(
-      { ...PACIENTE, uid: 'uid-otro', rol: 'nutricionista' },
-      dto(),
-    );
+    const { dispositivo } = await service.registrar(NUTRICIONISTA, dto());
 
     const llamada = prisma.dispositivo.update.mock.calls[0][0] as {
-      where: unknown;
-      data: { uid: string; rol: string };
+      data: Record<string, unknown>;
     };
-    expect(llamada.where).toEqual({ token: TOKEN });
-    expect(llamada.data.uid).toBe('uid-otro');
-    expect(llamada.data.rol).toBe('nutricionista');
+    expect(llamada.data).toMatchObject({
+      nutricionistaId: 'nutri-1',
+      pacienteId: null,
+    });
+    expect(dispositivo.rol).toBe('nutricionista');
   });
 
   it('no se traga un error de base que no sea de unicidad', async () => {
@@ -111,31 +172,45 @@ describe('DispositivosService', () => {
     await expect(service.registrar(PACIENTE, dto())).rejects.toThrow(
       'conexión perdida',
     );
-    expect(prisma.dispositivo.update).not.toHaveBeenCalled();
+    expect(prisma.dispositivo.update.mock.calls).toEqual([]);
   });
 
-  it('lista solo los dispositivos del usuario, el más reciente primero', async () => {
+  it('lista solo los dispositivos de ese perfil, el más reciente primero', async () => {
     const { prisma, service } = armar();
-    prisma.dispositivo.findMany.mockResolvedValue([]);
+    prisma.dispositivo.findMany.mockResolvedValue([FILA]);
 
-    await service.listar('uid-paciente');
+    const filas = await service.listar(PACIENTE);
 
-    expect(prisma.dispositivo.findMany).toHaveBeenCalledWith({
-      where: { uid: 'uid-paciente' },
-      orderBy: [{ ultimoUso: 'desc' }, { id: 'desc' }],
-    });
+    expect(prisma.dispositivo.findMany.mock.calls).toEqual([
+      [
+        {
+          where: { nutricionistaId: null, pacienteId: 'paciente-1' },
+          orderBy: [{ ultimoUso: 'desc' }, { id: 'desc' }],
+        },
+      ],
+    ]);
+    expect(filas).toHaveLength(1);
+    expect(filas[0].rol).toBe('paciente');
   });
 
   it('borra el dispositivo filtrando por token y dueño a la vez', async () => {
     const { prisma, service } = armar();
     prisma.dispositivo.deleteMany.mockResolvedValue({ count: 1 });
 
-    await expect(service.eliminar('uid-paciente', TOKEN)).resolves.toEqual({
+    await expect(service.eliminar(PACIENTE, TOKEN)).resolves.toEqual({
       token: TOKEN,
       eliminado: true,
     });
     expect(prisma.dispositivo.deleteMany.mock.calls).toEqual([
-      [{ where: { token: TOKEN, uid: 'uid-paciente' } }],
+      [
+        {
+          where: {
+            token: TOKEN,
+            nutricionistaId: null,
+            pacienteId: 'paciente-1',
+          },
+        },
+      ],
     ]);
   });
 
@@ -143,7 +218,7 @@ describe('DispositivosService', () => {
     const { prisma, service } = armar();
     prisma.dispositivo.deleteMany.mockResolvedValue({ count: 0 });
 
-    await expect(service.eliminar('uid-paciente', TOKEN)).rejects.toBeInstanceOf(
+    await expect(service.eliminar(PACIENTE, TOKEN)).rejects.toBeInstanceOf(
       NotFoundException,
     );
     expect(prisma.dispositivo.delete.mock.calls).toEqual([]);
@@ -178,9 +253,9 @@ describe('registro de dispositivos: contrato de la ruta', () => {
     const errores = await validar({
       token: TOKEN,
       plataforma: 'ANDROID',
-      uid: 'uid-ajeno',
+      pacienteId: 'paciente-ajeno',
       rol: 'nutricionista',
     });
-    expect(errores.map((e) => e.campo).sort()).toEqual(['rol', 'uid']);
+    expect(errores.map((e) => e.campo).sort()).toEqual(['pacienteId', 'rol']);
   });
 });
