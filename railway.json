@@ -1,0 +1,9 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "deploy": {
+    "//": "La migración corre antes de arrancar: la base de producción solo es alcanzable desde la red privada de Railway, así que no se puede migrar desde fuera. `migrate deploy` es idempotente.",
+    "startCommand": "npx prisma migrate deploy && node dist/main.js",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}
