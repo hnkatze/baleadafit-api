@@ -296,7 +296,7 @@ Para probar sin Firebase: `AUTH_DEV_BYPASS=true` en `.env`.
 **#24 · Endurecer seguridad de la API** (S4, infraestructura)
 - `helmet`, rate limiting (`@nestjs/throttler`) y `CORS_ORIGINS` obligatorio en producción.
 
-**#25 · Notificaciones push con FCM** — *corte 1 hecho*: tabla `dispositivo` y `POST/GET /me/dispositivos`, `DELETE /me/dispositivos/:token` (`odd/tasks/push-dispositivos.md`). Faltan el envío (`getMessaging()`, limpieza de tokens muertos) y los eventos de negocio.
+**#25 · Notificaciones push con FCM** — *corte 1 desplegado en producción* (2026-11-08, `main` = `75684fe`): tabla `dispositivo` colgada del perfil con cascade y `CHECK` de un solo dueño, más `POST/GET /me/dispositivos` y `DELETE /me/dispositivos/:token`. **Nada envía todavía tal.** Faltan: el envío con `getMessaging()`, la limpieza de tokens que FCM reporta como muertos, y los eventos de negocio (que necesitan definición de producto). Detalle en `odd/tasks/push-dispositivos.md`, sección "Deuda abierta".
 
 **#26 · Auditoría de comidas por foto**: fase futura.
 

@@ -31,6 +31,15 @@ Decisiones tomadas al implementar, para no reabrirlas:
 - **El dispositivo cuelga del perfil, no del `uid` de Firebase**: primera versión guardaba `uid` y un `rol` de texto. La corrección (L7) reemplazó las dos columnas por `pacienteId`/`nutricionistaId` con `onDelete: Cascade` y un `CHECK` de unicidad de dueño. El `rol` desapareció como columna: es derivable, y un dato derivable guardado es un dato que puede contradecirse. La versión con `uid` no llegó a producción, así que la migración se reescribió en vez de acumular un fixup.
 - **El perfil se resuelve del guard, no de una consulta extra**: `UsuarioActual` ya trae `pacienteId`/`nutricionistaId`, así que cada operación filtra por esa columna sin joins.
 
+## Deuda abierta (cortes 2 y 3)
+
+El corte 1 está desplegado en producción (`main` = `75684fe`, 2026-11-08). Lo que falta, en orden:
+
+1. **Corte 2 · envío.** `enviarPush()` en `FirebaseService` con `getMessaging()` sobre el `App` que ya inicializa `obtenerApp()`. Destinatario: las filas de `dispositivo` del perfil (`pacienteId` o `nutricionistaId`). Incluye la limpieza: cuando FCM responde `messaging/registration-token-not-registered`, hay que **borrar la fila** en vez de reintentar. Sin limpieza la tabla se llena de tokens muertos.
+2. **Corte 2 · endpoint de prueba.** Uno administrativo (rol nutricionista) que mande un push a los propios dispositivos, para probar sin esperar un evento de negocio.
+3. **Corte 3 · eventos y preferencias.** Qué se manda y con qué texto: cita agendada, plan nuevo, recordatorio de comida. Los recordatorios necesitan un cron, y **Railway no lo trae**: se resuelve con un workflow programado de GitHub Actions contra un endpoint, o con un servicio aparte. Las preferencias por usuario son tabla nueva. Antes de escribir hay que definirlo como producto: eventos, textos, horarios y a quién le llega.
+4. **Deuda chica arrastrada:** 4 warnings de `unbound-method` en `dispositivos.service.spec.ts` por referenciar `prisma.dispositivo.create` como valor en `expect`. El lint sale 0 y el repo ya tenía 6 parecidos.
+
 ## Log
 
 - **L1** — "ocupamos metodos para guardar push id y esas cosas que ocupamos para los push de las apps y eso, y para configs nose"
