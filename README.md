@@ -1,5 +1,7 @@
 # BaleadaFit API
 
+[![CI](https://github.com/hnkatze/baleadafit-api/actions/workflows/ci.yml/badge.svg)](https://github.com/hnkatze/baleadafit-api/actions/workflows/ci.yml)
+
 API de **BaleadaFit**, una plataforma de nutrición clínica basada en comida hondureña. Sirve a una sola app móvil (Flutter) con dos roles:
 
 - **Nutricionista:** gestiona pacientes, mediciones, catálogo de alimentos, planes y agenda.
