@@ -292,6 +292,22 @@ describe('RecomendadorService', () => {
     expect(r.dias).toHaveLength(7);
   });
 
+  it('aplica variedad semanal en código y nunca deja el plan incompleto', async () => {
+    const r = await new RecomendadorService(
+      bedrockFalso(async () => ({})),
+    ).generar(entrada(false));
+
+    // Con cuatro alimentos no hay alternativa para todo, y así debe ser: el
+    // plan sigue completo y la justificación dice qué se ajustó y qué no.
+    expect(r.dias).toHaveLength(7);
+    for (const d of r.dias) {
+      expect(d.tiempos).toHaveLength(3);
+      expect(d.tiempos.every((t) => t.items.length > 0)).toBe(true);
+    }
+    expect(r.justificacion).toMatch(/Variedad semanal: \d+ ajuste\(s\)/);
+    expect(r.justificacion).toMatch(/No se alcanzó el mínimo de fuentes proteicas/);
+  });
+
   it('corrige en código el techo de sodio del expediente, sin depender del modelo', async () => {
     // El desayuno y el almuerzo de reglas superan los 2000 mg de sodio.
     const salado = [

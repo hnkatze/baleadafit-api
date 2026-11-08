@@ -15,6 +15,7 @@ import {
 import type { PerfilClinico } from '../pacientes/perfil-clinico.js';
 import { ajustarDiaClinico } from '../nutricion/ajuste-clinico.js';
 import { detectarCondiciones } from '../nutricion/reglas-clinicas.js';
+import { ajustarVariedadSemanal } from '../nutricion/variedad-semanal.js';
 import { validarPlan } from './validacion-plan.js';
 
 export type { PerfilClinico };
@@ -117,27 +118,65 @@ export class RecomendadorService {
   async generar(e: EntradaRecomendador): Promise<ResultadoRecomendador> {
     if (e.usarIa) {
       try {
-        return this.clinica(await this.conIa(e), e);
+        return this.clinica(this.variedad(await this.conIa(e), e), e);
       } catch (err) {
         const motivo =
           err instanceof IaNoDisponibleError ? err.message : 'error inesperado';
         if (!(err instanceof IaNoDisponibleError)) this.logger.error(err);
         return this.clinica(
-          this.porReglas(
+          this.variedad(
+            this.porReglas(
+              e,
+              `Generado por reglas (IA no disponible: ${motivo}).`,
+            ),
             e,
-            `Generado por reglas (IA no disponible: ${motivo}).`,
           ),
           e,
         );
       }
     }
     return this.clinica(
-      this.porReglas(
+      this.variedad(
+        this.porReglas(
+          e,
+          'Generado por reglas a partir del catálogo y las restricciones del paciente.',
+        ),
         e,
-        'Generado por reglas a partir del catálogo y las restricciones del paciente.',
       ),
       e,
     );
+  }
+
+  /**
+   * Variedad semanal en código, antes de las reglas clínicas: el último filtro
+   * que toca los alimentos es el de los techos clínicos.
+   */
+  private variedad(
+    resultado: ResultadoRecomendador,
+    e: EntradaRecomendador,
+  ): ResultadoRecomendador {
+    const { dias, cambios } = ajustarVariedadSemanal(resultado.dias, e.catalogo);
+    if (cambios.length === 0) return resultado;
+
+    // La justificación se persiste y se lee: se muestran unos pocos ajustes y
+    // el límite que no se pudo alcanzar, nunca 35 líneas.
+    const visibles = cambios.slice(0, 6);
+    for (const pendiente of cambios.filter((c) =>
+      c.startsWith('No se alcanzó'),
+    ))
+      if (!visibles.includes(pendiente)) visibles.push(pendiente);
+    const resto = cambios.length - visibles.length;
+
+    return {
+      ...resultado,
+      dias,
+      justificacion: [
+        resultado.justificacion,
+        `Variedad semanal: ${cambios.length} ajuste(s)${resto > 0 ? `, +${resto} más` : ''}. ${visibles.join('; ')}.`,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    };
   }
 
   /**
