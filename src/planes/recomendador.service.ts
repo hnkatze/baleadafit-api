@@ -13,6 +13,7 @@ import {
   type DistribucionTiempos,
 } from '../nutricion/nutricion.util.js';
 import type { PerfilClinico } from '../pacientes/perfil-clinico.js';
+import { validarPlan } from './validacion-plan.js';
 
 export type { PerfilClinico };
 
@@ -182,48 +183,59 @@ export class RecomendadorService {
       throw new IaNoDisponibleError('La IA no devolvió ningún día válido.');
 
     const respaldo = this.semanaPorReglas(e);
+    const idsValidos = new Set(mapa.keys());
     const notas: string[] = [];
-    let diasPorReglas = 0;
+    let diasIlegibles = 0;
+    let diasNoDevueltos = 0;
     let tiemposPorReglas = 0;
 
     const dias: DiaPropuesto[] = respaldo.map(({ dia, tiempos: deReglas }) => {
       const deIa = porDia.get(dia);
       if (!deIa) {
-        diasPorReglas++;
+        diasNoDevueltos++;
+        return {
+          dia,
+          tiempos: deReglas,
+          justificacion: 'Día completado por reglas: la IA no lo devolvió.',
+        };
+      }
+
+      // Validación estricta contra el catálogo permitido. Un tiempo con algún
+      // ítem roto no se persiste a medias: ese tiempo se regenera por reglas.
+      const validado = validarPlan(deIa, idsValidos, tiposActivos);
+      if (validado.tiempos.length === 0) {
+        diasIlegibles++;
         return {
           dia,
           tiempos: deReglas,
           justificacion:
-            'Día completado por reglas: la IA no lo devolvió.',
+            'Día completado por reglas: la IA no devolvió ningún tiempo válido.',
         };
       }
 
+      const limpios = new Map(validado.tiempos.map((t) => [t.tipo, t.items]));
+      const rotos = new Set(validado.parciales.map((t) => t.tipo));
+      // La explicación del modelo se conserva para quien revisa el plan.
+      const explicaciones = new Map<TipoComida, string>();
+      for (const crudo of deIa.tiempos ?? []) {
+        const tipo = normalizarTipo(crudo?.tipo);
+        if (tipo && crudo.justificacion?.trim())
+          explicaciones.set(tipo, crudo.justificacion.trim());
+      }
       const notasDia: string[] = [];
       const tiempos: TiempoPropuesto[] = tiposActivos.map((tipo) => {
         const pctKcal = e.distribucion[tipo] ?? 0;
-        const deSlot = deIa.tiempos?.find(
-          (t) => normalizarTipo(t?.tipo) === tipo,
-        );
-        // Validación: solo IDs que existan en el catálogo permitido, sin duplicados.
-        const vistos = new Set<string>();
-        const items = (deSlot?.items ?? [])
-          .filter(
-            (i) =>
-              typeof i.alimentoId === 'string' &&
-              mapa.has(i.alimentoId) &&
-              !vistos.has(i.alimentoId) &&
-              vistos.add(i.alimentoId),
-          )
-          .map((i) => ({
-            alimentoId: i.alimentoId!,
-            porciones: Math.min(
-              4,
-              Math.max(0.5, Math.round((Number(i.porciones) || 1) * 4) / 4),
-            ),
-          }));
-
-        if (items.length === 0) {
+        const items = limpios.get(tipo);
+        if (!items) {
           tiemposPorReglas++;
+          const motivo = rotos.has(tipo)
+            ? 'ítems inválidos'
+            : validado.faltantes.includes(tipo)
+              ? 'no vino en la respuesta'
+              : 'sin ítems válidos';
+          notasDia.push(
+            `${NOMBRE_TIEMPO[tipo]}: completado por reglas (${motivo}).`,
+          );
           return (
             deReglas.find((r) => r.tipo === tipo) ?? {
               tipo,
@@ -232,8 +244,6 @@ export class RecomendadorService {
             }
           );
         }
-        if (deSlot?.justificacion)
-          notasDia.push(`${NOMBRE_TIEMPO[tipo]}: ${deSlot.justificacion}`);
         return {
           tipo,
           pctKcal,
@@ -241,21 +251,32 @@ export class RecomendadorService {
         };
       });
 
-      if (deIa.justificacion) notas.push(`${dia}: ${deIa.justificacion}`);
-      notas.push(...notasDia);
+      for (const [tipo, explicacion] of explicaciones)
+        notas.push(`${NOMBRE_TIEMPO[tipo]}: ${explicacion}`);
+      if (deIa.justificacion?.trim())
+        notas.push(`${dia}: ${deIa.justificacion.trim()}`);
+
+      if (validado.errores.length) {
+        const motivos = [...new Set(validado.errores.map((x) => x.motivo))];
+        notasDia.push(
+          `Descartados ${validado.errores.length} ítem(s) fuera de contrato (${motivos.join(', ')}).`,
+        );
+      }
       return {
         dia,
         tiempos,
-        justificacion: notasDia.length
-          ? notasDia.join('\n')
-          : undefined,
+        justificacion: notasDia.length ? notasDia.join('\n') : undefined,
       };
     });
 
     const partes = [respuesta.resumen?.trim(), ...notas].filter(Boolean);
-    if (diasPorReglas)
+    if (diasNoDevueltos)
       partes.push(
-        `${diasPorReglas} día(s) completados por reglas porque la IA no los devolvió.`,
+        `${diasNoDevueltos} día(s) completados por reglas porque la IA no los devolvió.`,
+      );
+    if (diasIlegibles)
+      partes.push(
+        `${diasIlegibles} día(s) completados por reglas porque la respuesta de la IA no fue válida.`,
       );
     if (tiemposPorReglas)
       partes.push(

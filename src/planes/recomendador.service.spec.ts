@@ -116,6 +116,82 @@ describe('RecomendadorService', () => {
     expect(r.justificacion).toMatch(/completados por reglas/);
   });
 
+  it('no persiste porciones fuera de rango: ese tiempo lo completa por reglas', async () => {
+    const svc = new RecomendadorService(
+      bedrockFalso(async () => ({
+        dias: [
+          {
+            dia: 'LUNES',
+            tiempos: [
+              {
+                tipo: 'ALMUERZO',
+                items: [
+                  { alimentoId: 'pollo', porciones: 9 },
+                  { alimentoId: 'arroz', porciones: 2 },
+                ],
+                justificacion: 'Almuerzo del modelo.',
+              },
+              {
+                tipo: 'DESAYUNO',
+                items: [{ alimentoId: 'baleada', porciones: 1 }],
+              },
+              {
+                tipo: 'CENA',
+                items: [{ alimentoId: 'pollo', porciones: 2 }],
+              },
+            ],
+          },
+        ],
+      })),
+    );
+    const r = await svc.generar(entrada());
+    const lunes = dia(r, 'LUNES');
+    const almuerzo = lunes.tiempos.find((t) => t.tipo === 'ALMUERZO')!;
+    // El tiempo roto no se persiste a medias: se regenera completo.
+    expect(almuerzo.items.every((i) => i.porciones <= 4)).toBe(true);
+    expect(
+      almuerzo.items.some((i) => i.alimentoId === 'pollo' && i.porciones === 9),
+    ).toBe(false);
+    expect(lunes.justificacion).toMatch(/Almuerzo: completado por reglas/);
+    expect(lunes.justificacion).toMatch(/fuera de contrato/);
+    // Los tiempos que sí vinieron bien se usan tal cual.
+    expect(
+      lunes.tiempos.find((t) => t.tipo === 'CENA')!.items.map((i) => i.alimentoId),
+    ).toEqual(['pollo']);
+  });
+
+  it('un día con forma rota queda por reglas y la semana sigue completa', async () => {
+    const svc = new RecomendadorService(
+      bedrockFalso(async () => ({
+        dias: [
+          { dia: 'LUNES', tiempos: 'no-es-un-arreglo' },
+          {
+            dia: 'MARTES',
+            tiempos: [
+              {
+                tipo: 'ALMUERZO',
+                items: [{ alimentoId: 'arroz', porciones: 2 }],
+              },
+            ],
+          },
+        ],
+      })),
+    );
+    const r = await svc.generar(entrada());
+    expect(r.dias.map((d) => d.dia)).toEqual(DIAS_SEMANA);
+    const lunes = dia(r, 'LUNES');
+    expect(lunes.tiempos).toHaveLength(3);
+    expect(lunes.justificacion).toMatch(/no devolvió ningún tiempo válido/);
+    expect(lunes.tiempos.every((t) => t.items.length > 0)).toBe(true);
+    // La semana no se rompe: se distingue el día ilegible de los que no vinieron.
+    expect(r.justificacion).toMatch(
+      /1 día\(s\) completados por reglas porque la respuesta de la IA no fue válida/,
+    );
+    expect(r.justificacion).toMatch(
+      /5 día\(s\) completados por reglas porque la IA no los devolvió/,
+    );
+  });
+
   it('devuelve los siete días, en orden y sin repetir, aunque la IA devuelva uno solo', async () => {
     const svc = new RecomendadorService(
       bedrockFalso(async () => ({
