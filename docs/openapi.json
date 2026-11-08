@@ -10730,6 +10730,18 @@
           "aprobadoEn"
         ]
       },
+      "DiaSemana": {
+        "type": "string",
+        "enum": [
+          "LUNES",
+          "MARTES",
+          "MIERCOLES",
+          "JUEVES",
+          "VIERNES",
+          "SABADO",
+          "DOMINGO"
+        ]
+      },
       "PlanItemEntity": {
         "type": "object",
         "properties": {
@@ -10841,6 +10853,13 @@
       "TiempoComidaEntity": {
         "type": "object",
         "properties": {
+          "dia": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiaSemana"
+              }
+            ]
+          },
           "tipo": {
             "allOf": [
               {
@@ -10884,6 +10903,7 @@
           }
         },
         "required": [
+          "dia",
           "tipo",
           "id",
           "planId",
@@ -10891,6 +10911,43 @@
           "orden",
           "items",
           "kcalMeta",
+          "totales",
+          "desviacion"
+        ]
+      },
+      "DiaPlanEntity": {
+        "type": "object",
+        "properties": {
+          "dia": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiaSemana"
+              }
+            ]
+          },
+          "tiempos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TiempoComidaEntity"
+            }
+          },
+          "totales": {
+            "description": "Totales del día.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TotalesEntity"
+              }
+            ]
+          },
+          "desviacion": {
+            "type": "number",
+            "description": "Desviación del día contra kcalObjetivo (la meta del plan es diaria).",
+            "example": 0.004
+          }
+        },
+        "required": [
+          "dia",
+          "tiempos",
           "totales",
           "desviacion"
         ]
@@ -10957,13 +11014,21 @@
             "nullable": true
           },
           "tiempos": {
+            "description": "Los tiempos de comida de toda la semana, en orden de día y de tiempo.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TiempoComidaEntity"
             }
           },
+          "dias": {
+            "description": "Días que tienen algún tiempo de comida, en orden de lunes a domingo.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiaPlanEntity"
+            }
+          },
           "totales": {
-            "description": "Totales del día.",
+            "description": "Totales de la semana completa.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/TotalesEntity"
@@ -10972,7 +11037,7 @@
           },
           "desviacion": {
             "type": "number",
-            "description": "Desviación del día contra kcalObjetivo.",
+            "description": "Desviación de la semana contra la meta semanal (kcalObjetivo × días del plan).",
             "example": 0.004
           }
         },
@@ -10991,6 +11056,7 @@
           "creadoEn",
           "aprobadoEn",
           "tiempos",
+          "dias",
           "totales",
           "desviacion"
         ]
@@ -11380,6 +11446,13 @@
       "TiempoHoyEntity": {
         "type": "object",
         "properties": {
+          "dia": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiaSemana"
+              }
+            ]
+          },
           "tipo": {
             "allOf": [
               {
@@ -11433,6 +11506,7 @@
           }
         },
         "required": [
+          "dia",
           "tipo",
           "id",
           "planId",

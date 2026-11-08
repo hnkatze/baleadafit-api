@@ -9,6 +9,7 @@ import type { TipoComida } from '../generated/prisma/enums.js';
 import { AlimentosService } from '../alimentos/alimentos.service.js';
 import {
   DIA_POR_DEFECTO,
+  DIAS_SEMANA,
   DISTRIBUCION_TIEMPOS_DEFAULT,
   ORDEN_TIEMPOS,
   desviacion,
@@ -89,7 +90,10 @@ export class PlanesService {
     return this.detalleConTotales(planId);
   }
 
-  /** Plan con totales por tiempo y del día, y desviación contra la meta. */
+  /**
+   * Plan con totales por tiempo, por día y de la semana, y su desviación.
+   * La meta del tiempo es la del día; la del plan, la de la semana completa.
+   */
   async detalleConTotales(planId: string) {
     const plan = await this.prisma.planAlimenticio.findUnique({
       where: { id: planId },
@@ -107,14 +111,30 @@ export class PlanesService {
         desviacion: desviacion(totales.kcal, kcalMeta),
       };
     });
+    const dias = DIAS_SEMANA.map((dia) => {
+      const delDia = tiempos.filter((t) => t.dia === dia);
+      const totales = sumarNutrientes(
+        delDia.flatMap((t) => t.items.map(nutrientesDelItem)),
+      );
+      return {
+        dia,
+        tiempos: delDia,
+        totales,
+        desviacion: desviacion(totales.kcal, plan.kcalObjetivo),
+      };
+    }).filter((d) => d.tiempos.length > 0);
     const totales = sumarNutrientes(
       plan.tiempos.flatMap((t) => t.items.map(nutrientesDelItem)),
     );
     return {
       ...plan,
       tiempos,
+      dias,
       totales,
-      desviacion: desviacion(totales.kcal, plan.kcalObjetivo),
+      desviacion: desviacion(
+        totales.kcal,
+        plan.kcalObjetivo * Math.max(1, dias.length),
+      ),
     };
   }
 
@@ -175,7 +195,9 @@ export class PlanesService {
     });
 
     const versiones = await this.versionesVigentes(
-      resultado.tiempos.flatMap((t) => t.items.map((i) => i.alimentoId)),
+      resultado.dias.flatMap((d) =>
+        d.tiempos.flatMap((t) => t.items.map((i) => i.alimentoId)),
+      ),
     );
 
     const plan = await this.prisma.planAlimenticio.create({
@@ -189,15 +211,17 @@ export class PlanesService {
         origen: resultado.origen,
         justificacion: resultado.justificacion,
         tiempos: {
-          create: resultado.tiempos.map((t) => ({
-            dia: DIA_POR_DEFECTO,
-            tipo: t.tipo,
-            pctKcal: t.pctKcal,
-            orden: ORDEN_TIEMPOS.indexOf(t.tipo),
-            items: {
-              create: t.items.map((i) => this.itemConVersion(i, versiones)),
-            },
-          })),
+          create: resultado.dias.flatMap((d) =>
+            d.tiempos.map((t) => ({
+              dia: d.dia,
+              tipo: t.tipo,
+              pctKcal: t.pctKcal,
+              orden: ORDEN_TIEMPOS.indexOf(t.tipo),
+              items: {
+                create: t.items.map((i) => this.itemConVersion(i, versiones)),
+              },
+            })),
+          ),
         },
       },
     });
