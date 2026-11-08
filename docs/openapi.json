@@ -11443,6 +11443,21 @@
           "en": {
             "type": "string",
             "example": "2026-02-11T15:04:05.000Z"
+          },
+          "entradaTokens": {
+            "type": "number",
+            "description": "Tokens de entrada que consumió la llamada (el catálogo filtrado del paciente).",
+            "example": 6100
+          },
+          "salidaTokens": {
+            "type": "number",
+            "description": "Tokens de salida, que son los que dominan la latencia: ~43 tokens/s medidos\ncon Sonnet 4.6.",
+            "example": 2702
+          },
+          "ms": {
+            "type": "number",
+            "description": "Duración total de la llamada en milisegundos.",
+            "example": 63000
           }
         },
         "required": [

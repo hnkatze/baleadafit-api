@@ -170,6 +170,26 @@ describe('BedrockService', () => {
     expect(svc.estado().ultimaLlamada).toMatchObject({ ok: false });
   });
 
+  it('registra tokens de entrada y salida y cuánto tardó la llamada', async () => {
+    const svc = new BedrockService(
+      config({ BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-6' }),
+      clienteFalso(async () => ({
+        output: { message: { content: [{ text: '{"dias":[]}' }] } },
+        stopReason: 'end_turn',
+        usage: { inputTokens: 6100, outputTokens: 2702, totalTokens: 8802 },
+      })),
+    );
+
+    await svc.generarJson('s', 'm', 16000);
+
+    expect(svc.estado().ultimaLlamada).toMatchObject({
+      ok: true,
+      entradaTokens: 6100,
+      salidaTokens: 2702,
+    });
+    expect(svc.estado().ultimaLlamada!.ms).toBeGreaterThanOrEqual(0);
+  });
+
   it('no expone detalles internos de AWS en el estado ni en la prueba', async () => {
     const detalleAws =
       'AccessDeniedException: User: arn:aws:iam::123456789012:user/sofia is not authorized';

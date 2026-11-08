@@ -22,6 +22,15 @@ export interface LlamadaIa {
   error?: string;
   /** Momento de la llamada en ISO 8601. */
   en: string;
+  /**
+   * Tokens que consumió la llamada. Sin esto no se puede decidir nada sobre
+   * latencia o costo: la salida es lo que domina el tiempo, y con dos números
+   * alcanza para saber si conviene partir la generación en varias llamadas.
+   */
+  entradaTokens?: number;
+  salidaTokens?: number;
+  /** Duración total de la llamada en milisegundos. */
+  ms?: number;
 }
 
 /** Lo que el portal muestra para saber si la IA está conectada. */
@@ -133,6 +142,7 @@ export class BedrockService {
       this.registrar({ ok: false, error: SIN_CONFIGURAR });
       throw new IaNoDisponibleError(SIN_CONFIGURAR);
     }
+    const inicio = Date.now();
     try {
       const res = await this.obtenerCliente().send(
         new ConverseCommand({
@@ -142,7 +152,9 @@ export class BedrockService {
           inferenceConfig: { maxTokens, temperature: 0.3 },
         }),
       );
-      this.registrar({ ok: true });
+      const ms = Date.now() - inicio;
+      const entradaTokens = res.usage?.inputTokens;
+      const salidaTokens = res.usage?.outputTokens;
       const texto = (res.output?.message?.content ?? [])
         .map((c) => c.text ?? '')
         .join('');
@@ -156,9 +168,16 @@ export class BedrockService {
           ok: false,
           error: SIN_TOKENS,
           en: new Date().toISOString(),
+          entradaTokens,
+          salidaTokens,
+          ms,
         };
         throw new IaNoDisponibleError(SIN_TOKENS);
       }
+      this.logger.log(
+        `Bedrock ok en ${ms} ms · entrada ${entradaTokens ?? '?'} · salida ${salidaTokens ?? '?'} tokens`,
+      );
+      this.registrar({ ok: true, entradaTokens, salidaTokens, ms });
       return texto;
     } catch (e) {
       // Lo que ya viene clasificado (por ejemplo el corte por tokens) se
