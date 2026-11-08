@@ -13,6 +13,8 @@ import {
   type DistribucionTiempos,
 } from '../nutricion/nutricion.util.js';
 import type { PerfilClinico } from '../pacientes/perfil-clinico.js';
+import { ajustarDiaClinico } from '../nutricion/ajuste-clinico.js';
+import { detectarCondiciones } from '../nutricion/reglas-clinicas.js';
 import { validarPlan } from './validacion-plan.js';
 
 export type { PerfilClinico };
@@ -115,21 +117,89 @@ export class RecomendadorService {
   async generar(e: EntradaRecomendador): Promise<ResultadoRecomendador> {
     if (e.usarIa) {
       try {
-        return await this.conIa(e);
+        return this.clinica(await this.conIa(e), e);
       } catch (err) {
         const motivo =
           err instanceof IaNoDisponibleError ? err.message : 'error inesperado';
         if (!(err instanceof IaNoDisponibleError)) this.logger.error(err);
-        return this.porReglas(
+        return this.clinica(
+          this.porReglas(
+            e,
+            `Generado por reglas (IA no disponible: ${motivo}).`,
+          ),
           e,
-          `Generado por reglas (IA no disponible: ${motivo}).`,
         );
       }
     }
-    return this.porReglas(
+    return this.clinica(
+      this.porReglas(
+        e,
+        'Generado por reglas a partir del catálogo y las restricciones del paciente.',
+      ),
       e,
-      'Generado por reglas a partir del catálogo y las restricciones del paciente.',
     );
+  }
+
+  /**
+   * Aplica las reglas clínicas verificables a la semana ya armada, sea de la IA
+   * o de las reglas. Los techos no dependen del criterio del modelo.
+   */
+  private clinica(
+    resultado: ResultadoRecomendador,
+    e: EntradaRecomendador,
+  ): ResultadoRecomendador {
+    if (!e.perfilClinico?.condiciones?.length) return resultado;
+
+    const mapa = new Map(e.catalogo.map((a) => [a.id, a]));
+    const perfil = e.perfilClinico;
+    const partes: string[] = [];
+    let diasAjustados = 0;
+
+    const dias = resultado.dias.map((diaPropuesto) => {
+      const ajuste = ajustarDiaClinico(diaPropuesto.tiempos, mapa, perfil);
+      const notas = diaPropuesto.justificacion
+        ? [diaPropuesto.justificacion]
+        : [];
+      if (ajuste.cambios.length) {
+        diasAjustados++;
+        notas.push(`Ajuste clínico: ${ajuste.cambios.join('; ')}.`);
+      }
+      for (const v of ajuste.violaciones)
+        notas.push(
+          `No se pudo corregir ${v.nutriente} (${v.actual} sobre ${v.limite}) de ${v.condicion}: revisar clínicamente.`,
+        );
+      for (const i of ajuste.incognitas)
+        notas.push(
+          `Sin dato de ${i.nutriente} en ${i.sinDato.length} alimento(s): el techo de ${i.condicion} no se pudo verificar.`,
+        );
+      return {
+        ...diaPropuesto,
+        tiempos: ajuste.tiempos,
+        justificacion: notas.length ? notas.join('\n') : undefined,
+      };
+    });
+
+    const detectadas = detectarCondiciones(perfil);
+    if (detectadas.evaluadas.length)
+      partes.push(
+        `Reglas clínicas aplicadas en código: ${detectadas.evaluadas.join(', ')}.`,
+      );
+    if (diasAjustados)
+      partes.push(
+        `${diasAjustados} día(s) ajustados para respetar los techos clínicos.`,
+      );
+    if (detectadas.noVerificadas.length)
+      partes.push(
+        `Condiciones que el sistema no verifica en código: ${detectadas.noVerificadas.join(', ')}.`,
+      );
+
+    return {
+      ...resultado,
+      dias,
+      justificacion: [resultado.justificacion, ...partes]
+        .filter(Boolean)
+        .join('\n'),
+    };
   }
 
   private porReglas(

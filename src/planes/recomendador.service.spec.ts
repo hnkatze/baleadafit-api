@@ -292,6 +292,54 @@ describe('RecomendadorService', () => {
     expect(r.dias).toHaveLength(7);
   });
 
+  it('corrige en código el techo de sodio del expediente, sin depender del modelo', async () => {
+    // El desayuno y el almuerzo de reglas superan los 2000 mg de sodio.
+    const salado = [
+      { ...catalogo[0], sodioMg: 2000 },
+      { ...catalogo[1], sodioMg: 1800 },
+      { ...catalogo[2], sodioMg: 5 },
+      { ...catalogo[3], sodioMg: 10 },
+    ];
+    const r = await new RecomendadorService(
+      bedrockFalso(async () => ({})),
+    ).generar({
+      ...entrada(false),
+      catalogo: salado,
+      perfilClinico: { condiciones: [{ nombre: 'Hipertensión arterial' }] },
+    });
+
+    const sodioPorDia = r.dias.map((d) =>
+      d.tiempos
+        .flatMap((t) => t.items)
+        .reduce((suma, i) => {
+          const a = salado.find((x) => x.id === i.alimentoId)!;
+          return suma + (a.sodioMg ?? 0) * i.porciones;
+        }, 0),
+    );
+    expect(Math.max(...sodioPorDia)).toBeLessThanOrEqual(2000);
+    expect(r.justificacion).toMatch(/Reglas clínicas aplicadas en código: HTA/);
+    expect(
+      r.dias.some((d) => /Ajuste clínico:/.test(d.justificacion ?? '')),
+    ).toBe(true);
+  });
+
+  it('no da por bueno un techo clínico que no puede verificar', async () => {
+    const r = await new RecomendadorService(
+      bedrockFalso(async () => ({})),
+    ).generar({
+      ...entrada(false),
+      perfilClinico: { condiciones: [{ nombre: 'HTA' }] },
+    });
+
+    // El catálogo de prueba no trae sodio: se informa, no se asume cumplido.
+    expect(r.justificacion).toMatch(/Reglas clínicas aplicadas en código: HTA/);
+    expect(
+      r.dias.every((d) =>
+        /Sin dato de sodioMg/.test(d.justificacion ?? ''),
+      ),
+    ).toBe(true);
+  });
+
   it('pide a la IA la semana completa con el esquema de días', async () => {
     const generar = vi.fn(async () => ({ dias: [] }));
     const svc = new RecomendadorService({
