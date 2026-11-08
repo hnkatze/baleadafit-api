@@ -24,7 +24,7 @@ El recomendador arma hoy planes de **un día**: schema, prompt, motor de reglas 
 - [x] **T6** — Motor de variedad semanal (techos, rotación, proteicas distintas) — S5 — `src/nutricion/variedad-semanal.ts` — commit: `85d8a71`
 - [x] **T7** — Fallback por día y por tiempo: un día ilegible no tumba la semana — S8 — commit: `656e950`
 - [x] **T8** — Persistencia y endpoints por (día, tiempo) — S1 — inline — commit: `63ed65a` (persistencia por día, `dias[]` y totales semanales) y `2478457` (`PUT /planes/:id/tiempos/:dia/:tipo/items`; la ruta vieja queda obsoleta y equivale a `LUNES`)
-- [ ] **T9** — Verificación end-to-end (IA disponible y no disponible) + documentación — S1..S9 — **parcial**: docs al día (`docs/RECOMENDADOR.md`) y verificación local sin IA completa; falta la corrida real contra Bedrock, que cuesta una llamada (~US$0.04) y es decisión del dueño
+- [x] **T9** — Verificación end-to-end (IA disponible y no disponible) + documentación — S1..S9 — corrida real contra Bedrock con paciente de prueba + edición por día + activación — commits: `96695eb` (docs), `79b6f80` (defectos encontrados en vivo)
 
 ## Log
 
@@ -75,3 +75,14 @@ El recomendador arma hoy planes de **un día**: schema, prompt, motor de reglas 
   - Verificación: 5/5 en `variedad-semanal.spec.ts` (plato típico consecutivo, techo con primeras apariciones conservadas, catálogo sin alternativa, mínimo de proteicas, estructura preservada) y un caso de integración que prueba que con 4 alimentos el plan sigue completo y lo no alcanzado se informa.
 - **L23** (estado tras T4–T7): suite 266/266, e2e 8/8, `nest build` OK, `oxlint` con las mismas 6 advertencias de `HEAD`. Pipeline final de `RecomendadorService.generar`: contrato por días → (IA semanal | reglas) → `validarPlan` por día → `ajustarVariedadSemanal` → `ajustarDiaClinico` por día → persistencia por (día, tiempo). `docs/RECOMENDADOR.md` quedó al día (flujo, costos y glosario) con refs `archivo:línea` verificadas.
   - Pendiente honesto: la corrida **real** con Bedrock (la mitad "IA disponible" de T9) no se hizo en esta sesión; los caminos de IA están probados con dobles, no contra el servicio. Requiere una llamada (~US$0.04 con Sonnet 4.6) y es decisión del dueño.
+
+- **L24** (corrida real, `origen: IA`): con el usuario `baleadafit-app` y `us.anthropic.claude-sonnet-4-6`, la generación de una semana completa tarda **~63 s** y devuelve `origen: IA` con 7 días × 5 tiempos. Paciente de prueba con HTA (mujer, 46 años, 78 kg, 158 cm, meta MANTENER, objetivo 1650 kcal). Resultado medido sobre 78 alimentos distintos:
+  - sodio máximo por día **1979 mg** (techo HTA 2000): la corrección clínica en código funciona con datos reales del catálogo;
+  - máximo de apariciones por alimento **3**, que es el techo de la variedad, con 5 ajustes aplicados (`Café de Marcala` → atoles y batidos, `Requesón` → leche semidescremada);
+  - 5 de 35 tiempos se completaron por reglas porque la IA no devolvió ítems válidos en ellos, y la justificación lo dice;
+  - kcal por día entre 1398 y 1906 contra una meta de 1650 (el rango calórico sigue siendo lo que peor maneja el modelo, como ya había medido L12).
+  - Flujo completo verificado por HTTP: registro de nutricionista → paciente + medición → `POST .../planes/generar` → `PUT .../tiempos/MIERCOLES/ALMUERZO/items` (edita miércoles y deja lunes intacto) → `POST .../activar` (`estado = ACTIVO`, `origen = IA`).
+- **L25** (defectos que solo aparecieron en vivo, commit `79b6f80`): las dos primeras corridas reales fallaron y **las dos parecían otra cosa**.
+  1. **Corte por tokens disfrazado de JSON inválido.** `conIa` pedía 5.000 tokens de salida para un esquema con justificación por tiempo; Sonnet 4.6 cortó con `stopReason: max_tokens` y el texto llegó truncado. `BedrockService` ignoraba `stopReason`, así que el error que se propagaba era "La IA devolvió JSON inválido" — y encima el `catch` genérico lo reenvolvía en "No se pudo conectar con Bedrock". Ahora un corte por tokens se reporta como tal, un `IaNoDisponibleError` no se reenvuelve, el tope de salida es 16.000 y la justificación es solo por día.
+  2. **Timeout de 60 s.** `requestTimeout` estaba en 60 s y la semana completa tarda ~63 s: la llamada moría por timeout *después* de generar (se pagó igual). Ahora es 180 s.
+  - **Límite honesto**: 63 s de latencia en un POST síncrono es mucho para la app. El siguiente paso natural es streaming o generación asíncrona con estado del plan; no se hizo acá para no abrir un frente nuevo.
