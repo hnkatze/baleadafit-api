@@ -1,6 +1,6 @@
 # El recomendador de BaleadaFit, explicado
 
-Este documento explica cómo funciona hoy el recomendador, qué pieza hace cada cosa, qué falta para el plan semanal y cómo se opera. Está escrito para que lo puedas leer de corrido sin tener que abrir el código.
+Este documento explica cómo funciona hoy el recomendador, qué pieza hace cada cosa, cómo arma la semana y cómo se opera. Está escrito para que lo puedas leer de corrido sin tener que abrir el código.
 
 ---
 
@@ -21,14 +21,21 @@ La consecuencia práctica para BaleadaFit: **la inferencia alcanza**. No hay buc
 ## 2. Cómo funciona hoy, de punta a punta
 
 ```
-POST /pacientes/:id/planes/generar        planes.controller.ts:66
-  └─ PlanesService.generar                planes.service.ts:121
-       ├─ pacientes.requerimiento         (meta calórica y macros)
-       ├─ alimentos.catalogoParaPaciente   alimentos.service.ts:54   ← filtro de alergias en SQL
-       └─ RecomendadorService.generar      recomendador.service.ts:70
-            ├─ si hay IA → BedrockService.generarJson   bedrock.service.ts:150
-            │                └─ ConverseCommand          bedrock.service.ts:127
-            └─ si NO hay IA → generarPlanPorReglas       generador-reglas.ts:236
+POST /pacientes/:id/planes/generar        planes.controller.ts:67
+  └─ PlanesService.generar                planes.service.ts:141
+       ├─ pacientes.requerimiento         pacientes.service.ts:354   (meta calórica y macros)
+       ├─ pacientes.contextoClinico       pacientes.service.ts:385   (perfil clínico)
+       ├─ alimentos.catalogoParaPaciente   alimentos.service.ts:47   ← filtro de alergias en SQL
+       └─ RecomendadorService.generar      recomendador.service.ts:118
+            ├─ si hay IA → conIa                          recomendador.service.ts:272
+            │                ├─ BedrockService.generarJson bedrock.service.ts:150
+            │                │    └─ ConverseCommand       bedrock.service.ts:127
+            │                └─ validarPlan                validacion-plan.ts:105
+            ├─ si NO hay IA → semanaPorReglas              recomendador.service.ts:260
+            │                └─ generarPlanPorReglas       generador-reglas.ts:236
+            ├─ variedad    → ajustarVariedadSemanal        variedad-semanal.ts:55
+            └─ clinica     → ajustarDiaClinico             ajuste-clinico.ts:73
+  └─ PlanesService.detalleConTotales       planes.service.ts:96
 ```
 
 ### El detalle que más importa
@@ -43,14 +50,53 @@ Eso no es optimización, es seguridad clínica: si el filtro de alérgenos depen
 
 ---
 
-## 3. Qué falta hoy
+## 3. El flujo semanal, pieza por pieza
 
-1. **La dimensión día no existe.** `PlanAlimenticio` → `TiempoComida` con `@@unique([planId, tipo])` (`schema.prisma:423`) prohíbe 7 × 5 filas por plan. El prompt dice literalmente `'Armas planes alimenticios de un día'` (`recomendador.service.ts:176`). El motor de reglas también devuelve un día.
-2. **Nadie valida la salida del modelo.** `bedrock.service.ts:161` hace `JSON.parse` y castea `as T`. Después, `recomendador.service.ts:130-152` repara a mano. Con 5 slots alcanza; con 35 no.
-3. **Nadie controla la variedad entre días.** Ni el prompt ni las reglas. Un plan con el mismo plato típico siete días es válido para el código e inútil para el paciente.
-4. **Las condiciones clínicas no se verifican.** HTA, ERC y diabetes viajan al prompt como texto, pero no hay ninguna regla que impida un plan con 4.000 mg de sodio para un hipertenso.
+### El contrato: una semana, no un día
 
-El punto 4 **ya no está bloqueado por datos**: el catálogo tiene `sodioMg`, `potasioMg`, `fosforoMg` (`schema.prisma:320-324`) e `indiceGlucemico` (`:330`), y el seed los carga. Está bloqueado por código.
+`ResultadoRecomendador` (`recomendador.service.ts:46`) devuelve `origen`, `justificacion` y `dias: DiaPropuesto[]` (`:39`): siempre los siete días, en el orden de `DIAS_SEMANA` (`nutricion.util.ts:51`). El campo `tiempos` del plan de un día ya no existe en el contrato. Cada `DiaPropuesto` es `{ dia, tiempos, justificacion? }`, y cada tiempo trae `tipo`, `pctKcal` e `items` (el tipo `TiempoPropuesto` del motor por reglas, `generador-reglas.ts:36`).
+
+### Una sola llamada semanal a Bedrock
+
+`conIa` (`recomendador.service.ts:272`) hace **una** llamada por plan, con `MAX_TOKENS_SEMANA = 5000` (`:75`). El esquema que fija el prompt de sistema es `{resumen, dias:[{dia, tiempos, justificacion}]}` y pide los siete días, en orden y una sola vez cada uno (`:401-413`). El catálogo viaja con los nutrientes clínicos **por porción** — sodio, potasio, fósforo, fibra, azúcares, grasas saturadas e índice glucémico — en `promptUsuario` (`:485-520`).
+
+### Validación estricta antes de persistir
+
+`validarPlan` (`validacion-plan.ts:105`) revisa cada tiempo del modelo contra lo permitido: `alimentoId` del catálogo recibido, sin duplicados dentro del tiempo, porciones numéricas dentro de `[0.5, 4]` (`PORCION_MINIMA` / `PORCION_MAXIMA`, `:14-15`).
+
+Un tiempo con cualquier ítem fuera de contrato queda en `parciales` (`validacion-plan.ts:168-170`) y **no se persiste a medias**: ese tiempo se regenera completo por reglas (`recomendador.service.ts:335-356`). Un día del que no sobrevive ningún tiempo válido se completa entero por reglas (`:315-323`).
+
+La justificación distingue los dos casos, porque no son lo mismo para quien revisa: día que la IA **no devolvió** (`:308`) y día con **respuesta inválida** (`:321`). Además suma un contador por caso —`diasNoDevueltos`, `diasIlegibles`, `tiemposPorReglas` (`:297-299`, `:382-392`)— y lista el motivo de cada tiempo completado por reglas (`:339-345`).
+
+### Variedad semanal en código
+
+`ajustarVariedadSemanal` (`variedad-semanal.ts:55`) corre **antes** de las reglas clínicas (`recomendador.service.ts:120`), para que el último filtro que toque los alimentos sea el de los techos clínicos. Con `VARIEDAD_POR_DEFECTO` (`:26`) aplica tres reglas: máximo 3 apariciones por alimento en la semana (`:28`, `:146`), un `PLATO_TIPICO` no se repite en días consecutivos (`:123-136`) y mínimo 4 fuentes proteicas distintas, contando `PROTEINA` y `LEGUMINOSA` (`:29`, `:40`).
+
+Es **best effort**: sin candidato en el catálogo el plan no se rompe, el alimento se queda y el límite no alcanzado se informa en `cambios` (`:196-201`). La justificación del plan muestra hasta seis ajustes y siempre los límites pendientes, nunca 35 líneas (`recomendador.service.ts:163-176`).
+
+### Reglas clínicas en código
+
+`detectarCondiciones` (`reglas-clinicas.ts:105`) reconoce HTA, ERC y diabetes por nombre o descripción de la condición; las demás se informan como no verificadas en vez de ignorarse (`reglas-clinicas.ts:202`).
+
+Los techos diarios viven en `LIMITES_DIARIOS` (`:39`): sodio 2000 mg para HTA; potasio 3000 mg y fósforo 1000 mg para ERC. Para diabetes no hay techo por nutriente: se evalúa el índice glucémico **promedio del día** contra `IG_PROMEDIO_MAXIMO = 55` (`:46`, `:216`).
+
+`ajustarDiaClinico` (`ajuste-clinico.ts:73`) corrige bajando porciones del alimento responsable en pasos de 0.25 (`:21`) y, cuando ya está en la porción mínima de 0.5, retirándolo (`:23`, `:108-118`). El índice glucémico no se escala por porción, así que ahí el alimento se retira directo (`:106-108`). El ciclo está acotado a 200 ajustes (`:29`) y lo que no se pudo corregir vuelve como `violaciones` para revisión clínica.
+
+**Nada se da por cumplido sin datos.** Si a un alimento le falta el nutriente, `evaluarTecho` no lo suma como 0: devuelve una `incognita` con los alimentos sin dato y la suma conocida como piso (`reglas-clinicas.ts:166-178`). `ok` exige cero violaciones **y** cero incógnitas (`:248`), y ambas se escriben en la justificación del día (`recomendador.service.ts:206-214`).
+
+### Persistencia y detalle
+
+La generación persiste una fila por (día, tiempo): `resultado.dias` se aplana en `tiempos.create` con `dia`, `tipo`, `pctKcal` y `orden` (`planes.service.ts:212-226`), y `TiempoComida` es única por `@@unique([planId, dia, tipo])` (`schema.prisma:436`).
+
+El detalle (`detalleConTotales`, `planes.service.ts:96`) agrega a cada tiempo su `kcalMeta`, `totales` y `desviacion` (`:101-111`); agrupa por día en `dias[]`, cada uno con sus tiempos, totales y desviación contra la meta diaria (`:113-126`); y devuelve `totales` y `desviacion` **del plan como semana**, contra `kcalObjetivo × días` (`:130-137`), donde `días` son los días que el plan tiene con tiempos.
+
+### Edición manual de un tiempo
+
+`PUT /planes/:id/tiempos/:dia/:tipo/items` (`planes.controller.ts:126`) reemplaza la lista completa de ese tiempo en ese día; si el plan no tiene ese (día, tiempo) responde 404 (`planes.service.ts:254-259`). La ruta sin `dia`, `PUT /planes/:id/tiempos/:tipo/items` (`planes.controller.ts:154`), sigue existiendo marcada como obsoleta (`deprecated: true`, `:158-161`) y equivale a `dia = LUNES`, que es el valor por defecto de la columna (`schema.prisma:426`).
+
+### Los umbrales son de referencia, no una prescripción
+
+`LIMITES_DIARIOS` está centralizado justamente para que ajustarlo sea un cambio de una línea, pero son **valores clínicos de referencia**: requieren revisión de quien responda clínicamente por la app antes de producción, y ajuste por paciente — ERC tiene estadios, HTA tiene grados (`reglas-clinicas.ts:32-37`).
 
 ---
 
@@ -159,7 +205,7 @@ Ojo con un detalle de AWS: si la cuenta no tiene método de pago verificado, el 
 
 - **Railway**: el API, como hoy.
 - **AWS**: solo tokens de Bedrock. Nada de ECS, ni clusters, ni Runtime hosteado.
-- **Ojo con el prompt**: hoy el catálogo entero viaja en cada llamada (~150 alimentos con nombre, porción, macros, tiempos y nutrientes clínicos). Estimando ~40 tokens por línea son ~6.000 tokens de entrada por llamada; con 7 días son ~42.000. Vale recortar campos a lo que el modelo realmente usa, o evaluar prompt caching (Claude lo soporta; el skill `amazon-bedrock` tiene la referencia).
+- **Ojo con el prompt**: el catálogo entero viaja en **una** llamada por plan semanal (~150 alimentos con nombre, porción, macros, tiempos y nutrientes clínicos). Estimando ~40 tokens por línea son ~6.000 tokens de entrada **por plan**, y la salida de la semana ronda los 1.800 tokens (medido contra los tres modelos, `recomendador.service.ts:68-75`). Vale recortar campos a lo que el modelo realmente usa, o evaluar prompt caching (Claude lo soporta; el skill `amazon-bedrock` tiene la referencia).
 
 ---
 
@@ -186,6 +232,8 @@ aws s3 ls
 - **Inference profile**: capa sobre un modelo que permite enrutar entre regiones (prefijo `us.`). Obligatorio para los modelos Claude actuales.
 - **Converse API**: la forma estándar y portable de invocar modelos en Bedrock. Es la que usa `bedrock.service.ts`.
 - **Perfil clínico (`PerfilClinico`)**: el objeto que arma el expediente del paciente para el recomendador: antropometría, condiciones, estado fisiológico, alergias, medicación, hábitos y objetivo.
-- **Motor por reglas**: el generador determinista que arma un plan sin IA. Es el fallback y es la red de seguridad.
+- **Motor por reglas**: el generador determinista que arma un plan sin IA. Es el fallback y es la red de seguridad: completa días enteros o tiempos sueltos que la IA no devolvió o devolvió mal.
+- **Incógnita clínica**: un techo que no se puede verificar porque falta el nutriente en algún alimento del día. No cuenta como cumplido (`reglas-clinicas.ts:165-178`).
+- **Variedad semanal**: el ajuste en código que limita repeticiones entre días. Best effort: informa lo que no pudo alcanzar, nunca rompe el plan (`variedad-semanal.ts:5-15`).
 - **Least privilege**: dar a cada identidad solo lo que necesita. Es la razón de existir de `baleadafit-app`.
 - **CDK bootstrap**: preparación inicial que `agentcore deploy` hace en una cuenta para poder desplegar. No hace falta hoy porque no desplegamos nada a AWS.
