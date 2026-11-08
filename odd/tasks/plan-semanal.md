@@ -16,14 +16,14 @@ El recomendador arma hoy planes de **un día**: schema, prompt, motor de reglas 
 
 ## Tasks
 
-- [x] **T1** — Migración: campo `dia` (`DiaSemana`, default `LUNES`) en `TiempoComida` y único relajado a `[planId, dia, tipo]` — S1 — inline — `Risk: item 1` — aplicada con `prisma migrate deploy` y verificada contra Postgres real — commit: pendiente
-- [ ] **T2** — Contrato multi-día en `RecomendadorService` / `ResultadoRecomendador` — S1 — **SIGUIENTE** — commit: pendiente
-- [ ] **T3** — Prompt de semana y presupuesto de tokens (`maxTokens` 3000 no alcanza para 35 slots; evaluar recorte de catálogo y prompt caching) — S1, S3 — inline — commit: pendiente
+- [x] **T1** — Migración: campo `dia` (`DiaSemana`, default `LUNES`) en `TiempoComida` y único relajado a `[planId, dia, tipo]` — S1 — inline — `Risk: item 1` — aplicada con `prisma migrate deploy` y verificada contra Postgres real — commit: `4b1b8bb`
+- [x] **T2** — Contrato multi-día en `RecomendadorService` / `ResultadoRecomendador` — S1 — inline — commit: `63ed65a`
+- [x] **T3** — Prompt de semana y presupuesto de tokens (una llamada semanal, `maxTokens` 5000) — S1, S3 — inline — commit: `63ed65a`
 - [ ] **T4** — Validación estricta de la salida del modelo — S7 — módulo escrito y probado en `src/planes/validacion-plan.ts` (`214256d`), **falta cablearlo** en `RecomendadorService` — pendiente: integración
 - [ ] **T5** — Motor de reglas clínicas por condición con sodio/potasio/fósforo/IG — S6 — módulo escrito y probado en `src/nutricion/reglas-clinicas.ts` (`214256d`), **falta cablearlo** en la generación — `Risk: item 6` — pendiente: integración
 - [ ] **T6** — Motor de variedad semanal (techos, rotación, proteicas distintas) — S5 — inline — commit: pendiente
-- [ ] **T7** — Fallback por día: un día ilegible no tumba la semana — S8 — inline — commit: pendiente
-- [ ] **T8** — Persistencia y endpoints por (día, tiempo); revisar `PATCH planes/:id` y `reemplazarItems` — S1 — inline — commit: pendiente
+- [ ] **T7** — Fallback por día: un día ilegible no tumba la semana — S8 — **parcial**: un día ausente o con todos sus tiempos vacíos ya se completa por reglas y la justificación lo dice (`63ed65a`); falta el fallback cuando la respuesta entera es ilegible bajo validación estricta (depende de T4)
+- [ ] **T8** — Persistencia y endpoints por (día, tiempo) — S1 — **parcial** (`63ed65a`): la generación persiste el día de cada tiempo de comida y el detalle totaliza por día y por semana (`dias[]`, `totales` y `desviacion` semanales en `docs/openapi.json`); **falta** que `reemplazarItems` y `PATCH /planes/:id` reciban el día: hoy `reemplazarItems` sigue resolviendo contra `DIA_POR_DEFECTO`, así que editar un plan semanal solo toca el lunes
 - [ ] **T9** — Verificación end-to-end (IA disponible y no disponible) + documentación — S1..S9 — inline — commit: pendiente
 
 ## Log
@@ -54,3 +54,12 @@ El recomendador arma hoy planes de **un día**: schema, prompt, motor de reglas 
   - El **corte automático** de gasto está activo al 100% del budget: adjunta `baleadafit-bedrock-stop` (deny de Bedrock) al usuario `baleadafit-app`. Verificado que bloquea y que se revierte. Protege la app, **no** las invocaciones con root.
   - Issue #21 sigue abierto: falta probar con 3 perfiles de paciente reales y aplicar el ajuste de prompt en el código.
   - El pull request de la rama no está abierto: es decisión del dueño.
+- **L17** (evidencia de T2, T3 y la mitad de T8, commit `63ed65a`):
+  - `ResultadoRecomendador` pasa de `tiempos` a `dias: DiaPropuesto[]` (`dia`, `tiempos`, `justificacion?`), siempre los siete días en el orden de `DIAS_SEMANA`. `normalizarDia` y `normalizarTipo` toleran minúsculas y espacios; el día repetido o desconocido que devuelve el modelo se descarta y manda la primera aparición válida.
+  - Una sola llamada semanal (`MAX_TOKENS_SEMANA = 5000`, justificado en L12: ≈1.800 tokens de salida medidos) con el esquema `{"resumen", "dias": [{"dia", "tiempos", "justificacion"}]}`.
+  - Si el modelo no devuelve **ningún** día utilizable se lanza `IaNoDisponibleError` y cae la semana completa a reglas. Si devuelve algunos, los días faltantes los arma el generador por reglas y la justificación lo cuenta (`N día(s) completados por reglas`).
+  - `semanaPorReglas` desplaza la semilla `7` por día: el generador por reglas alterna plato típico y plato combinado en días consecutivos, así que la semana no es el mismo día repetido siete veces.
+  - Persistencia: `planAlimenticio.create` hace `flatMap` de días y guarda `dia` por tiempo de comida. `detalleConTotales` agrega `dias[]` con `totales` y `desviacion` contra la meta **diaria** del plan; el `totales` y la `desviacion` del plan pasan a ser **semanales** (kcal semanal real contra `kcalObjetivo × días`), documentado en `PlanDetalleEntity` y regenerado en `docs/openapi.json`.
+  - Verificación: 9/9 en `recomendador.service.spec.ts` (los 7 casos nuevos cubren semana completa, día único, días duplicados/desconocidos, respuesta sin días, fallback sin IA, esquema del prompt) y 46/46 en `src/planes`. Suite completa 248/248, `nest build` OK, `oxlint` con las mismas 6 advertencias previas (comparado contra `HEAD`).
+  - **Límite honesto**: la reparación por slot sigue siendo la del código anterior (ids existentes, sin duplicados, porciones 0.5–4). `validacion-plan.ts` todavía no está cableado (T4), así que un JSON con forma rota en un tiempo suelto se arregla por el filtro permisivo, no por el validador estricto.
+- **L18** (defecto vivo que deja T8 parcial): `reemplazarItems` resuelve el tiempo con `planId_dia_tipo: { planId, dia: DIA_POR_DEFECTO, tipo }` (`planes.service.ts`), y el controlador no recibe día. Un plan semanal recién generado se puede leer completo pero **solo se puede editar el lunes** desde `PUT .../tiempos/:tipo` (o el equivalente del controlador). Se cierra en T8 agregando `dia` al DTO y a la ruta.
