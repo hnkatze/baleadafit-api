@@ -17,10 +17,10 @@ El recomendador arma hoy planes de **un día**: schema, prompt, motor de reglas 
 ## Tasks
 
 - [x] **T1** — Migración: campo `dia` (`DiaSemana`, default `LUNES`) en `TiempoComida` y único relajado a `[planId, dia, tipo]` — S1 — inline — `Risk: item 1` — aplicada con `prisma migrate deploy` y verificada contra Postgres real — commit: pendiente
-- [ ] **T2** — Contrato multi-día en `RecomendadorService` / `ResultadoRecomendador` — S1 — inline — commit: pendiente
+- [ ] **T2** — Contrato multi-día en `RecomendadorService` / `ResultadoRecomendador` — S1 — **SIGUIENTE** — commit: pendiente
 - [ ] **T3** — Prompt de semana y presupuesto de tokens (`maxTokens` 3000 no alcanza para 35 slots; evaluar recorte de catálogo y prompt caching) — S1, S3 — inline — commit: pendiente
-- [ ] **T4** — Validación estricta de la salida del modelo (esquema + reparación) — S7 — inline — commit: pendiente
-- [ ] **T5** — Motor de reglas clínicas por condición usando sodio/potasio/fósforo/IG — S6 — inline — `Risk: item 6` (si no hay test, la regla clínica no está probada) — commit: pendiente
+- [ ] **T4** — Validación estricta de la salida del modelo — S7 — módulo escrito y probado en `src/planes/validacion-plan.ts` (`214256d`), **falta cablearlo** en `RecomendadorService` — pendiente: integración
+- [ ] **T5** — Motor de reglas clínicas por condición con sodio/potasio/fósforo/IG — S6 — módulo escrito y probado en `src/nutricion/reglas-clinicas.ts` (`214256d`), **falta cablearlo** en la generación — `Risk: item 6` — pendiente: integración
 - [ ] **T6** — Motor de variedad semanal (techos, rotación, proteicas distintas) — S5 — inline — commit: pendiente
 - [ ] **T7** — Fallback por día: un día ilegible no tumba la semana — S8 — inline — commit: pendiente
 - [ ] **T8** — Persistencia y endpoints por (día, tiempo); revisar `PATCH planes/:id` y `reemplazarItems` — S1 — inline — commit: pendiente
@@ -42,3 +42,15 @@ El recomendador arma hoy planes de **un día**: schema, prompt, motor de reglas 
 - **L12** (cierra L9, medido): una sola llamada semanal **no** trunca (≈1.800 tokens de salida para 7×5 slots) y los tres modelos devuelven JSON válido con 7/7 días y 0 ids inventados. Pero **los tres fallan el rango calórico** (Nova 7/7 días, Sonnet 6/7) y Nova Lite **repite el alimento principal en 5 de 7 días consecutivos** mientras los Claude no repiten ninguno. Decisión: **una llamada semanal con Sonnet 4.6** (~$0.036–0.05 por plan; 7 llamadas diarias costarían ~$0.20), Nova Lite para desarrollo, y regeneración por día solo de los días que fallen la validación. La aritmética queda en código: `reglas-clinicas.ts` y `validacion-plan.ts`.
 - **L13** (evidencia de T1): migración `20261108120000_plan_semanal_dia` aplicada contra Postgres 16 real. `\d tiempo_comida` muestra `dia "DiaSemana" NOT NULL DEFAULT 'LUNES'` y el único `tiempo_comida_plan_id_dia_tipo_key (plan_id, dia, tipo)`; el índice viejo `tiempo_comida_plan_id_tipo_key` ya no existe. `prisma migrate status`: "Database schema is up to date". Suite 243/243, lint sin warnings nuevos, `nest build` OK. La tabla tenía 0 filas, así que el backfill no tocó datos.
 - **L14** (límite honesto de T1): los umbrales de `LIMITES_DIARIOS` (sodio 2000 mg, potasio 3000 mg, fósforo 1000 mg, IG promedio 55) son valores de referencia elegidos en implementación. Los tests prueban que el código los aplica, no que sean los correctos para cada paciente: requieren revisión clínica antes de producción.
+- **L15** (estado al pausar, rama `feat/plan-semanal` pusheada):
+  - `214256d` — `reglas-clinicas.ts` y `validacion-plan.ts` con 31 tests. Suite completa 243/243, lint sin warnings nuevos, `nest build` OK.
+  - `4b1b8bb` — migración `20261108120000_plan_semanal_dia` **aplicada** con `migrate deploy` sobre Postgres 16 real y confirmada con `db pull`; `tiempo_comida` tenía 0 filas.
+  - `01272c0` — esta ficha, `docs/RECOMENDADOR.md` y la corrección de L4 en `recomendador-contexto-clinico`.
+  - `3538cda` — badge de CI en el README (issue #20, cerrado). También se cerró #17.
+  - **Nada de esto llama todavía a los módulos nuevos**: son código probado y sin cablear. Ese es exactamente el trabajo de T2 y de la integración de T4/T5.
+- **L16** (pendientes que no son código, para no perderlos):
+  - Revisar `LIMITES_DIARIOS` con criterio clínico antes de producción (ver L14).
+  - Confirmar en la consola de Billing que las alertas del presupuesto (USD 10/mes, 5 umbrales) tienen el email `henriquezhector1@hotmail.com`: la API de AWS no devuelve los destinatarios.
+  - El **corte automático** de gasto está activo al 100% del budget: adjunta `baleadafit-bedrock-stop` (deny de Bedrock) al usuario `baleadafit-app`. Verificado que bloquea y que se revierte. Protege la app, **no** las invocaciones con root.
+  - Issue #21 sigue abierto: falta probar con 3 perfiles de paciente reales y aplicar el ajuste de prompt en el código.
+  - El pull request de la rama no está abierto: es decisión del dueño.
