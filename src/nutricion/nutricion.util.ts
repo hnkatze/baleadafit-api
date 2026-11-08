@@ -1,4 +1,5 @@
 import type {
+  DiaSemana,
   Meta,
   NivelActividad,
   Sexo,
@@ -45,6 +46,23 @@ export const ORDEN_TIEMPOS: TipoComida[] = [
   'MERIENDA_PM',
   'CENA',
 ];
+
+/** Orden canónico de la semana para armar planes semanales. */
+export const DIAS_SEMANA: DiaSemana[] = [
+  'LUNES',
+  'MARTES',
+  'MIERCOLES',
+  'JUEVES',
+  'VIERNES',
+  'SABADO',
+  'DOMINGO',
+];
+
+/**
+ * Día que usan los planes de un solo día. Existe para que el comportamiento
+ * anterior a los planes semanales siga siendo el mismo.
+ */
+export const DIA_POR_DEFECTO: DiaSemana = 'LUNES';
 
 export type DistribucionTiempos = Partial<Record<TipoComida, number>>;
 

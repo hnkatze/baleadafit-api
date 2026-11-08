@@ -8,6 +8,7 @@ import { PaginacionDto, paginar } from '../common/paginacion.js';
 import type { TipoComida } from '../generated/prisma/enums.js';
 import { AlimentosService } from '../alimentos/alimentos.service.js';
 import {
+  DIA_POR_DEFECTO,
   DISTRIBUCION_TIEMPOS_DEFAULT,
   ORDEN_TIEMPOS,
   desviacion,
@@ -189,6 +190,7 @@ export class PlanesService {
         justificacion: resultado.justificacion,
         tiempos: {
           create: resultado.tiempos.map((t) => ({
+            dia: DIA_POR_DEFECTO,
             tipo: t.tipo,
             pctKcal: t.pctKcal,
             orden: ORDEN_TIEMPOS.indexOf(t.tipo),
@@ -226,7 +228,7 @@ export class PlanesService {
     const plan = await this.acceso.planDeNutricionista(planId, nutricionistaId);
     this.asegurarEditable(plan.estado);
     const tiempo = await this.prisma.tiempoComida.findUnique({
-      where: { planId_tipo: { planId, tipo } },
+      where: { planId_dia_tipo: { planId, dia: DIA_POR_DEFECTO, tipo } },
     });
     if (!tiempo) throw new NotFoundException(`El plan no tiene ${tipo}.`);
 
