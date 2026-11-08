@@ -24,6 +24,21 @@ export class AlimentoEntity {
   /** @example 13 */
   grasaG: number;
   fibraG: number | null;
+  /** Sodio por porción, en miligramos. */
+  sodioMg: number | null;
+  /** Potasio por porción, en miligramos. */
+  potasioMg: number | null;
+  /** Fósforo por porción, en miligramos. */
+  fosforoMg: number | null;
+  /** Azúcares totales por porción, en gramos. */
+  azucaresG: number | null;
+  /** Grasa saturada por porción, en gramos. */
+  grasasSatG: number | null;
+  /**
+   * Índice glucémico de la porción (0-110). Nulo en alimentos sin
+   * carbohidratos.
+   */
+  indiceGlucemico: number | null;
   @ApiProperty({ enum: TipoComida, enumName: 'TipoComida', isArray: true })
   tiposComida: TipoComida[];
   /**

@@ -9753,6 +9753,36 @@
             "type": "number",
             "nullable": true
           },
+          "sodioMg": {
+            "type": "number",
+            "nullable": true,
+            "description": "Sodio por porción, en miligramos."
+          },
+          "potasioMg": {
+            "type": "number",
+            "nullable": true,
+            "description": "Potasio por porción, en miligramos."
+          },
+          "fosforoMg": {
+            "type": "number",
+            "nullable": true,
+            "description": "Fósforo por porción, en miligramos."
+          },
+          "azucaresG": {
+            "type": "number",
+            "nullable": true,
+            "description": "Azúcares totales por porción, en gramos."
+          },
+          "grasasSatG": {
+            "type": "number",
+            "nullable": true,
+            "description": "Grasa saturada por porción, en gramos."
+          },
+          "indiceGlucemico": {
+            "type": "number",
+            "nullable": true,
+            "description": "Índice glucémico de la porción (0-110). Nulo en alimentos sin\ncarbohidratos."
+          },
           "contiene": {
             "description": "Etiquetas para filtrar restricciones.",
             "example": [
@@ -9789,6 +9819,12 @@
           "carbohidratoG",
           "grasaG",
           "fibraG",
+          "sodioMg",
+          "potasioMg",
+          "fosforoMg",
+          "azucaresG",
+          "grasasSatG",
+          "indiceGlucemico",
           "contiene",
           "esTipicoHn",
           "fuente",

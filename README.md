@@ -265,6 +265,8 @@ Cada alimento declara, **por porción** (igual que kcal y macros), además de `k
 | `fosforoMg` | mg | Clave en enfermedad renal crónica |
 | `indiceGlucemico` | 0-110 | Nulo cuando la porción aporta menos de 2 g de carbohidratos |
 
+`GET /alimentos` y `GET /alimentos/{id}` devuelven esos siete campos junto al resto de la porción (el esquema `AlimentoEntity` del OpenAPI los declara como numéricos y nullables), y `GET /alimentos/{id}/versiones` los repite en cada versión del historial.
+
 Los totales del plan (`GET /planes/:id`, `GET /me/hoy`, `GET /me/plan`) suman todos esos nutrientes por tiempo de comida y por día, más la **carga glucémica** (índice glucémico × carbohidratos / 100 por alimento). Un nutriente sin dato aporta 0, así que el total es un **piso de lo conocido**, no una promesa: si un alimento no tiene el dato cargado, el total subestima.
 
 El recomendador recibe estos valores por alimento en el catálogo del prompt, así que el agente puede razonar sobre sodio, potasio y carga glucémica al elegir los platos, además del perfil clínico del paciente.
