@@ -53,7 +53,6 @@ export interface ResultadoRecomendador {
 interface RespuestaIaTiempo {
   tipo?: string;
   items?: { alimentoId?: string; porciones?: number }[];
-  justificacion?: string;
 }
 
 interface RespuestaIaDia {
@@ -68,11 +67,15 @@ interface RespuestaIa {
 }
 
 /**
- * Salida del modelo para una semana entera. Medido contra los tres modelos: la
- * semana completa ronda los 1.800 tokens de salida, así que 5.000 deja aire para
- * un plan con textos largos sin acercarse al límite de los modelos chicos.
+ * Salida del modelo para una semana entera.
+ *
+ * 5.000 no alcanzó: con el esquema semanal completo (35 tiempos, cada uno con su
+ * justificación, más la del día) Sonnet 4.6 cortó la respuesta por `max_tokens`
+ * y el JSON llegó truncado — lo que se veía como "la IA devolvió JSON inválido"
+ * y caía a reglas después de 50 segundos. El tope no cuesta por sí mismo: solo se
+ * paga lo generado.
  */
-const MAX_TOKENS_SEMANA = 5000;
+const MAX_TOKENS_SEMANA = 16000;
 
 /**
  * Desplazamiento de la semilla por día: con paso impar, el generador por reglas
@@ -85,13 +88,6 @@ function normalizarDia(valor: unknown): DiaSemana | undefined {
   if (typeof valor !== 'string') return undefined;
   const nombre = valor.trim().toUpperCase();
   return DIAS_SEMANA.find((d) => d === nombre);
-}
-
-/** Tipo de comida del modelo tolerando minúsculas y espacios. */
-function normalizarTipo(valor: unknown): TipoComida | undefined {
-  if (typeof valor !== 'string') return undefined;
-  const nombre = valor.trim().toUpperCase();
-  return ORDEN_TIEMPOS.find((t) => t === nombre);
 }
 
 const NOMBRE_TIEMPO: Record<TipoComida, string> = {
@@ -324,13 +320,6 @@ export class RecomendadorService {
 
       const limpios = new Map(validado.tiempos.map((t) => [t.tipo, t.items]));
       const rotos = new Set(validado.parciales.map((t) => t.tipo));
-      // La explicación del modelo se conserva para quien revisa el plan.
-      const explicaciones = new Map<TipoComida, string>();
-      for (const crudo of deIa.tiempos ?? []) {
-        const tipo = normalizarTipo(crudo?.tipo);
-        if (tipo && crudo.justificacion?.trim())
-          explicaciones.set(tipo, crudo.justificacion.trim());
-      }
       const notasDia: string[] = [];
       const tiempos: TiempoPropuesto[] = tiposActivos.map((tipo) => {
         const pctKcal = e.distribucion[tipo] ?? 0;
@@ -360,8 +349,6 @@ export class RecomendadorService {
         };
       });
 
-      for (const [tipo, explicacion] of explicaciones)
-        notas.push(`${NOMBRE_TIEMPO[tipo]}: ${explicacion}`);
       if (deIa.justificacion?.trim())
         notas.push(`${dia}: ${deIa.justificacion.trim()}`);
 
@@ -407,7 +394,7 @@ export class RecomendadorService {
       'Si recibes el perfil clínico, respétalo: las condiciones, el estado fisiológico, las alergias y los hábitos mandan sobre la preferencia cultural.',
       'No inventes alimentos, ids ni valores nutricionales. Las porciones son múltiplos de 0.25 de la porción indicada.',
       'Responde SOLO con JSON válido, sin texto adicional, con esta forma:',
-      '{"resumen": string, "dias": [{"dia": "LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO", "tiempos": [{"tipo": "DESAYUNO|MERIENDA_AM|ALMUERZO|MERIENDA_PM|CENA", "items": [{"alimentoId": string, "porciones": number}], "justificacion": string}], "justificacion": string}]}',
+      '{"resumen": string, "dias": [{"dia": "LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO", "tiempos": [{"tipo": "DESAYUNO|MERIENDA_AM|ALMUERZO|MERIENDA_PM|CENA", "items": [{"alimentoId": string, "porciones": number}]}], "justificacion": string}]}',
       'Devuelve los siete días, en orden y cada uno una sola vez.',
     ].join('\n');
   }

@@ -58,7 +58,7 @@ Eso no es optimización, es seguridad clínica: si el filtro de alérgenos depen
 
 ### Una sola llamada semanal a Bedrock
 
-`conIa` (`recomendador.service.ts:272`) hace **una** llamada por plan, con `MAX_TOKENS_SEMANA = 5000` (`:75`). El esquema que fija el prompt de sistema es `{resumen, dias:[{dia, tiempos, justificacion}]}` y pide los siete días, en orden y una sola vez cada uno (`:401-413`). El catálogo viaja con los nutrientes clínicos **por porción** — sodio, potasio, fósforo, fibra, azúcares, grasas saturadas e índice glucémico — en `promptUsuario` (`:485-520`).
+`conIa` (`recomendador.service.ts:279`) hace **una** llamada por plan, con `MAX_TOKENS_SEMANA = 16000` (`:78`). El esquema que fija el prompt de sistema es `{resumen, dias:[{dia, tiempos, justificacion}]}` — la justificación va **por día**, no por tiempo: con 35 tiempos la salida se multiplicaba y la generación se pasaba del presupuesto de tokens y del timeout — y pide los siete días, en orden y una sola vez cada uno (`:407-419`). El cliente de Bedrock usa `requestTimeout` de **180 s** (`bedrock.service.ts:110`): una semana completa tarda alrededor de 63 s medidos, y con 60 s la llamada moría por timeout después de generar. El catálogo viaja con los nutrientes clínicos **por porción** — sodio, potasio, fósforo, fibra, azúcares, grasas saturadas e índice glucémico — en `promptUsuario` (`:485-520`).
 
 ### Validación estricta antes de persistir
 

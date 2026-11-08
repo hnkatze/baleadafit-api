@@ -155,6 +155,21 @@ describe('BedrockService', () => {
     expect(svc.estado().ultimaLlamada).toMatchObject({ ok: false });
   });
 
+  it('dice cuando el modelo se quedó sin tokens en vez de culpar al JSON', async () => {
+    const svc = new BedrockService(
+      config({ BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-6' }),
+      clienteFalso(async () => ({
+        output: { message: { content: [{ text: '{"dias": [{"dia": "LUNE' }] } },
+        stopReason: 'max_tokens',
+      })),
+    );
+
+    await expect(svc.generarJson('s', 'm', 5000)).rejects.toThrow(
+      /sin tokens/i,
+    );
+    expect(svc.estado().ultimaLlamada).toMatchObject({ ok: false });
+  });
+
   it('no expone detalles internos de AWS en el estado ni en la prueba', async () => {
     const detalleAws =
       'AccessDeniedException: User: arn:aws:iam::123456789012:user/sofia is not authorized';

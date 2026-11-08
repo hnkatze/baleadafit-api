@@ -35,6 +35,14 @@ export interface EstadoIa {
 const REGION_POR_DEFECTO = 'us-east-1';
 const SIN_CONFIGURAR = 'IA deshabilitada o BEDROCK_MODEL_ID sin configurar.';
 /**
+ * El modelo cortó la respuesta por el tope de tokens. Se distingue del JSON
+ * inválido a propósito: con una semana de 35 slots, "no devolvió JSON" es la
+ * consecuencia y no la causa, y confundirlas manda a buscar el problema en el
+ * prompt cuando el problema es el presupuesto de salida.
+ */
+const SIN_TOKENS =
+  'La IA se quedó sin tokens antes de terminar la respuesta.';
+/**
  * Mensaje apto para el portal. El detalle de AWS puede traer el ARN, el número
  * de cuenta y el usuario IAM, así que solo va al log del servidor.
  */
@@ -105,9 +113,12 @@ export class BedrockService {
       region: this.region,
       // Sin reintentos: cada intento puede tardar el requestTimeout completo y el
       // portal necesita un límite predecible. El requestTimeout mide el socket
-      // inactivo y Converse sin streaming no envía nada hasta terminar.
+      // inactivo y Converse sin streaming no envía nada hasta terminar, así que
+      // este valor es también el máximo que puede tardar una respuesta entera.
+      // 60 s alcanza para una consulta suelta, no para un plan semanal completo
+      // (35 tiempos): con 60 s la llamada moría por timeout después de generar.
       maxAttempts: 1,
-      requestHandler: { connectionTimeout: 2000, requestTimeout: 60000 },
+      requestHandler: { connectionTimeout: 2000, requestTimeout: 180000 },
     });
     return this.cliente;
   }
@@ -132,10 +143,27 @@ export class BedrockService {
         }),
       );
       this.registrar({ ok: true });
-      return (res.output?.message?.content ?? [])
+      const texto = (res.output?.message?.content ?? [])
         .map((c) => c.text ?? '')
         .join('');
+      if (res.stopReason === 'max_tokens') {
+        // El texto llegó cortado: parsearlo como JSON siempre falla, así que se
+        // informa la causa real y se registra la llamada como fallida.
+        this.logger.warn(
+          `Bedrock cortó la respuesta por tokens (${texto.length} caracteres).`,
+        );
+        this.ultima = {
+          ok: false,
+          error: SIN_TOKENS,
+          en: new Date().toISOString(),
+        };
+        throw new IaNoDisponibleError(SIN_TOKENS);
+      }
+      return texto;
     } catch (e) {
+      // Lo que ya viene clasificado (por ejemplo el corte por tokens) se
+      // propaga tal cual: envolverlo en "no se pudo conectar" miente sobre la causa.
+      if (e instanceof IaNoDisponibleError) throw e;
       // El detalle (ARN, cuenta, usuario IAM) queda en el log y no sale por la API.
       this.logger.warn(`Bedrock falló: ${(e as Error).message}`);
       this.registrar({ ok: false, error: ERROR_CONEXION });
