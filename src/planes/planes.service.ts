@@ -5,10 +5,9 @@ import {
 } from '@nestjs/common';
 import { AccesoService } from '../common/acceso.service.js';
 import { PaginacionDto, paginar } from '../common/paginacion.js';
-import type { TipoComida } from '../generated/prisma/enums.js';
+import type { DiaSemana, TipoComida } from '../generated/prisma/enums.js';
 import { AlimentosService } from '../alimentos/alimentos.service.js';
 import {
-  DIA_POR_DEFECTO,
   DIAS_SEMANA,
   DISTRIBUCION_TIEMPOS_DEFAULT,
   ORDEN_TIEMPOS,
@@ -242,9 +241,10 @@ export class PlanesService {
     return this.detalleConTotales(planId);
   }
 
-  /** Edición manual de un tiempo de comida: reemplaza sus alimentos. */
+  /** Edición manual de un tiempo de comida de un día: reemplaza sus alimentos. */
   async reemplazarItems(
     planId: string,
+    dia: DiaSemana,
     tipo: TipoComida,
     nutricionistaId: string,
     dto: ReemplazarItemsDto,
@@ -252,9 +252,10 @@ export class PlanesService {
     const plan = await this.acceso.planDeNutricionista(planId, nutricionistaId);
     this.asegurarEditable(plan.estado);
     const tiempo = await this.prisma.tiempoComida.findUnique({
-      where: { planId_dia_tipo: { planId, dia: DIA_POR_DEFECTO, tipo } },
+      where: { planId_dia_tipo: { planId, dia, tipo } },
     });
-    if (!tiempo) throw new NotFoundException(`El plan no tiene ${tipo}.`);
+    if (!tiempo)
+      throw new NotFoundException(`El plan no tiene ${tipo} el ${dia}.`);
 
     const ids = [...new Set(dto.items.map((i) => i.alimentoId))];
     const existentes = await this.prisma.alimento.count({

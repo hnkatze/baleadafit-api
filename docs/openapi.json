@@ -4668,10 +4668,197 @@
         ]
       }
     },
+    "/planes/{id}/tiempos/{dia}/{tipo}/items": {
+      "put": {
+        "description": "Edición manual: reemplaza la lista completa del tiempo indicado en el día indicado. Un plan semanal tiene cinco tiempos por día; el día es parte de la dirección del recurso. Los ítems nuevos quedan atados a la versión vigente de cada alimento.",
+        "operationId": "PlanesController_reemplazarItems",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del plan",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dia",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/DiaSemana"
+            }
+          },
+          {
+            "name": "tipo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/TipoComida"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReemplazarItemsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanDetalleEntity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reemplazar alimentos de un tiempo de comida de un día",
+        "tags": [
+          "planes"
+        ]
+      }
+    },
     "/planes/{id}/tiempos/{tipo}/items": {
       "put": {
-        "description": "Edición manual: reemplaza la lista completa del tiempo indicado. Los ítems nuevos quedan atados a la versión vigente de cada alimento.",
-        "operationId": "PlanesController_reemplazarItems",
+        "deprecated": true,
+        "description": "Se mantiene por compatibilidad y equivale a la ruta con `dia = LUNES`. Usa `PUT /planes/:id/tiempos/:dia/:tipo/items`.",
+        "operationId": "PlanesController_reemplazarItemsLunes",
         "parameters": [
           {
             "name": "id",
@@ -4840,7 +5027,7 @@
             "bearer": []
           }
         ],
-        "summary": "Reemplazar alimentos de un tiempo de comida",
+        "summary": "Reemplazar alimentos de un tiempo de comida (obsoleto)",
         "tags": [
           "planes"
         ]

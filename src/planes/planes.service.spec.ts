@@ -388,7 +388,7 @@ describe('PlanesService', () => {
     it('reemplaza los alimentos de un tiempo de comida', async () => {
       prisma.tiempoComida.findUnique.mockResolvedValue({ id: 't1' });
       prisma.alimento.count.mockResolvedValue(1);
-      await svc.reemplazarItems('plan1', 'DESAYUNO', 'n1', {
+      await svc.reemplazarItems('plan1', 'LUNES', 'DESAYUNO', 'n1', {
         items: [{ alimentoId: 'a1', porciones: 1.5 }],
       });
       expect(prisma.planItem.deleteMany).toHaveBeenCalledWith({
@@ -413,7 +413,7 @@ describe('PlanesService', () => {
         { id: 'v1a', alimentoId: 'a1', version: 3 },
       ]);
 
-      await svc.reemplazarItems('plan1', 'DESAYUNO', 'n1', {
+      await svc.reemplazarItems('plan1', 'LUNES', 'DESAYUNO', 'n1', {
         items: [
           { alimentoId: 'a1', porciones: 1 },
           { alimentoId: 'a2', porciones: 2 },
@@ -446,17 +446,46 @@ describe('PlanesService', () => {
       prisma.tiempoComida.findUnique.mockResolvedValue({ id: 't1' });
       prisma.alimento.count.mockResolvedValue(0);
       await expect(
-        svc.reemplazarItems('plan1', 'DESAYUNO', 'n1', {
+        svc.reemplazarItems('plan1', 'LUNES', 'DESAYUNO', 'n1', {
           items: [{ alimentoId: 'zz', porciones: 1 }],
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.planItem.deleteMany).not.toHaveBeenCalled();
     });
 
+    it('edita el tiempo de comida del día pedido, no siempre el lunes', async () => {
+      prisma.tiempoComida.findUnique.mockResolvedValue({ id: 't9' });
+      prisma.alimento.count.mockResolvedValue(1);
+
+      await svc.reemplazarItems('plan1', 'MIERCOLES', 'ALMUERZO', 'n1', {
+        items: [{ alimentoId: 'a1', porciones: 1 }],
+      });
+
+      expect(prisma.tiempoComida.findUnique).toHaveBeenCalledWith({
+        where: {
+          planId_dia_tipo: {
+            planId: 'plan1',
+            dia: 'MIERCOLES',
+            tipo: 'ALMUERZO',
+          },
+        },
+      });
+      expect(prisma.planItem.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            alimentoId: 'a1',
+            porciones: 1,
+            tiempoComidaId: 't9',
+            alimentoVersionId: null,
+          },
+        ],
+      });
+    });
+
     it('responde 404 si el plan no tiene ese tiempo de comida', async () => {
       prisma.tiempoComida.findUnique.mockResolvedValue(null);
       await expect(
-        svc.reemplazarItems('plan1', 'CENA', 'n1', { items: [] }),
+        svc.reemplazarItems('plan1', 'LUNES', 'CENA', 'n1', { items: [] }),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
