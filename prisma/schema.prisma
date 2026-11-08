@@ -94,6 +94,13 @@ enum AutorRegistro {
   NUTRICIONISTA
 }
 
+/// Plataforma que recibe el push. FCM no distingue más que esto al enviar.
+enum Plataforma {
+  ANDROID
+  IOS
+  WEB
+}
+
 // ─── Expediente ───────────────────────────────────────────────────────────
 
 model Nutricionista {
@@ -448,4 +455,23 @@ model RegistroComida {
 
   @@unique([pacienteId, tiempoComidaId, fecha])
   @@map("registro_comida")
+}
+
+/// Token de push de un dispositivo. El dueño es el `uid` de Firebase, no el perfil:
+/// un paciente sin vincular todavía no tiene fila en `paciente` y el token igual sirve.
+model Dispositivo {
+  id         String     @id @default(uuid()) @db.Uuid
+  /// Token de registro de FCM. Es único: el mismo dispositivo no se registra dos veces.
+  token      String     @unique
+  plataforma Plataforma
+  /// `firebase_uid` del usuario autenticado que lo registró.
+  uid        String     @map("uid")
+  /// Rol con el que se registró, para poder filtrar a quién se le manda.
+  rol        String
+  creadoEn   DateTime   @default(now()) @map("creado_en")
+  /// Se refresca en cada registro, para saber qué dispositivos siguen vivos.
+  ultimoUso  DateTime   @default(now()) @map("ultimo_uso")
+
+  @@index([uid])
+  @@map("dispositivo")
 }

@@ -156,6 +156,16 @@ En el cliente, antes de mostrar el formulario, conviene mirar `user.emailVerifie
 | nutricionista | `POST/PATCH /alimentos` | Mantener el catálogo |
 | paciente | `GET /me/hoy`, `GET /me/plan`, `GET /me/mediciones`, `GET /me/citas` | App del paciente |
 | paciente | `PUT /me/registros`, `GET /me/registros` | Marcar comidas cumplidas |
+| ambos | `POST/GET /me/dispositivos`, `DELETE /me/dispositivos/:token` | Registrar el dispositivo para push (token de FCM) y darlo de baja |
+
+### Dispositivos y push
+
+`POST /me/dispositivos` guarda el token que FCM le dio a la app, con su plataforma (`ANDROID`, `IOS` o `WEB`). La app lo vuelve a llamar en cada arranque de sesión, porque el token cambia cuando se reinstala.
+
+- La clave es el **token**, no el usuario: repetir la llamada no duplica filas y refresca `ultimoUso`. Si el mismo celular se loguea con otra cuenta, el token **pasa a esa cuenta** en vez de quedar duplicado o huérfano.
+- El dueño (`uid` de Firebase) y el `rol` los pone el servidor desde el token de autenticación. Mandarlos en el body da `400`: son datos de confianza, no una declaración del cliente.
+- `DELETE /me/dispositivos/:token` filtra por token **y** dueño en la misma consulta, así que el token de otra cuenta responde `404` sin borrar nada y sin revelar si existe.
+- Esta entrega **no envía notificaciones**. Es el corte 1 de la fase #25: deja el registro listo para que el envío por FCM (corte 2) tenga a quién mandarle.
 
 ### Ficha del paciente
 

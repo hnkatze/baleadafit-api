@@ -296,7 +296,9 @@ Para probar sin Firebase: `AUTH_DEV_BYPASS=true` en `.env`.
 **#24 · Endurecer seguridad de la API** (S4, infraestructura)
 - `helmet`, rate limiting (`@nestjs/throttler`) y `CORS_ORIGINS` obligatorio en producción.
 
-**#25 · Notificaciones push con FCM** y **#26 · Auditoría de comidas por foto**: fase futura.
+**#25 · Notificaciones push con FCM** — *corte 1 hecho*: tabla `dispositivo` y `POST/GET /me/dispositivos`, `DELETE /me/dispositivos/:token` (`odd/tasks/push-dispositivos.md`). Faltan el envío (`getMessaging()`, limpieza de tokens muertos) y los eventos de negocio.
+
+**#26 · Auditoría de comidas por foto**: fase futura.
 
 ---
 

@@ -6565,6 +6565,417 @@
           "mi cuenta (paciente)"
         ]
       }
+    },
+    "/me/dispositivos": {
+      "post": {
+        "description": "Guarda el token de FCM del dispositivo que hace la llamada. Es idempotente sobre el token: el primer registro responde `201` y los siguientes refrescan el mismo registro con `200`, sin duplicar. Si el token estaba en otra cuenta, pasa a esta. El dueño y el rol los pone el servidor.",
+        "operationId": "DispositivosController_registrar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrarDispositivoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "El token ya existía en esta cuenta y solo se refrescó.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DispositivoEntity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Primer registro de este token en la cuenta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DispositivoEntity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registrar el dispositivo para push",
+        "tags": [
+          "dispositivos"
+        ]
+      },
+      "get": {
+        "description": "Los dispositivos registrados por esta cuenta, el de uso más reciente primero.",
+        "operationId": "DispositivosController_listar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DispositivoEntity"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mis dispositivos",
+        "tags": [
+          "dispositivos"
+        ]
+      }
+    },
+    "/me/dispositivos/{token}": {
+      "delete": {
+        "description": "Borra el token de esta cuenta. Sirve para cerrar sesión o cuando FCM avisa que el token ya no existe.",
+        "operationId": "DispositivosController_eliminar",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Token de registro de FCM. Si tiene caracteres reservados de URL, mandalo con `encodeURIComponent`.",
+            "schema": {
+              "example": "fMEr1:APA91bH...",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DispositivoEliminadoEntity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dar de baja un dispositivo",
+        "tags": [
+          "dispositivos"
+        ]
+      }
     }
   },
   "info": {
@@ -11191,6 +11602,97 @@
         "required": [
           "tiempoComidaId",
           "cumplido"
+        ]
+      },
+      "Plataforma": {
+        "type": "string",
+        "enum": [
+          "ANDROID",
+          "IOS",
+          "WEB"
+        ]
+      },
+      "DispositivoEntity": {
+        "type": "object",
+        "properties": {
+          "plataforma": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plataforma"
+              }
+            ]
+          },
+          "creadoEn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ultimoUso": {
+            "type": "string",
+            "description": "Última vez que la app registró este token.",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string",
+            "description": "Token de registro de FCM."
+          },
+          "uid": {
+            "type": "string",
+            "description": "`firebase_uid` del dueño del dispositivo."
+          },
+          "rol": {
+            "type": "string",
+            "description": "Rol con el que se registró: `nutricionista` o `paciente`."
+          }
+        },
+        "required": [
+          "plataforma",
+          "creadoEn",
+          "ultimoUso",
+          "id",
+          "token",
+          "uid",
+          "rol"
+        ]
+      },
+      "RegistrarDispositivoDto": {
+        "type": "object",
+        "properties": {
+          "plataforma": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plataforma"
+              }
+            ]
+          },
+          "token": {
+            "type": "string",
+            "description": "Token de registro de FCM. Llega del SDK del dispositivo y cambia cuando la\napp se reinstala, así que se vuelve a registrar en cada arranque de sesión.",
+            "example": "fMEr1:APA91bH...",
+            "minLength": 20,
+            "maxLength": 4096
+          }
+        },
+        "required": [
+          "plataforma",
+          "token"
+        ]
+      },
+      "DispositivoEliminadoEntity": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "eliminado": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "token",
+          "eliminado"
         ]
       },
       "ErrorRespuesta": {

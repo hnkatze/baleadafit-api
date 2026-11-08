@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { CitasModule } from './citas/citas.module.js';
 import { AccesoModule } from './common/acceso.service.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
+import { DispositivosModule } from './dispositivos/dispositivos.module.js';
 import { IaModule } from './ia/ia.module.js';
 import { MiCuentaModule } from './mi-cuenta/mi-cuenta.module.js';
 import { PacientesModule } from './pacientes/pacientes.module.js';
@@ -23,6 +24,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     PlanesModule,
     CitasModule,
     MiCuentaModule,
+    DispositivosModule,
     IaModule,
   ],
 })
