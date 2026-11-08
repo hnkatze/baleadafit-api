@@ -36,8 +36,11 @@ export class MiCuentaController {
   @Get('hoy')
   @ApiOperation({
     summary: 'Pantalla Hoy',
-    description:
-      'Comidas del plan activo con su registro del día, comidas cumplidas y próxima cita.',
+    description: [
+      'Comidas del plan activo del día que corresponde a `fecha`, con su registro, comidas cumplidas y próxima cita.',
+      'Con un plan semanal se devuelven solo los tiempos de ese día (`dia`), y `plan.totales` son los del día, no los de la semana.',
+      'Un plan de un solo día (anterior a los planes semanales) devuelve ese día, sin importar la fecha.',
+    ].join(' '),
   })
   @ApiQuery({
     name: 'fecha',

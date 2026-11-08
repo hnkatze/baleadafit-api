@@ -5969,7 +5969,7 @@
     },
     "/me/hoy": {
       "get": {
-        "description": "Comidas del plan activo con su registro del día, comidas cumplidas y próxima cita.",
+        "description": "Comidas del plan activo del día que corresponde a `fecha`, con su registro, comidas cumplidas y próxima cita. Con un plan semanal se devuelven solo los tiempos de ese día (`dia`), y `plan.totales` son los del día, no los de la semana. Un plan de un solo día (anterior a los planes semanales) devuelve ese día, sin importar la fecha.",
         "operationId": "MiCuentaController_hoy",
         "parameters": [
           {
@@ -11763,6 +11763,11 @@
             "type": "string",
             "example": "2026-10-28"
           },
+          "dia": {
+            "type": "string",
+            "description": "Día de la semana que corresponde a `fecha`, que es el día del plan que se\ndevuelve. Un plan semanal tiene siete días: esta pantalla muestra uno.",
+            "example": "MIERCOLES"
+          },
           "plan": {
             "nullable": true,
             "description": "null si el paciente no tiene plan activo.",
@@ -11795,6 +11800,7 @@
         },
         "required": [
           "fecha",
+          "dia",
           "plan",
           "tiempos",
           "cumplidos",

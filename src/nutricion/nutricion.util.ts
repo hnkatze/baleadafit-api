@@ -64,6 +64,20 @@ export const DIAS_SEMANA: DiaSemana[] = [
  */
 export const DIA_POR_DEFECTO: DiaSemana = 'LUNES';
 
+/**
+ * Día de la semana de una fecha calendario. Lee el día en UTC a propósito: la
+ * fecha llega como `YYYY-MM-DD` (sin hora), así que sumarle una zona horaria
+ * solo podría correrla al día anterior.
+ */
+export function diaSemanaDe(fecha: Date | string): DiaSemana {
+  const d =
+    typeof fecha === 'string'
+      ? new Date(`${fecha.slice(0, 10)}T00:00:00Z`)
+      : fecha;
+  // getUTCDay(): 0 = domingo … 6 = sábado; DIAS_SEMANA arranca en lunes.
+  return DIAS_SEMANA[(d.getUTCDay() + 6) % 7];
+}
+
 export type DistribucionTiempos = Partial<Record<TipoComida, number>>;
 
 export const DISTRIBUCION_TIEMPOS_DEFAULT: DistribucionTiempos = {

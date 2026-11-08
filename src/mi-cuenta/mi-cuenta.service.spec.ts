@@ -29,8 +29,21 @@ describe('MiCuentaService', () => {
       id: 'plan1',
       nombre: 'Plan A',
       kcalObjetivo: 1800,
-      totales: { kcal: 1790 },
-      tiempos: [{ id: 't1' }, { id: 't2' }],
+      totales: { kcal: 12000 },
+      dias: [
+        {
+          dia: 'MIERCOLES',
+          tiempos: [{ id: 't1' }, { id: 't2' }],
+          totales: { kcal: 1790 },
+          desviacion: -0.005,
+        },
+        {
+          dia: 'JUEVES',
+          tiempos: [{ id: 't9' }],
+          totales: { kcal: 1700 },
+          desviacion: -0.05,
+        },
+      ],
     });
     prisma.registroComida.findMany.mockResolvedValue([
       { tiempoComidaId: 't1', cumplido: true },
@@ -42,6 +55,8 @@ describe('MiCuentaService', () => {
     expect(prisma.registroComida.findMany).toHaveBeenCalledWith({
       where: { pacienteId: 'p1', fecha: new Date('2026-10-28T00:00:00.000Z') },
     });
+    // Solo el día de la fecha pedida: los demás días de la semana no se mezclan.
+    expect(r.dia).toBe('MIERCOLES');
     expect(r.plan).toEqual({
       id: 'plan1',
       nombre: 'Plan A',
@@ -54,6 +69,54 @@ describe('MiCuentaService', () => {
     ]);
     expect(r.cumplidos).toBe(1);
     expect(r.proximaCita).toEqual({ id: 'c1' });
+  });
+
+  it('la pantalla Hoy de un plan de un solo día sigue mostrando ese día', async () => {
+    // Los planes anteriores a la semana tienen todas sus filas en LUNES.
+    prisma.planAlimenticio.findFirst.mockResolvedValue({ id: 'plan1' });
+    planes.detalleConTotales.mockResolvedValue({
+      id: 'plan1',
+      nombre: 'Plan viejo',
+      kcalObjetivo: 1800,
+      totales: { kcal: 1800 },
+      dias: [
+        {
+          dia: 'LUNES',
+          tiempos: [{ id: 't1' }],
+          totales: { kcal: 1800 },
+          desviacion: 0,
+        },
+      ],
+    });
+    prisma.registroComida.findMany.mockResolvedValue([]);
+    prisma.cita.findFirst.mockResolvedValue(null);
+
+    const r = await svc.hoy('p1', '2026-10-28');
+
+    expect(r.dia).toBe('MIERCOLES');
+    expect(r.tiempos).toHaveLength(1);
+    expect(r.plan?.totales).toEqual({ kcal: 1800 });
+  });
+
+  it('la pantalla Hoy no inventa comidas si el plan no tiene ese día', async () => {
+    prisma.planAlimenticio.findFirst.mockResolvedValue({ id: 'plan1' });
+    planes.detalleConTotales.mockResolvedValue({
+      id: 'plan1',
+      nombre: 'Plan A',
+      kcalObjetivo: 1800,
+      totales: { kcal: 12000 },
+      dias: [
+        { dia: 'LUNES', tiempos: [{ id: 't1' }], totales: { kcal: 1 }, desviacion: 0 },
+        { dia: 'MARTES', tiempos: [{ id: 't2' }], totales: { kcal: 1 }, desviacion: 0 },
+      ],
+    });
+    prisma.registroComida.findMany.mockResolvedValue([]);
+    prisma.cita.findFirst.mockResolvedValue(null);
+
+    const r = await svc.hoy('p1', '2026-10-28');
+
+    expect(r.tiempos).toEqual([]);
+    expect(r.cumplidos).toBe(0);
   });
 
   it('la pantalla Hoy no expone notas internas ni SOAP en la próxima cita', async () => {
