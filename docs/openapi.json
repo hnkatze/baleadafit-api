@@ -11464,6 +11464,16 @@
             "description": "Milisegundos hasta el primer token. Es lo que percibe quien espera.",
             "example": 2400
           },
+          "cacheLecturaTokens": {
+            "type": "number",
+            "description": "Tokens leídos de la caché de prompt. Si es alto, el bloque cacheable (el\ncatálogo) se está reusando y esa entrada cuesta una décima parte.",
+            "example": 13932
+          },
+          "cacheEscrituraTokens": {
+            "type": "number",
+            "description": "Tokens escritos en la caché de prompt en esta llamada. La escritura cuesta\nun poco más que la entrada normal; la lectura, mucho menos.",
+            "example": 13932
+          },
           "transporte": {
             "type": "string",
             "description": "`stream` si la respuesta se leyó por `ConverseStream` (el socket no queda\ninactivo, así que el `requestTimeout` no es el techo) y `json` si se esperó\nla respuesta entera.",
