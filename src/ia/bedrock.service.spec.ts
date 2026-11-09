@@ -190,6 +190,52 @@ describe('BedrockService', () => {
     expect(svc.estado().ultimaLlamada!.ms).toBeGreaterThanOrEqual(0);
   });
 
+  it('lee la respuesta por stream, mide el primer token y devuelve el JSON', async () => {
+    const svc = new BedrockService(
+      config({ BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-6' }),
+      clienteFalso(async () => ({
+        stream: (async function* () {
+          yield { contentBlockDelta: { delta: { text: '{"dias":' } } };
+          yield { contentBlockDelta: { delta: { text: '[]}' } } };
+          yield {
+            metadata: {
+              usage: { inputTokens: 6100, outputTokens: 2702, totalTokens: 8802 },
+            },
+          };
+          yield { messageStop: { stopReason: 'end_turn' } };
+        })(),
+      })),
+    );
+
+    const r = await svc.generarJsonStream<{ dias: unknown[] }>('s', 'm', 16000);
+
+    expect(r).toEqual({ dias: [] });
+    expect(svc.estado().ultimaLlamada).toMatchObject({
+      ok: true,
+      entradaTokens: 6100,
+      salidaTokens: 2702,
+      transporte: 'stream',
+    });
+    expect(svc.estado().ultimaLlamada!.ttftMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('también detecta el corte por tokens cuando la respuesta viene por stream', async () => {
+    const svc = new BedrockService(
+      config({ BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-6' }),
+      clienteFalso(async () => ({
+        stream: (async function* () {
+          yield { contentBlockDelta: { delta: { text: '{"dias": [{"dia": "LUNE' } } };
+          yield { messageStop: { stopReason: 'max_tokens' } };
+        })(),
+      })),
+    );
+
+    await expect(svc.generarJsonStream('s', 'm', 16000)).rejects.toThrow(
+      /sin tokens/i,
+    );
+    expect(svc.estado().ultimaLlamada).toMatchObject({ ok: false });
+  });
+
   it('no expone detalles internos de AWS en el estado ni en la prueba', async () => {
     const detalleAws =
       'AccessDeniedException: User: arn:aws:iam::123456789012:user/sofia is not authorized';

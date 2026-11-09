@@ -3,7 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import {
   BedrockRuntimeClient,
   ConverseCommand,
+  ConverseStreamCommand,
   type ConverseCommandOutput,
+  type ConverseStreamCommandOutput,
 } from '@aws-sdk/client-bedrock-runtime';
 
 export class IaNoDisponibleError extends Error {}
@@ -12,8 +14,15 @@ export class IaNoDisponibleError extends Error {}
 export const CLIENTE_BEDROCK = 'CLIENTE_BEDROCK';
 
 /** Cliente mínimo que usa el servicio: basta `send` de la Converse API. */
+/**
+ * Cliente mínimo que usamos de Bedrock. Acepta los dos comandos y devuelve una
+ * unión: el SDK genérico ya pierde el tipo del comando en `send`, así que cada
+ * llamador castea al resultado que pidió.
+ */
 export interface ClienteBedrock {
-  send(comando: ConverseCommand): Promise<ConverseCommandOutput>;
+  send(
+    comando: ConverseCommand | ConverseStreamCommand,
+  ): Promise<ConverseCommandOutput | ConverseStreamCommandOutput>;
 }
 
 /** Resultado de la última llamada real a Bedrock. */
@@ -31,6 +40,13 @@ export interface LlamadaIa {
   salidaTokens?: number;
   /** Duración total de la llamada en milisegundos. */
   ms?: number;
+  /** Milisegundos hasta el primer token: lo que percibe quien espera. */
+  ttftMs?: number;
+  /**
+   * `stream` cuando la respuesta se leyó por `ConverseStream` (sin riesgo de
+   * timeout por socket inactivo) y `json` cuando se esperó la respuesta entera.
+   */
+  transporte?: 'stream' | 'json';
 }
 
 /** Lo que el portal muestra para saber si la IA está conectada. */
@@ -122,10 +138,9 @@ export class BedrockService {
       region: this.region,
       // Sin reintentos: cada intento puede tardar el requestTimeout completo y el
       // portal necesita un límite predecible. El requestTimeout mide el socket
-      // inactivo y Converse sin streaming no envía nada hasta terminar, así que
-      // este valor es también el máximo que puede tardar una respuesta entera.
-      // 60 s alcanza para una consulta suelta, no para un plan semanal completo
-      // (35 tiempos): con 60 s la llamada moría por timeout después de generar.
+      // inactivo, así que gobierna solo las llamadas sin stream (el ping del
+      // portal). La generación de planes va por `ConverseStream`, donde el socket
+      // nunca queda inactivo y una semana de ~63 s ya no choca con el límite.
       maxAttempts: 1,
       requestHandler: { connectionTimeout: 2000, requestTimeout: 180000 },
     });
@@ -144,14 +159,14 @@ export class BedrockService {
     }
     const inicio = Date.now();
     try {
-      const res = await this.obtenerCliente().send(
+      const res = (await this.obtenerCliente().send(
         new ConverseCommand({
           modelId: this.modelo,
           system: [{ text: sistema }],
           messages: [{ role: 'user', content: [{ text: mensaje }] }],
           inferenceConfig: { maxTokens, temperature: 0.3 },
         }),
-      );
+      )) as ConverseCommandOutput;
       const ms = Date.now() - inicio;
       const entradaTokens = res.usage?.inputTokens;
       const salidaTokens = res.usage?.outputTokens;
@@ -177,7 +192,13 @@ export class BedrockService {
       this.logger.log(
         `Bedrock ok en ${ms} ms · entrada ${entradaTokens ?? '?'} · salida ${salidaTokens ?? '?'} tokens`,
       );
-      this.registrar({ ok: true, entradaTokens, salidaTokens, ms });
+      this.registrar({
+        ok: true,
+        entradaTokens,
+        salidaTokens,
+        ms,
+        transporte: 'json',
+      });
       return texto;
     } catch (e) {
       // Lo que ya viene clasificado (por ejemplo el corte por tokens) se
@@ -192,6 +213,107 @@ export class BedrockService {
 
   private registrar(resultado: Omit<LlamadaIa, 'en'>): void {
     this.ultima = { ...resultado, en: new Date().toISOString() };
+  }
+
+
+  /**
+   * Igual que `conversar`, pero leyendo el stream de Bedrock.
+   *
+   * Con `ConverseStream` el socket tiene actividad permanente, así que el
+   * `requestTimeout` deja de ser el techo de una generación larga: una semana
+   * completa tarda ~63 s y antes eso chocaba contra el límite del cliente.
+   * Además mide el primer token, que es lo que percibe quien espera.
+   */
+  private async conversarPorStream(
+    sistema: string,
+    mensaje: string,
+    maxTokens: number,
+  ): Promise<string> {
+    if (!this.habilitado) {
+      this.registrar({ ok: false, error: SIN_CONFIGURAR });
+      throw new IaNoDisponibleError(SIN_CONFIGURAR);
+    }
+    const inicio = Date.now();
+    let primerToken: number | undefined;
+    let entradaTokens: number | undefined;
+    let salidaTokens: number | undefined;
+    let corte: string | undefined;
+
+    try {
+      const res = (await this.obtenerCliente().send(
+        new ConverseStreamCommand({
+          modelId: this.modelo,
+          system: [{ text: sistema }],
+          messages: [{ role: 'user', content: [{ text: mensaje }] }],
+          inferenceConfig: { maxTokens, temperature: 0.3 },
+        }),
+      )) as ConverseStreamCommandOutput;
+
+      let texto = '';
+      for await (const evento of res.stream ?? []) {
+        const delta = evento.contentBlockDelta?.delta?.text;
+        if (delta) {
+          primerToken ??= Date.now() - inicio;
+          texto += delta;
+        }
+        // El uso llega en el evento `metadata`, antes del cierre del mensaje.
+        if (evento.metadata?.usage) {
+          entradaTokens = evento.metadata.usage.inputTokens ?? entradaTokens;
+          salidaTokens = evento.metadata.usage.outputTokens ?? salidaTokens;
+        }
+        if (evento.messageStop?.stopReason === 'max_tokens')
+          corte = SIN_TOKENS;
+      }
+
+      const ms = Date.now() - inicio;
+      if (corte) {
+        this.logger.warn(
+          `Bedrock cortó el stream por tokens (${texto.length} caracteres).`,
+        );
+        this.ultima = {
+          ok: false,
+          error: corte,
+          en: new Date().toISOString(),
+          entradaTokens,
+          salidaTokens,
+          ms,
+          ttftMs: primerToken,
+          transporte: 'stream',
+        };
+        throw new IaNoDisponibleError(corte);
+      }
+
+      this.logger.log(
+        `Bedrock stream ok en ${ms} ms · primer token ${primerToken ?? '?'} ms · entrada ${entradaTokens ?? '?'} · salida ${salidaTokens ?? '?'} tokens`,
+      );
+      this.registrar({
+        ok: true,
+        entradaTokens,
+        salidaTokens,
+        ms,
+        ttftMs: primerToken,
+        transporte: 'stream',
+      });
+      return texto;
+    } catch (e) {
+      if (e instanceof IaNoDisponibleError) throw e;
+      this.logger.warn(`Bedrock falló: ${(e as Error).message}`);
+      this.registrar({ ok: false, error: ERROR_CONEXION, transporte: 'stream' });
+      throw new IaNoDisponibleError(ERROR_CONEXION);
+    }
+  }
+
+  /**
+   * Respuesta por stream validada como JSON. Es la que usa la generación de
+   * planes; `generarJson` queda para las llamadas cortas (el ping del portal).
+   */
+  async generarJsonStream<T>(
+    sistema: string,
+    mensaje: string,
+    maxTokens = 3000,
+  ): Promise<T> {
+    const texto = await this.conversarPorStream(sistema, mensaje, maxTokens);
+    return extraerJson<T>(texto);
   }
 
   async generarJson<T>(
