@@ -11,6 +11,25 @@ export class LlamadaIaEntity {
 
   /** @example "2026-02-11T15:04:05.000Z" */
   en: string;
+
+  /**
+   * Tokens de entrada que consumió la llamada (el catálogo filtrado del paciente).
+   * @example 6100
+   */
+  entradaTokens?: number;
+
+  /**
+   * Tokens de salida, que son los que dominan la latencia: ~43 tokens/s medidos
+   * con Sonnet 4.6.
+   * @example 2702
+   */
+  salidaTokens?: number;
+
+  /**
+   * Duración total de la llamada en milisegundos.
+   * @example 63000
+   */
+  ms?: number;
 }
 
 export class EstadoIaEntity {

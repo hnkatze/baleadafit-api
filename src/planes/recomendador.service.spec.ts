@@ -1,9 +1,11 @@
 import type { BedrockService } from '../ia/bedrock.service.js';
 import { IaNoDisponibleError } from '../ia/bedrock.service.js';
+import { DIAS_SEMANA } from '../nutricion/nutricion.util.js';
 import type { AlimentoCatalogo } from '../nutricion/generador-reglas.js';
 import {
   RecomendadorService,
   type EntradaRecomendador,
+  type ResultadoRecomendador,
 } from './recomendador.service.js';
 
 const catalogo: AlimentoCatalogo[] = [
@@ -69,26 +71,37 @@ const entrada = (usarIa = true): EntradaRecomendador => ({
 const bedrockFalso = (impl: () => Promise<unknown>) =>
   ({ generarJson: vi.fn(impl) }) as unknown as BedrockService;
 
+const dia = (r: ResultadoRecomendador, nombre: (typeof DIAS_SEMANA)[number]) =>
+  r.dias.find((d) => d.dia === nombre)!;
+
+const idsDe = (r: ResultadoRecomendador) =>
+  r.dias.flatMap((d) => d.tiempos.flatMap((t) => t.items.map((i) => i.alimentoId)));
+
 describe('RecomendadorService', () => {
   it('usa la propuesta de la IA, descarta ids inventados y completa tiempos vacíos', async () => {
     const svc = new RecomendadorService(
       bedrockFalso(async () => ({
         resumen: 'Plan con comida típica.',
-        tiempos: [
+        dias: [
           {
-            tipo: 'DESAYUNO',
-            items: [
-              { alimentoId: 'baleada', porciones: 1 },
-              { alimentoId: 'inventado', porciones: 2 },
-            ],
-            justificacion: 'Desayuno típico.',
-          },
-          {
-            tipo: 'ALMUERZO',
-            items: [
-              { alimentoId: 'pollo', porciones: 2 },
-              { alimentoId: 'arroz', porciones: 2 },
-              { alimentoId: 'chismol', porciones: 1 },
+            dia: 'LUNES',
+            tiempos: [
+              {
+                tipo: 'DESAYUNO',
+                items: [
+                  { alimentoId: 'baleada', porciones: 1 },
+                  { alimentoId: 'inventado', porciones: 2 },
+                ],
+                justificacion: 'Desayuno típico.',
+              },
+              {
+                tipo: 'ALMUERZO',
+                items: [
+                  { alimentoId: 'pollo', porciones: 2 },
+                  { alimentoId: 'arroz', porciones: 2 },
+                  { alimentoId: 'chismol', porciones: 1 },
+                ],
+              },
             ],
           },
         ],
@@ -96,12 +109,166 @@ describe('RecomendadorService', () => {
     );
     const r = await svc.generar(entrada());
     expect(r.origen).toBe('IA');
-    const ids = r.tiempos.flatMap((t) => t.items.map((i) => i.alimentoId));
-    expect(ids).not.toContain('inventado');
+    expect(idsDe(r)).not.toContain('inventado');
     expect(
-      r.tiempos.find((t) => t.tipo === 'CENA')!.items.length,
+      dia(r, 'LUNES').tiempos.find((t) => t.tipo === 'CENA')!.items.length,
     ).toBeGreaterThan(0);
     expect(r.justificacion).toMatch(/completados por reglas/);
+  });
+
+  it('no persiste porciones fuera de rango: ese tiempo lo completa por reglas', async () => {
+    const svc = new RecomendadorService(
+      bedrockFalso(async () => ({
+        dias: [
+          {
+            dia: 'LUNES',
+            tiempos: [
+              {
+                tipo: 'ALMUERZO',
+                items: [
+                  { alimentoId: 'pollo', porciones: 9 },
+                  { alimentoId: 'arroz', porciones: 2 },
+                ],
+                justificacion: 'Almuerzo del modelo.',
+              },
+              {
+                tipo: 'DESAYUNO',
+                items: [{ alimentoId: 'baleada', porciones: 1 }],
+              },
+              {
+                tipo: 'CENA',
+                items: [{ alimentoId: 'pollo', porciones: 2 }],
+              },
+            ],
+          },
+        ],
+      })),
+    );
+    const r = await svc.generar(entrada());
+    const lunes = dia(r, 'LUNES');
+    const almuerzo = lunes.tiempos.find((t) => t.tipo === 'ALMUERZO')!;
+    // El tiempo roto no se persiste a medias: se regenera completo.
+    expect(almuerzo.items.every((i) => i.porciones <= 4)).toBe(true);
+    expect(
+      almuerzo.items.some((i) => i.alimentoId === 'pollo' && i.porciones === 9),
+    ).toBe(false);
+    expect(lunes.justificacion).toMatch(/Almuerzo: completado por reglas/);
+    expect(lunes.justificacion).toMatch(/fuera de contrato/);
+    // Los tiempos que sí vinieron bien se usan tal cual.
+    expect(
+      lunes.tiempos.find((t) => t.tipo === 'CENA')!.items.map((i) => i.alimentoId),
+    ).toEqual(['pollo']);
+  });
+
+  it('un día con forma rota queda por reglas y la semana sigue completa', async () => {
+    const svc = new RecomendadorService(
+      bedrockFalso(async () => ({
+        dias: [
+          { dia: 'LUNES', tiempos: 'no-es-un-arreglo' },
+          {
+            dia: 'MARTES',
+            tiempos: [
+              {
+                tipo: 'ALMUERZO',
+                items: [{ alimentoId: 'arroz', porciones: 2 }],
+              },
+            ],
+          },
+        ],
+      })),
+    );
+    const r = await svc.generar(entrada());
+    expect(r.dias.map((d) => d.dia)).toEqual(DIAS_SEMANA);
+    const lunes = dia(r, 'LUNES');
+    expect(lunes.tiempos).toHaveLength(3);
+    expect(lunes.justificacion).toMatch(/no devolvió ningún tiempo válido/);
+    expect(lunes.tiempos.every((t) => t.items.length > 0)).toBe(true);
+    // La semana no se rompe: se distingue el día ilegible de los que no vinieron.
+    expect(r.justificacion).toMatch(
+      /1 día\(s\) completados por reglas porque la respuesta de la IA no fue válida/,
+    );
+    expect(r.justificacion).toMatch(
+      /5 día\(s\) completados por reglas porque la IA no los devolvió/,
+    );
+  });
+
+  it('devuelve los siete días, en orden y sin repetir, aunque la IA devuelva uno solo', async () => {
+    const svc = new RecomendadorService(
+      bedrockFalso(async () => ({
+        dias: [
+          {
+            dia: 'LUNES',
+            tiempos: [
+              {
+                tipo: 'ALMUERZO',
+                items: [{ alimentoId: 'pollo', porciones: 2 }],
+              },
+            ],
+          },
+        ],
+      })),
+    );
+    const r = await svc.generar(entrada());
+    expect(r.dias.map((d) => d.dia)).toEqual(DIAS_SEMANA);
+    for (const d of r.dias) {
+      expect(d.tiempos.map((t) => t.tipo)).toEqual([
+        'DESAYUNO',
+        'ALMUERZO',
+        'CENA',
+      ]);
+      expect(d.tiempos.every((t) => t.items.length > 0)).toBe(true);
+    }
+    expect(r.justificacion).toMatch(/6 día\(s\) completados por reglas/);
+  });
+
+  it('ignora días desconocidos y repeticiones de día', async () => {
+    const svc = new RecomendadorService(
+      bedrockFalso(async () => ({
+        dias: [
+          {
+            dia: 'lunes',
+            tiempos: [
+              {
+                tipo: 'almuerzo',
+                items: [{ alimentoId: 'pollo', porciones: 2 }],
+              },
+            ],
+          },
+          {
+            dia: 'LUNES',
+            tiempos: [
+              {
+                tipo: 'ALMUERZO',
+                items: [{ alimentoId: 'arroz', porciones: 2 }],
+              },
+            ],
+          },
+          {
+            dia: 'FUNDAY',
+            tiempos: [
+              {
+                tipo: 'ALMUERZO',
+                items: [{ alimentoId: 'baleada', porciones: 1 }],
+              },
+            ],
+          },
+        ],
+      })),
+    );
+    const r = await svc.generar(entrada());
+    expect(r.dias.map((d) => d.dia)).toEqual(DIAS_SEMANA);
+    const almuerzo = dia(r, 'LUNES').tiempos.find((t) => t.tipo === 'ALMUERZO')!;
+    expect(almuerzo.items.map((i) => i.alimentoId)).toEqual(['pollo']);
+  });
+
+  it('cae a la semana por reglas si la IA no devuelve ningún día utilizable', async () => {
+    const svc = new RecomendadorService(
+      bedrockFalso(async () => ({ resumen: 'sin días', dias: [] })),
+    );
+    const r = await svc.generar(entrada());
+    expect(r.origen).toBe('REGLAS');
+    expect(r.dias.map((d) => d.dia)).toEqual(DIAS_SEMANA);
+    expect(r.justificacion).toMatch(/IA no disponible/);
   });
 
   it('cae a reglas si Bedrock no está disponible', async () => {
@@ -113,7 +280,8 @@ describe('RecomendadorService', () => {
     const r = await svc.generar(entrada());
     expect(r.origen).toBe('REGLAS');
     expect(r.justificacion).toMatch(/sin credenciales/);
-    expect(r.tiempos).toHaveLength(3);
+    expect(r.dias).toHaveLength(7);
+    expect(dia(r, 'DOMINGO').tiempos).toHaveLength(3);
   });
 
   it('no llama a la IA cuando usarIa = false', async () => {
@@ -121,10 +289,92 @@ describe('RecomendadorService', () => {
     const r = await new RecomendadorService(bedrock).generar(entrada(false));
     expect(r.origen).toBe('REGLAS');
     expect(bedrock.generarJson).not.toHaveBeenCalled();
+    expect(r.dias).toHaveLength(7);
+  });
+
+  it('aplica variedad semanal en código y nunca deja el plan incompleto', async () => {
+    const r = await new RecomendadorService(
+      bedrockFalso(async () => ({})),
+    ).generar(entrada(false));
+
+    // Con cuatro alimentos no hay alternativa para todo, y así debe ser: el
+    // plan sigue completo y la justificación dice qué se ajustó y qué no.
+    expect(r.dias).toHaveLength(7);
+    for (const d of r.dias) {
+      expect(d.tiempos).toHaveLength(3);
+      expect(d.tiempos.every((t) => t.items.length > 0)).toBe(true);
+    }
+    expect(r.justificacion).toMatch(/Variedad semanal: \d+ ajuste\(s\)/);
+    expect(r.justificacion).toMatch(/No se alcanzó el mínimo de fuentes proteicas/);
+  });
+
+  it('corrige en código el techo de sodio del expediente, sin depender del modelo', async () => {
+    // El desayuno y el almuerzo de reglas superan los 2000 mg de sodio.
+    const salado = [
+      { ...catalogo[0], sodioMg: 2000 },
+      { ...catalogo[1], sodioMg: 1800 },
+      { ...catalogo[2], sodioMg: 5 },
+      { ...catalogo[3], sodioMg: 10 },
+    ];
+    const r = await new RecomendadorService(
+      bedrockFalso(async () => ({})),
+    ).generar({
+      ...entrada(false),
+      catalogo: salado,
+      perfilClinico: { condiciones: [{ nombre: 'Hipertensión arterial' }] },
+    });
+
+    const sodioPorDia = r.dias.map((d) =>
+      d.tiempos
+        .flatMap((t) => t.items)
+        .reduce((suma, i) => {
+          const a = salado.find((x) => x.id === i.alimentoId)!;
+          return suma + (a.sodioMg ?? 0) * i.porciones;
+        }, 0),
+    );
+    expect(Math.max(...sodioPorDia)).toBeLessThanOrEqual(2000);
+    expect(r.justificacion).toMatch(/Reglas clínicas aplicadas en código: HTA/);
+    expect(
+      r.dias.some((d) => /Ajuste clínico:/.test(d.justificacion ?? '')),
+    ).toBe(true);
+  });
+
+  it('no da por bueno un techo clínico que no puede verificar', async () => {
+    const r = await new RecomendadorService(
+      bedrockFalso(async () => ({})),
+    ).generar({
+      ...entrada(false),
+      perfilClinico: { condiciones: [{ nombre: 'HTA' }] },
+    });
+
+    // El catálogo de prueba no trae sodio: se informa, no se asume cumplido.
+    expect(r.justificacion).toMatch(/Reglas clínicas aplicadas en código: HTA/);
+    expect(
+      r.dias.every((d) =>
+        /Sin dato de sodioMg/.test(d.justificacion ?? ''),
+      ),
+    ).toBe(true);
+  });
+
+  it('pide a la IA la semana completa con el esquema de días', async () => {
+    const generar = vi.fn(async () => ({ dias: [] }));
+    const svc = new RecomendadorService({
+      generarJson: generar,
+    } as unknown as BedrockService);
+
+    await svc.generar(entrada());
+
+    const sistema = generar.mock.calls[0][0] as string;
+    const mensaje = generar.mock.calls[0][1] as string;
+    expect(sistema).toMatch(/siete días/i);
+    expect(sistema).toMatch(/"dias"/);
+    expect(sistema).toMatch(/DOMINGO/);
+    expect(mensaje).toMatch(/Plan semanal/);
+    for (const nombre of DIAS_SEMANA) expect(mensaje).toMatch(nombre);
   });
 
   it('manda los nutrientes clínicos de cada alimento en el catálogo', async () => {
-    const generar = vi.fn(async () => ({ tiempos: [] }));
+    const generar = vi.fn(async () => ({ dias: [] }));
     const svc = new RecomendadorService({
       generarJson: generar,
     } as unknown as BedrockService);
@@ -160,7 +410,7 @@ describe('RecomendadorService', () => {
   });
 
   it('manda el perfil clínico del paciente a la IA', async () => {
-    const generar = vi.fn(async () => ({ tiempos: [] }));
+    const generar = vi.fn(async () => ({ dias: [] }));
     const svc = new RecomendadorService({
       generarJson: generar,
     } as unknown as BedrockService);

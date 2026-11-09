@@ -5,6 +5,7 @@ import {
   AlimentoVersionEntity,
 } from '../alimentos/alimentos.entity.js';
 import {
+  DiaSemana,
   EstadoPlan,
   OrigenPlan,
   TipoComida,
@@ -66,6 +67,8 @@ export class PlanItemEntity {
 export class TiempoComidaEntity {
   id: string;
   planId: string;
+  @ApiProperty({ enum: DiaSemana, enumName: 'DiaSemana' })
+  dia: DiaSemana;
   @ApiProperty({ enum: TipoComida, enumName: 'TipoComida' })
   tipo: TipoComida;
   /**
@@ -116,12 +119,29 @@ export class PlanEntity {
   aprobadoEn: Date | null;
 }
 
-export class PlanDetalleEntity extends PlanEntity {
+/** Un día del plan semanal con sus totales frente a la meta diaria. */
+export class DiaPlanEntity {
+  @ApiProperty({ enum: DiaSemana, enumName: 'DiaSemana' })
+  dia: DiaSemana;
   tiempos: TiempoComidaEntity[];
   /** Totales del día. */
   totales: TotalesEntity;
   /**
-   * Desviación del día contra kcalObjetivo.
+   * Desviación del día contra kcalObjetivo (la meta del plan es diaria).
+   * @example 0.004
+   */
+  desviacion: number;
+}
+
+export class PlanDetalleEntity extends PlanEntity {
+  /** Los tiempos de comida de toda la semana, en orden de día y de tiempo. */
+  tiempos: TiempoComidaEntity[];
+  /** Días que tienen algún tiempo de comida, en orden de lunes a domingo. */
+  dias: DiaPlanEntity[];
+  /** Totales de la semana completa. */
+  totales: TotalesEntity;
+  /**
+   * Desviación de la semana contra la meta semanal (kcalObjetivo × días del plan).
    * @example 0.004
    */
   desviacion: number;

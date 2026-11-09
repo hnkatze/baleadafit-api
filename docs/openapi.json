@@ -4668,10 +4668,197 @@
         ]
       }
     },
+    "/planes/{id}/tiempos/{dia}/{tipo}/items": {
+      "put": {
+        "description": "Edición manual: reemplaza la lista completa del tiempo indicado en el día indicado. Un plan semanal tiene cinco tiempos por día; el día es parte de la dirección del recurso. Los ítems nuevos quedan atados a la versión vigente de cada alimento.",
+        "operationId": "PlanesController_reemplazarItems",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del plan",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dia",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/DiaSemana"
+            }
+          },
+          {
+            "name": "tipo",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/TipoComida"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReemplazarItemsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlanDetalleEntity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reemplazar alimentos de un tiempo de comida de un día",
+        "tags": [
+          "planes"
+        ]
+      }
+    },
     "/planes/{id}/tiempos/{tipo}/items": {
       "put": {
-        "description": "Edición manual: reemplaza la lista completa del tiempo indicado. Los ítems nuevos quedan atados a la versión vigente de cada alimento.",
-        "operationId": "PlanesController_reemplazarItems",
+        "deprecated": true,
+        "description": "Se mantiene por compatibilidad y equivale a la ruta con `dia = LUNES`. Usa `PUT /planes/:id/tiempos/:dia/:tipo/items`.",
+        "operationId": "PlanesController_reemplazarItemsLunes",
         "parameters": [
           {
             "name": "id",
@@ -4840,7 +5027,7 @@
             "bearer": []
           }
         ],
-        "summary": "Reemplazar alimentos de un tiempo de comida",
+        "summary": "Reemplazar alimentos de un tiempo de comida (obsoleto)",
         "tags": [
           "planes"
         ]
@@ -5782,7 +5969,7 @@
     },
     "/me/hoy": {
       "get": {
-        "description": "Comidas del plan activo con su registro del día, comidas cumplidas y próxima cita.",
+        "description": "Comidas del plan activo del día que corresponde a `fecha`, con su registro, comidas cumplidas y próxima cita. Con un plan semanal se devuelven solo los tiempos de ese día (`dia`), y `plan.totales` son los del día, no los de la semana. Un plan de un solo día (anterior a los planes semanales) devuelve ese día, sin importar la fecha.",
         "operationId": "MiCuentaController_hoy",
         "parameters": [
           {
@@ -10730,6 +10917,18 @@
           "aprobadoEn"
         ]
       },
+      "DiaSemana": {
+        "type": "string",
+        "enum": [
+          "LUNES",
+          "MARTES",
+          "MIERCOLES",
+          "JUEVES",
+          "VIERNES",
+          "SABADO",
+          "DOMINGO"
+        ]
+      },
       "PlanItemEntity": {
         "type": "object",
         "properties": {
@@ -10841,6 +11040,13 @@
       "TiempoComidaEntity": {
         "type": "object",
         "properties": {
+          "dia": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiaSemana"
+              }
+            ]
+          },
           "tipo": {
             "allOf": [
               {
@@ -10884,6 +11090,7 @@
           }
         },
         "required": [
+          "dia",
           "tipo",
           "id",
           "planId",
@@ -10891,6 +11098,43 @@
           "orden",
           "items",
           "kcalMeta",
+          "totales",
+          "desviacion"
+        ]
+      },
+      "DiaPlanEntity": {
+        "type": "object",
+        "properties": {
+          "dia": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiaSemana"
+              }
+            ]
+          },
+          "tiempos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TiempoComidaEntity"
+            }
+          },
+          "totales": {
+            "description": "Totales del día.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TotalesEntity"
+              }
+            ]
+          },
+          "desviacion": {
+            "type": "number",
+            "description": "Desviación del día contra kcalObjetivo (la meta del plan es diaria).",
+            "example": 0.004
+          }
+        },
+        "required": [
+          "dia",
+          "tiempos",
           "totales",
           "desviacion"
         ]
@@ -10957,13 +11201,21 @@
             "nullable": true
           },
           "tiempos": {
+            "description": "Los tiempos de comida de toda la semana, en orden de día y de tiempo.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/TiempoComidaEntity"
             }
           },
+          "dias": {
+            "description": "Días que tienen algún tiempo de comida, en orden de lunes a domingo.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiaPlanEntity"
+            }
+          },
           "totales": {
-            "description": "Totales del día.",
+            "description": "Totales de la semana completa.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/TotalesEntity"
@@ -10972,7 +11224,7 @@
           },
           "desviacion": {
             "type": "number",
-            "description": "Desviación del día contra kcalObjetivo.",
+            "description": "Desviación de la semana contra la meta semanal (kcalObjetivo × días del plan).",
             "example": 0.004
           }
         },
@@ -10991,6 +11243,7 @@
           "creadoEn",
           "aprobadoEn",
           "tiempos",
+          "dias",
           "totales",
           "desviacion"
         ]
@@ -11190,6 +11443,21 @@
           "en": {
             "type": "string",
             "example": "2026-02-11T15:04:05.000Z"
+          },
+          "entradaTokens": {
+            "type": "number",
+            "description": "Tokens de entrada que consumió la llamada (el catálogo filtrado del paciente).",
+            "example": 6100
+          },
+          "salidaTokens": {
+            "type": "number",
+            "description": "Tokens de salida, que son los que dominan la latencia: ~43 tokens/s medidos\ncon Sonnet 4.6.",
+            "example": 2702
+          },
+          "ms": {
+            "type": "number",
+            "description": "Duración total de la llamada en milisegundos.",
+            "example": 63000
           }
         },
         "required": [
@@ -11380,6 +11648,13 @@
       "TiempoHoyEntity": {
         "type": "object",
         "properties": {
+          "dia": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiaSemana"
+              }
+            ]
+          },
           "tipo": {
             "allOf": [
               {
@@ -11433,6 +11708,7 @@
           }
         },
         "required": [
+          "dia",
           "tipo",
           "id",
           "planId",
@@ -11487,6 +11763,11 @@
             "type": "string",
             "example": "2026-10-28"
           },
+          "dia": {
+            "type": "string",
+            "description": "Día de la semana que corresponde a `fecha`, que es el día del plan que se\ndevuelve. Un plan semanal tiene siete días: esta pantalla muestra uno.",
+            "example": "MIERCOLES"
+          },
           "plan": {
             "nullable": true,
             "description": "null si el paciente no tiene plan activo.",
@@ -11519,6 +11800,7 @@
         },
         "required": [
           "fecha",
+          "dia",
           "plan",
           "tiempos",
           "cumplidos",

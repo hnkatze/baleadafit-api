@@ -1,4 +1,5 @@
 import type {
+  DiaSemana,
   Meta,
   NivelActividad,
   Sexo,
@@ -45,6 +46,37 @@ export const ORDEN_TIEMPOS: TipoComida[] = [
   'MERIENDA_PM',
   'CENA',
 ];
+
+/** Orden canónico de la semana para armar planes semanales. */
+export const DIAS_SEMANA: DiaSemana[] = [
+  'LUNES',
+  'MARTES',
+  'MIERCOLES',
+  'JUEVES',
+  'VIERNES',
+  'SABADO',
+  'DOMINGO',
+];
+
+/**
+ * Día que usan los planes de un solo día. Existe para que el comportamiento
+ * anterior a los planes semanales siga siendo el mismo.
+ */
+export const DIA_POR_DEFECTO: DiaSemana = 'LUNES';
+
+/**
+ * Día de la semana de una fecha calendario. Lee el día en UTC a propósito: la
+ * fecha llega como `YYYY-MM-DD` (sin hora), así que sumarle una zona horaria
+ * solo podría correrla al día anterior.
+ */
+export function diaSemanaDe(fecha: Date | string): DiaSemana {
+  const d =
+    typeof fecha === 'string'
+      ? new Date(`${fecha.slice(0, 10)}T00:00:00Z`)
+      : fecha;
+  // getUTCDay(): 0 = domingo … 6 = sábado; DIAS_SEMANA arranca en lunes.
+  return DIAS_SEMANA[(d.getUTCDay() + 6) % 7];
+}
 
 export type DistribucionTiempos = Partial<Record<TipoComida, number>>;
 

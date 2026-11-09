@@ -22,6 +22,12 @@ export class TiempoHoyEntity extends TiempoComidaEntity {
 export class HoyEntity {
   /** @example "2026-10-28" */
   fecha: string;
+  /**
+   * Día de la semana que corresponde a `fecha`, que es el día del plan que se
+   * devuelve. Un plan semanal tiene siete días: esta pantalla muestra uno.
+   * @example "MIERCOLES"
+   */
+  dia: string;
   /** null si el paciente no tiene plan activo. */
   plan: PlanHoyEntity | null;
   tiempos: TiempoHoyEntity[];

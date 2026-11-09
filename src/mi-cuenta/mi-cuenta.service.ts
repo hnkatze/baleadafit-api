@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { aFecha, hoyIso, sumarDias } from '../common/fechas.js';
+import { diaSemanaDe } from '../nutricion/nutricion.util.js';
 import { PaginacionDto, paginar } from '../common/paginacion.js';
 import { PlanesService } from '../planes/planes.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -51,17 +52,26 @@ export class MiCuentaService {
         select: CITA_PACIENTE_SELECT,
       }),
     ]);
-    const tiempos = (plan?.tiempos ?? []).map((t) => ({
+    // El plan semanal trae siete días: "Hoy" muestra solo el de la fecha pedida.
+    // Un plan de un solo día (anterior a la semana) conserva su comportamiento.
+    const diaSemana = diaSemanaDe(fecha);
+    const delDia =
+      plan?.dias.find((d) => d.dia === diaSemana) ??
+      (plan?.dias.length === 1 ? plan.dias[0] : undefined);
+
+    const tiempos = (delDia?.tiempos ?? []).map((t) => ({
       ...t,
       registro: registros.find((r) => r.tiempoComidaId === t.id) ?? null,
     }));
     return {
       fecha,
+      dia: diaSemana,
       plan: plan && {
         id: plan.id,
         nombre: plan.nombre,
         kcalObjetivo: plan.kcalObjetivo,
-        totales: plan.totales,
+        // Totales del día que se está mostrando, no de la semana.
+        totales: delDia?.totales ?? plan.totales,
       },
       tiempos,
       cumplidos: tiempos.filter((t) => t.registro?.cumplido).length,

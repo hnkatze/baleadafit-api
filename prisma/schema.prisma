@@ -42,6 +42,17 @@ enum TipoComida {
   CENA
 }
 
+/// Día de la semana de un plan alimenticio. Un plan de un día vive en LUNES.
+enum DiaSemana {
+  LUNES
+  MARTES
+  MIERCOLES
+  JUEVES
+  VIERNES
+  SABADO
+  DOMINGO
+}
+
 enum CategoriaAlimento {
   PLATO_TIPICO
   PROTEINA
@@ -411,6 +422,8 @@ model PlanAlimenticio {
 model TiempoComida {
   id      String     @id @default(uuid()) @db.Uuid
   planId  String     @map("plan_id") @db.Uuid
+  /// Día de la semana al que pertenece este tiempo.
+  dia     DiaSemana  @default(LUNES)
   tipo    TipoComida
   /// Porcentaje de las kcal del día asignado a este tiempo
   pctKcal Float      @map("pct_kcal")
@@ -420,7 +433,7 @@ model TiempoComida {
   items     PlanItem[]
   registros RegistroComida[]
 
-  @@unique([planId, tipo])
+  @@unique([planId, dia, tipo])
   @@map("tiempo_comida")
 }
 

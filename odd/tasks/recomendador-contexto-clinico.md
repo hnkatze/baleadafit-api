@@ -19,7 +19,7 @@ El expediente ya guarda condiciones, hábitos, composición corporal y objetivo,
 - [x] C1 — `PerfilClinico` compartido y `PacientesService.contextoClinico()` que arma el contexto desde el expediente (S2-S8)
 - [x] C2 — El recomendador manda el perfil clínico en el prompt y le dice al modelo que las condiciones mandan sobre la preferencia cultural (S1, S3-S4)
 - [x] C3 — `PlanesService.generar` conecta el contexto con el recomendador (S1)
-- [ ] C4 — Que el generador por reglas respete las condiciones que se pueden verificar (pendiente de decisión sobre nutrientes del catálogo)
+- [ ] C4 — Que el generador por reglas respete las condiciones que se pueden verificar (los nutrientes ya están en el catálogo; ver L5; se cierra en `plan-semanal` T5)
 
 ## Log
 
@@ -27,3 +27,4 @@ El expediente ya guarda condiciones, hábitos, composición corporal y objetivo,
 - **L2** (hallazgo que motiva el feature): `promptUsuario()` enviaba meta, kcal y macros, restricciones, indicaciones libres y el catálogo. No enviaba condiciones, estado fisiológico, alergias, medicación, hábitos, composición ni objetivo, aunque el expediente ya los tenga desde el feature `expediente-clinico`.
 - **L3** (desvío de proceso, declarado): C1-C3 se implementaron antes de escribir este documento; las specs S1-S9 se derivan del pedido L1 y del código ya escrito. C4 queda abierta.
 - **L4** (límite conocido, abierto): el catálogo no tiene sodio, potasio, fósforo ni índice glucémico, así que las condiciones que dependen de esos nutrientes (HTA, ERC) solo se pueden comunicar al modelo, no verificar en el backend. El generador por reglas tampoco las considera. C4 necesita decidir si se agregan esos nutrientes al catálogo (valores estimados, misma advertencia que los macros) o si se resuelve con etiquetas por condición.
+- **L5** (corrección verificada): `L4` es incorrecto. El catálogo **sí** tiene `sodioMg`, `potasioMg` y `fosforoMg` (`prisma/schema.prisma:320-324`) e `indiceGlucemico` (`:330`), y `prisma/seed.ts` los carga 154 veces sobre ~150 alimentos. Son nullable, así que la regla que los consuma debe manejar nulos. C4 ya no está bloqueada por datos: está bloqueada por código, y se cierra en el feature `plan-semanal` (tarea T5).

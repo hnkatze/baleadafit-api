@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { TipoComida } from '../generated/prisma/enums.js';
+import type { DiaSemana, TipoComida } from '../generated/prisma/enums.js';
 import { BedrockService, IaNoDisponibleError } from '../ia/bedrock.service.js';
 import {
   ajustarPorciones,
@@ -8,10 +8,15 @@ import {
   type TiempoPropuesto,
 } from '../nutricion/generador-reglas.js';
 import {
+  DIAS_SEMANA,
   ORDEN_TIEMPOS,
   type DistribucionTiempos,
 } from '../nutricion/nutricion.util.js';
 import type { PerfilClinico } from '../pacientes/perfil-clinico.js';
+import { ajustarDiaClinico } from '../nutricion/ajuste-clinico.js';
+import { detectarCondiciones } from '../nutricion/reglas-clinicas.js';
+import { ajustarVariedadSemanal } from '../nutricion/variedad-semanal.js';
+import { validarPlan } from './validacion-plan.js';
 
 export type { PerfilClinico };
 
@@ -31,19 +36,58 @@ export interface EntradaRecomendador {
   semilla: number;
 }
 
+export interface DiaPropuesto {
+  dia: DiaSemana;
+  tiempos: TiempoPropuesto[];
+  /** Nota del día: la del modelo o el motivo por el que lo armaron las reglas. */
+  justificacion?: string;
+}
+
 export interface ResultadoRecomendador {
   origen: 'IA' | 'REGLAS';
-  tiempos: TiempoPropuesto[];
+  /** Siempre los siete días, en el orden de `DIAS_SEMANA`. */
+  dias: DiaPropuesto[];
   justificacion: string;
+}
+
+interface RespuestaIaTiempo {
+  tipo?: string;
+  items?: { alimentoId?: string; porciones?: number }[];
+}
+
+interface RespuestaIaDia {
+  dia?: string;
+  tiempos?: RespuestaIaTiempo[];
+  justificacion?: string;
 }
 
 interface RespuestaIa {
   resumen?: string;
-  tiempos?: {
-    tipo?: string;
-    items?: { alimentoId?: string; porciones?: number }[];
-    justificacion?: string;
-  }[];
+  dias?: RespuestaIaDia[];
+}
+
+/**
+ * Salida del modelo para una semana entera.
+ *
+ * 5.000 no alcanzó: con el esquema semanal completo (35 tiempos, cada uno con su
+ * justificación, más la del día) Sonnet 4.6 cortó la respuesta por `max_tokens`
+ * y el JSON llegó truncado — lo que se veía como "la IA devolvió JSON inválido"
+ * y caía a reglas después de 50 segundos. El tope no cuesta por sí mismo: solo se
+ * paga lo generado.
+ */
+const MAX_TOKENS_SEMANA = 16000;
+
+/**
+ * Desplazamiento de la semilla por día: con paso impar, el generador por reglas
+ * alterna plato típico y plato combinado en días consecutivos.
+ */
+const SEMILLA_POR_DIA = 7;
+
+/** Día del modelo tolerando minúsculas y espacios; `undefined` si no es un día. */
+function normalizarDia(valor: unknown): DiaSemana | undefined {
+  if (typeof valor !== 'string') return undefined;
+  const nombre = valor.trim().toUpperCase();
+  return DIAS_SEMANA.find((d) => d === nombre);
 }
 
 const NOMBRE_TIEMPO: Record<TipoComida, string> = {
@@ -70,21 +114,127 @@ export class RecomendadorService {
   async generar(e: EntradaRecomendador): Promise<ResultadoRecomendador> {
     if (e.usarIa) {
       try {
-        return await this.conIa(e);
+        return this.clinica(this.variedad(await this.conIa(e), e), e);
       } catch (err) {
         const motivo =
           err instanceof IaNoDisponibleError ? err.message : 'error inesperado';
         if (!(err instanceof IaNoDisponibleError)) this.logger.error(err);
-        return this.porReglas(
+        return this.clinica(
+          this.variedad(
+            this.porReglas(
+              e,
+              `Generado por reglas (IA no disponible: ${motivo}).`,
+            ),
+            e,
+          ),
           e,
-          `Generado por reglas (IA no disponible: ${motivo}).`,
         );
       }
     }
-    return this.porReglas(
+    return this.clinica(
+      this.variedad(
+        this.porReglas(
+          e,
+          'Generado por reglas a partir del catálogo y las restricciones del paciente.',
+        ),
+        e,
+      ),
       e,
-      'Generado por reglas a partir del catálogo y las restricciones del paciente.',
     );
+  }
+
+  /**
+   * Variedad semanal en código, antes de las reglas clínicas: el último filtro
+   * que toca los alimentos es el de los techos clínicos.
+   */
+  private variedad(
+    resultado: ResultadoRecomendador,
+    e: EntradaRecomendador,
+  ): ResultadoRecomendador {
+    const { dias, cambios } = ajustarVariedadSemanal(resultado.dias, e.catalogo);
+    if (cambios.length === 0) return resultado;
+
+    // La justificación se persiste y se lee: se muestran unos pocos ajustes y
+    // el límite que no se pudo alcanzar, nunca 35 líneas.
+    const visibles = cambios.slice(0, 6);
+    for (const pendiente of cambios.filter((c) =>
+      c.startsWith('No se alcanzó'),
+    ))
+      if (!visibles.includes(pendiente)) visibles.push(pendiente);
+    const resto = cambios.length - visibles.length;
+
+    return {
+      ...resultado,
+      dias,
+      justificacion: [
+        resultado.justificacion,
+        `Variedad semanal: ${cambios.length} ajuste(s)${resto > 0 ? `, +${resto} más` : ''}. ${visibles.join('; ')}.`,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    };
+  }
+
+  /**
+   * Aplica las reglas clínicas verificables a la semana ya armada, sea de la IA
+   * o de las reglas. Los techos no dependen del criterio del modelo.
+   */
+  private clinica(
+    resultado: ResultadoRecomendador,
+    e: EntradaRecomendador,
+  ): ResultadoRecomendador {
+    if (!e.perfilClinico?.condiciones?.length) return resultado;
+
+    const mapa = new Map(e.catalogo.map((a) => [a.id, a]));
+    const perfil = e.perfilClinico;
+    const partes: string[] = [];
+    let diasAjustados = 0;
+
+    const dias = resultado.dias.map((diaPropuesto) => {
+      const ajuste = ajustarDiaClinico(diaPropuesto.tiempos, mapa, perfil);
+      const notas = diaPropuesto.justificacion
+        ? [diaPropuesto.justificacion]
+        : [];
+      if (ajuste.cambios.length) {
+        diasAjustados++;
+        notas.push(`Ajuste clínico: ${ajuste.cambios.join('; ')}.`);
+      }
+      for (const v of ajuste.violaciones)
+        notas.push(
+          `No se pudo corregir ${v.nutriente} (${v.actual} sobre ${v.limite}) de ${v.condicion}: revisar clínicamente.`,
+        );
+      for (const i of ajuste.incognitas)
+        notas.push(
+          `Sin dato de ${i.nutriente} en ${i.sinDato.length} alimento(s): el techo de ${i.condicion} no se pudo verificar.`,
+        );
+      return {
+        ...diaPropuesto,
+        tiempos: ajuste.tiempos,
+        justificacion: notas.length ? notas.join('\n') : undefined,
+      };
+    });
+
+    const detectadas = detectarCondiciones(perfil);
+    if (detectadas.evaluadas.length)
+      partes.push(
+        `Reglas clínicas aplicadas en código: ${detectadas.evaluadas.join(', ')}.`,
+      );
+    if (diasAjustados)
+      partes.push(
+        `${diasAjustados} día(s) ajustados para respetar los techos clínicos.`,
+      );
+    if (detectadas.noVerificadas.length)
+      partes.push(
+        `Condiciones que el sistema no verifica en código: ${detectadas.noVerificadas.join(', ')}.`,
+      );
+
+    return {
+      ...resultado,
+      dias,
+      justificacion: [resultado.justificacion, ...partes]
+        .filter(Boolean)
+        .join('\n'),
+    };
   }
 
   private porReglas(
@@ -93,14 +243,26 @@ export class RecomendadorService {
   ): ResultadoRecomendador {
     return {
       origen: 'REGLAS',
+      dias: this.semanaPorReglas(e),
+      justificacion,
+    };
+  }
+
+  /**
+   * Los siete días armados por reglas. Cada día usa su propio desplazamiento de
+   * semilla, así que la semana no repite el mismo plan siete veces y sigue siendo
+   * determinista para la misma `semilla`.
+   */
+  private semanaPorReglas(e: EntradaRecomendador): DiaPropuesto[] {
+    return DIAS_SEMANA.map((dia, indice) => ({
+      dia,
       tiempos: generarPlanPorReglas(
         e.catalogo,
         e.kcalObjetivo,
         e.distribucion,
-        e.semilla,
+        e.semilla + indice * SEMILLA_POR_DIA,
       ),
-      justificacion,
-    };
+    }));
   }
 
   private async conIa(e: EntradaRecomendador): Promise<ResultadoRecomendador> {
@@ -112,74 +274,128 @@ export class RecomendadorService {
     const respuesta = await this.bedrock.generarJson<RespuestaIa>(
       this.promptSistema(),
       this.promptUsuario(e, tiposActivos),
+      MAX_TOKENS_SEMANA,
     );
 
-    const respaldo = generarPlanPorReglas(
-      e.catalogo,
-      e.kcalObjetivo,
-      e.distribucion,
-      e.semilla,
-    );
+    // Un día repetido o desconocido se descarta: manda la primera aparición
+    // válida, y el día que falte lo completa el generador por reglas.
+    const porDia = new Map<DiaSemana, RespuestaIaDia>();
+    for (const crudo of respuesta.dias ?? []) {
+      const dia = normalizarDia(crudo?.dia);
+      if (dia && !porDia.has(dia)) porDia.set(dia, crudo);
+    }
+    if (porDia.size === 0)
+      throw new IaNoDisponibleError('La IA no devolvió ningún día válido.');
+
+    const respaldo = this.semanaPorReglas(e);
+    const idsValidos = new Set(mapa.keys());
     const notas: string[] = [];
-    let tiemposCorregidos = 0;
+    let diasIlegibles = 0;
+    let diasNoDevueltos = 0;
+    let tiemposPorReglas = 0;
 
-    const tiempos: TiempoPropuesto[] = tiposActivos.map((tipo) => {
-      const pctKcal = e.distribucion[tipo] ?? 0;
-      const deIa = respuesta.tiempos?.find((t) => t.tipo === tipo);
-      // Validación: solo IDs que existan en el catálogo permitido, sin duplicados.
-      const vistos = new Set<string>();
-      const items = (deIa?.items ?? [])
-        .filter(
-          (i) =>
-            typeof i.alimentoId === 'string' &&
-            mapa.has(i.alimentoId) &&
-            !vistos.has(i.alimentoId) &&
-            vistos.add(i.alimentoId),
-        )
-        .map((i) => ({
-          alimentoId: i.alimentoId!,
-          porciones: Math.min(
-            4,
-            Math.max(0.5, Math.round((Number(i.porciones) || 1) * 4) / 4),
-          ),
-        }));
+    const dias: DiaPropuesto[] = respaldo.map(({ dia, tiempos: deReglas }) => {
+      const deIa = porDia.get(dia);
+      if (!deIa) {
+        diasNoDevueltos++;
+        return {
+          dia,
+          tiempos: deReglas,
+          justificacion: 'Día completado por reglas: la IA no lo devolvió.',
+        };
+      }
 
-      if (items.length === 0) {
-        tiemposCorregidos++;
-        return (
-          respaldo.find((r) => r.tipo === tipo) ?? { tipo, pctKcal, items: [] }
+      // Validación estricta contra el catálogo permitido. Un tiempo con algún
+      // ítem roto no se persiste a medias: ese tiempo se regenera por reglas.
+      const validado = validarPlan(deIa, idsValidos, tiposActivos);
+      if (validado.tiempos.length === 0) {
+        diasIlegibles++;
+        return {
+          dia,
+          tiempos: deReglas,
+          justificacion:
+            'Día completado por reglas: la IA no devolvió ningún tiempo válido.',
+        };
+      }
+
+      const limpios = new Map(validado.tiempos.map((t) => [t.tipo, t.items]));
+      const rotos = new Set(validado.parciales.map((t) => t.tipo));
+      const notasDia: string[] = [];
+      const tiempos: TiempoPropuesto[] = tiposActivos.map((tipo) => {
+        const pctKcal = e.distribucion[tipo] ?? 0;
+        const items = limpios.get(tipo);
+        if (!items) {
+          tiemposPorReglas++;
+          const motivo = rotos.has(tipo)
+            ? 'ítems inválidos'
+            : validado.faltantes.includes(tipo)
+              ? 'no vino en la respuesta'
+              : 'sin ítems válidos';
+          notasDia.push(
+            `${NOMBRE_TIEMPO[tipo]}: completado por reglas (${motivo}).`,
+          );
+          return (
+            deReglas.find((r) => r.tipo === tipo) ?? {
+              tipo,
+              pctKcal,
+              items: [],
+            }
+          );
+        }
+        return {
+          tipo,
+          pctKcal,
+          items: ajustarPorciones(items, mapa, e.kcalObjetivo * pctKcal),
+        };
+      });
+
+      if (deIa.justificacion?.trim())
+        notas.push(`${dia}: ${deIa.justificacion.trim()}`);
+
+      if (validado.errores.length) {
+        const motivos = [...new Set(validado.errores.map((x) => x.motivo))];
+        notasDia.push(
+          `Descartados ${validado.errores.length} ítem(s) fuera de contrato (${motivos.join(', ')}).`,
         );
       }
-      if (deIa?.justificacion)
-        notas.push(`${NOMBRE_TIEMPO[tipo]}: ${deIa.justificacion}`);
       return {
-        tipo,
-        pctKcal,
-        items: ajustarPorciones(items, mapa, e.kcalObjetivo * pctKcal),
+        dia,
+        tiempos,
+        justificacion: notasDia.length ? notasDia.join('\n') : undefined,
       };
     });
 
     const partes = [respuesta.resumen?.trim(), ...notas].filter(Boolean);
-    if (tiemposCorregidos)
+    if (diasNoDevueltos)
       partes.push(
-        `${tiemposCorregidos} tiempo(s) completados por reglas porque la IA no devolvió alimentos válidos.`,
+        `${diasNoDevueltos} día(s) completados por reglas porque la IA no los devolvió.`,
+      );
+    if (diasIlegibles)
+      partes.push(
+        `${diasIlegibles} día(s) completados por reglas porque la respuesta de la IA no fue válida.`,
+      );
+    if (tiemposPorReglas)
+      partes.push(
+        `${tiemposPorReglas} tiempo(s) completados por reglas porque la IA no devolvió alimentos válidos.`,
       );
     partes.push(
-      'Porciones verificadas por el sistema (±10 % de la meta). Revisar antes de aprobar.',
+      'Porciones verificadas por el sistema (±10 % de la meta del tiempo de comida). Revisar antes de aprobar.',
     );
 
-    return { origen: 'IA', tiempos, justificacion: partes.join('\n') };
+    return { origen: 'IA', dias, justificacion: partes.join('\n') };
   }
 
   private promptSistema(): string {
     return [
       'Eres un asistente de nutricionistas clínicos en Honduras.',
-      'Armas planes alimenticios de un día usando EXCLUSIVAMENTE alimentos del catálogo que recibes (por su id).',
+      'Armas planes alimenticios semanales de siete días (lunes a domingo) usando EXCLUSIVAMENTE alimentos del catálogo que recibes (por su id).',
       'Prioriza comida hondureña, variedad, saciedad y combinaciones culturalmente normales.',
+      'La semana completa debe variar: no repitas el mismo plato principal en días consecutivos y no uses un alimento más de tres veces en la semana.',
       'Si recibes el perfil clínico, respétalo: las condiciones, el estado fisiológico, las alergias y los hábitos mandan sobre la preferencia cultural.',
       'No inventes alimentos, ids ni valores nutricionales. Las porciones son múltiplos de 0.25 de la porción indicada.',
       'Responde SOLO con JSON válido, sin texto adicional, con esta forma:',
-      '{"resumen": string, "tiempos": [{"tipo": "DESAYUNO|MERIENDA_AM|ALMUERZO|MERIENDA_PM|CENA", "items": [{"alimentoId": string, "porciones": number}], "justificacion": string}]}',
+      '{"resumen": string, "dias": [{"dia": "LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO", "tiempos": [{"tipo": "DESAYUNO|MERIENDA_AM|ALMUERZO|MERIENDA_PM|CENA", "items": [{"alimentoId": string, "porciones": number}]}], "justificacion": string}]}',
+      'Devuelve los siete días, en orden y cada uno una sola vez.',
     ].join('\n');
   }
 
@@ -286,6 +502,7 @@ export class RecomendadorService {
       .join('\n');
     return [
       `Meta del paciente: ${e.meta}.`,
+      `Plan semanal: los siete días (${DIAS_SEMANA.join(', ')}), cada uno con los mismos tiempos y las mismas metas por tiempo.`,
       `Objetivo diario: ${e.kcalObjetivo} kcal · proteína ${e.proteinaG} g · carbohidratos ${e.carbohidratoG} g · grasa ${e.grasaG} g.`,
       e.restricciones.length
         ? `Restricciones (ya excluidas del catálogo): ${e.restricciones.join(', ')}.`

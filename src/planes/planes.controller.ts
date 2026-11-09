@@ -24,7 +24,8 @@ import type { UsuarioActual } from '../auth/auth.types.js';
 import { Roles, UsuarioAct } from '../auth/decorators.js';
 import { PaginacionDto } from '../common/paginacion.js';
 import { ApiErrores } from '../common/swagger.js';
-import { TipoComida } from '../generated/prisma/enums.js';
+import { DIA_POR_DEFECTO } from '../nutricion/nutricion.util.js';
+import { DiaSemana, TipoComida } from '../generated/prisma/enums.js';
 import {
   ActualizarPlanDto,
   GenerarPlanDto,
@@ -122,23 +123,58 @@ export class PlanesController {
     return this.service.actualizar(id, u.nutricionistaId!, dto);
   }
 
-  @Put('planes/:id/tiempos/:tipo/items')
+  @Put('planes/:id/tiempos/:dia/:tipo/items')
   @ID_PLAN
+  @ApiParam({ name: 'dia', enum: DiaSemana, enumName: 'DiaSemana' })
   @ApiParam({ name: 'tipo', enum: TipoComida, enumName: 'TipoComida' })
   @ApiOperation({
-    summary: 'Reemplazar alimentos de un tiempo de comida',
-    description:
-      'Edición manual: reemplaza la lista completa del tiempo indicado. Los ítems nuevos quedan atados a la versión vigente de cada alimento.',
+    summary: 'Reemplazar alimentos de un tiempo de comida de un día',
+    description: [
+      'Edición manual: reemplaza la lista completa del tiempo indicado en el día indicado.',
+      'Un plan semanal tiene cinco tiempos por día; el día es parte de la dirección del recurso.',
+      'Los ítems nuevos quedan atados a la versión vigente de cada alimento.',
+    ].join(' '),
   })
   @ApiSobreOk(PlanDetalleEntity)
   @ApiErrores(400, 404)
   reemplazarItems(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
+    @Param('dia', new ParseEnumPipe(DiaSemana)) dia: DiaSemana,
     @Param('tipo', new ParseEnumPipe(TipoComida)) tipo: TipoComida,
     @Body() dto: ReemplazarItemsDto,
   ) {
-    return this.service.reemplazarItems(id, tipo, u.nutricionistaId!, dto);
+    return this.service.reemplazarItems(id, dia, tipo, u.nutricionistaId!, dto);
+  }
+
+  /**
+   * Ruta anterior a los planes semanales.
+   * @deprecated usa `PUT /planes/:id/tiempos/:dia/:tipo/items`; esta edita el lunes.
+   */
+  @Put('planes/:id/tiempos/:tipo/items')
+  @ID_PLAN
+  @ApiParam({ name: 'tipo', enum: TipoComida, enumName: 'TipoComida' })
+  @ApiOperation({
+    deprecated: true,
+    summary: 'Reemplazar alimentos de un tiempo de comida (obsoleto)',
+    description:
+      'Se mantiene por compatibilidad y equivale a la ruta con `dia = LUNES`. Usa `PUT /planes/:id/tiempos/:dia/:tipo/items`.',
+  })
+  @ApiSobreOk(PlanDetalleEntity)
+  @ApiErrores(400, 404)
+  reemplazarItemsLunes(
+    @UsuarioAct() u: UsuarioActual,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('tipo', new ParseEnumPipe(TipoComida)) tipo: TipoComida,
+    @Body() dto: ReemplazarItemsDto,
+  ) {
+    return this.service.reemplazarItems(
+      id,
+      DIA_POR_DEFECTO,
+      tipo,
+      u.nutricionistaId!,
+      dto,
+    );
   }
 
   @Post('planes/:id/activar')

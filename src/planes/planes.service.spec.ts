@@ -26,6 +26,7 @@ const planGuardado = {
   tiempos: [
     {
       id: 't1',
+      dia: 'LUNES',
       tipo: 'DESAYUNO',
       pctKcal: 0.5,
       orden: 0,
@@ -33,6 +34,7 @@ const planGuardado = {
     },
     {
       id: 't2',
+      dia: 'LUNES',
       tipo: 'CENA',
       pctKcal: 0.5,
       orden: 4,
@@ -79,16 +81,31 @@ describe('PlanesService', () => {
       generar: vi.fn().mockResolvedValue({
         origen: 'IA',
         justificacion: 'ok',
-        tiempos: [
+        dias: [
           {
-            tipo: 'ALMUERZO',
-            pctKcal: 0.6,
-            items: [{ alimentoId: 'a1', porciones: 1 }],
+            dia: 'LUNES',
+            tiempos: [
+              {
+                tipo: 'ALMUERZO',
+                pctKcal: 0.6,
+                items: [{ alimentoId: 'a1', porciones: 1 }],
+              },
+              {
+                tipo: 'DESAYUNO',
+                pctKcal: 0.4,
+                items: [{ alimentoId: 'a2', porciones: 2 }],
+              },
+            ],
           },
           {
-            tipo: 'DESAYUNO',
-            pctKcal: 0.4,
-            items: [{ alimentoId: 'a2', porciones: 2 }],
+            dia: 'MARTES',
+            tiempos: [
+              {
+                tipo: 'CENA',
+                pctKcal: 1,
+                items: [{ alimentoId: 'a1', porciones: 1 }],
+              },
+            ],
           },
         ],
       }),
@@ -113,6 +130,48 @@ describe('PlanesService', () => {
     expect(plan.tiempos[1].desviacion).toBe(-0.2);
     expect(plan.totales.kcal).toBe(1800);
     expect(plan.desviacion).toBe(-0.1);
+    expect(plan.dias).toHaveLength(1);
+    expect(plan.dias[0]).toMatchObject({ dia: 'LUNES' });
+    expect(plan.dias[0].totales.kcal).toBe(1800);
+    expect(plan.dias[0].desviacion).toBe(-0.1);
+  });
+
+  it('agrupa por día y compara la semana contra la meta semanal', async () => {
+    prisma.planAlimenticio.findUnique.mockResolvedValue({
+      id: 'plan1',
+      kcalObjetivo: 2000,
+      tiempos: [
+        {
+          id: 't1',
+          dia: 'LUNES',
+          tipo: 'DESAYUNO',
+          pctKcal: 0.5,
+          orden: 0,
+          items: [{ porciones: 1, alimento: alimento(1000) }],
+        },
+        {
+          id: 't2',
+          dia: 'MARTES',
+          tipo: 'DESAYUNO',
+          pctKcal: 0.5,
+          orden: 0,
+          items: [{ porciones: 1, alimento: alimento(1000) }],
+        },
+      ],
+    });
+
+    const plan = await svc.detalleConTotales('plan1');
+
+    expect(
+      plan.dias.map((d) => [d.dia, d.totales.kcal, d.desviacion]),
+    ).toEqual([
+      // Cada día de prueba cubre solo el 50 % de la meta diaria (2000 kcal).
+      ['LUNES', 1000, -0.5],
+      ['MARTES', 1000, -0.5],
+    ]);
+    // El plan totaliza la semana y se compara contra las kcal diarias por día.
+    expect(plan.totales.kcal).toBe(2000);
+    expect(plan.desviacion).toBe(-0.5);
   });
 
   it('totaliza con la versión atada al ítem, no con los valores actuales del alimento', async () => {
@@ -229,13 +288,15 @@ describe('PlanesService', () => {
         kcalObjetivo: 1800,
       });
       expect(
-        data.tiempos.create.map((t: { tipo: string; orden: number }) => [
+        data.tiempos.create.map((t: { dia: string; tipo: string; orden: number }) => [
+          t.dia,
           t.tipo,
           t.orden,
         ]),
       ).toEqual([
-        ['ALMUERZO', 2],
-        ['DESAYUNO', 0],
+        ['LUNES', 'ALMUERZO', 2],
+        ['LUNES', 'DESAYUNO', 0],
+        ['MARTES', 'CENA', 4],
       ]);
     });
 
@@ -259,7 +320,7 @@ describe('PlanesService', () => {
           (t: { items: { create: { alimentoVersionId: string | null }[] } }) =>
             t.items.create.map((i) => i.alimentoVersionId),
         ),
-      ).toEqual([['v1a'], ['v1b']]);
+      ).toEqual([['v1a'], ['v1b'], ['v1a']]);
     });
 
     it('deja el ítem sin versión si el alimento no tiene ninguna', async () => {
@@ -270,7 +331,7 @@ describe('PlanesService', () => {
           (t: { items: { create: { alimentoVersionId: string | null }[] } }) =>
             t.items.create.map((i) => i.alimentoVersionId),
         ),
-      ).toEqual([[null], [null]]);
+      ).toEqual([[null], [null], [null]]);
     });
 
     it('recalcula macros si se sobrescriben las kcal', async () => {
@@ -327,7 +388,7 @@ describe('PlanesService', () => {
     it('reemplaza los alimentos de un tiempo de comida', async () => {
       prisma.tiempoComida.findUnique.mockResolvedValue({ id: 't1' });
       prisma.alimento.count.mockResolvedValue(1);
-      await svc.reemplazarItems('plan1', 'DESAYUNO', 'n1', {
+      await svc.reemplazarItems('plan1', 'LUNES', 'DESAYUNO', 'n1', {
         items: [{ alimentoId: 'a1', porciones: 1.5 }],
       });
       expect(prisma.planItem.deleteMany).toHaveBeenCalledWith({
@@ -352,7 +413,7 @@ describe('PlanesService', () => {
         { id: 'v1a', alimentoId: 'a1', version: 3 },
       ]);
 
-      await svc.reemplazarItems('plan1', 'DESAYUNO', 'n1', {
+      await svc.reemplazarItems('plan1', 'LUNES', 'DESAYUNO', 'n1', {
         items: [
           { alimentoId: 'a1', porciones: 1 },
           { alimentoId: 'a2', porciones: 2 },
@@ -385,17 +446,46 @@ describe('PlanesService', () => {
       prisma.tiempoComida.findUnique.mockResolvedValue({ id: 't1' });
       prisma.alimento.count.mockResolvedValue(0);
       await expect(
-        svc.reemplazarItems('plan1', 'DESAYUNO', 'n1', {
+        svc.reemplazarItems('plan1', 'LUNES', 'DESAYUNO', 'n1', {
           items: [{ alimentoId: 'zz', porciones: 1 }],
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.planItem.deleteMany).not.toHaveBeenCalled();
     });
 
+    it('edita el tiempo de comida del día pedido, no siempre el lunes', async () => {
+      prisma.tiempoComida.findUnique.mockResolvedValue({ id: 't9' });
+      prisma.alimento.count.mockResolvedValue(1);
+
+      await svc.reemplazarItems('plan1', 'MIERCOLES', 'ALMUERZO', 'n1', {
+        items: [{ alimentoId: 'a1', porciones: 1 }],
+      });
+
+      expect(prisma.tiempoComida.findUnique).toHaveBeenCalledWith({
+        where: {
+          planId_dia_tipo: {
+            planId: 'plan1',
+            dia: 'MIERCOLES',
+            tipo: 'ALMUERZO',
+          },
+        },
+      });
+      expect(prisma.planItem.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            alimentoId: 'a1',
+            porciones: 1,
+            tiempoComidaId: 't9',
+            alimentoVersionId: null,
+          },
+        ],
+      });
+    });
+
     it('responde 404 si el plan no tiene ese tiempo de comida', async () => {
       prisma.tiempoComida.findUnique.mockResolvedValue(null);
       await expect(
-        svc.reemplazarItems('plan1', 'CENA', 'n1', { items: [] }),
+        svc.reemplazarItems('plan1', 'LUNES', 'CENA', 'n1', { items: [] }),
       ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
