@@ -911,7 +911,7 @@
         ]
       },
       "patch": {
-        "description": "Si se envía `restricciones` o `condiciones`, reemplaza la lista completa de esa relación. Responde 409 si el `correo` ya lo usa otro paciente.",
+        "description": "Si se envía `restricciones` o `condiciones`, reemplaza la lista completa de esa relación. Responde 409 si el `correo` ya lo usa otro paciente. Con `activo: true` reactiva a un paciente dado de baja.",
         "operationId": "PacientesController_actualizar",
         "parameters": [
           {
@@ -1106,7 +1106,7 @@
         ]
       },
       "delete": {
-        "description": "Baja lógica (`activo = false`); el historial se conserva.",
+        "description": "Baja lógica (`activo = false`); el historial se conserva. Para reactivarlo, `PATCH /pacientes/:id` con `{\"activo\": true}`.",
         "operationId": "PacientesController_desactivar",
         "parameters": [
           {
@@ -9879,6 +9879,11 @@
             "items": {
               "type": "string"
             }
+          },
+          "activo": {
+            "type": "boolean",
+            "description": "`true` reactiva al paciente dado de baja; `false` es la misma baja lógica\nque `DELETE /pacientes/:id`. Mismo criterio que la medicación.",
+            "example": true
           }
         }
       },

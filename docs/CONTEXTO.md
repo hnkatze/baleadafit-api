@@ -313,7 +313,7 @@ Referencia para no romper el contrato. El esquema completo está en `docs/openap
 | #5 Registro de nutricionista | `POST /auth/registro-nutricionista` |
 | #6 Inicio de la nutricionista | `GET /dashboard` |
 | #7 Lista de pacientes | `GET /pacientes?q=` |
-| #8 Crear/editar paciente | `POST /pacientes`, `PATCH /pacientes/{id}`, `DELETE /pacientes/{id}`, `GET /restricciones` |
+| #8 Crear/editar paciente | `POST /pacientes`, `PATCH /pacientes/{id}`, `DELETE /pacientes/{id}`, `GET /restricciones`. El `DELETE` es baja lógica; `PATCH` con `{activo: true}` reactiva al paciente |
 | #9 Expediente y mediciones | `GET /pacientes/{id}`, `GET/POST /pacientes/{id}/mediciones`, `GET /pacientes/{id}/requerimiento`, `GET /pacientes/{id}/adherencia`, `PUT/GET /pacientes/{id}/registros` |
 | #10 Catálogo | `GET /alimentos`, `POST/PATCH /alimentos` |
 | #11 Generar plan | `POST /pacientes/{id}/planes/generar` |

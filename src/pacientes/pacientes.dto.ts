@@ -210,7 +210,16 @@ export class CrearPacienteDto {
   condiciones?: string[];
 }
 
-export class ActualizarPacienteDto extends PartialType(CrearPacienteDto) {}
+export class ActualizarPacienteDto extends PartialType(CrearPacienteDto) {
+  /**
+   * `true` reactiva al paciente dado de baja; `false` es la misma baja lógica
+   * que `DELETE /pacientes/:id`. Mismo criterio que la medicación.
+   * @example true
+   */
+  @IsOptional()
+  @IsBoolean()
+  activo?: boolean;
+}
 
 export class BuscarPacientesDto extends PaginacionDto {
   /**

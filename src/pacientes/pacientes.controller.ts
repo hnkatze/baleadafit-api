@@ -129,7 +129,7 @@ export class PacientesController {
   @ApiOperation({
     summary: 'Actualizar paciente',
     description:
-      'Si se envía `restricciones` o `condiciones`, reemplaza la lista completa de esa relación. Responde 409 si el `correo` ya lo usa otro paciente.',
+      'Si se envía `restricciones` o `condiciones`, reemplaza la lista completa de esa relación. Responde 409 si el `correo` ya lo usa otro paciente. Con `activo: true` reactiva a un paciente dado de baja.',
   })
   @ApiSobreOk(PacienteConCondicionesEntity)
   @ApiErrores(400, 404, 409)
@@ -194,7 +194,8 @@ export class PacientesController {
   @ID_PACIENTE
   @ApiOperation({
     summary: 'Dar de baja al paciente',
-    description: 'Baja lógica (`activo = false`); el historial se conserva.',
+    description:
+      'Baja lógica (`activo = false`); el historial se conserva. Para reactivarlo, `PATCH /pacientes/:id` con `{"activo": true}`.',
   })
   @ApiSobreOk(PacienteEntity)
   @ApiErrores(404)

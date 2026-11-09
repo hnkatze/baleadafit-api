@@ -143,7 +143,7 @@ En el cliente, antes de mostrar el formulario, conviene mirar `user.emailVerifie
 | todos | `GET /auth/me` | Rol y perfil |
 | sin perfil | `POST /auth/registro-nutricionista` | Crea el perfil de nutricionista (exige correo verificado) |
 | nutricionista | `GET /dashboard` | Pacientes activos, borradores, citas de hoy |
-| nutricionista | `GET/POST /pacientes`, `GET/PATCH/DELETE /pacientes/:id` | Expediente (el DELETE es baja lógica); acepta `condiciones` y devuelve condiciones, medicación vigente y las últimas mediciones |
+| nutricionista | `GET/POST /pacientes`, `GET/PATCH/DELETE /pacientes/:id` | Expediente (el DELETE es baja lógica y `PATCH` con `activo: true` lo reactiva); acepta `condiciones` y devuelve condiciones, medicación vigente y las últimas mediciones |
 | nutricionista | `GET /pacientes/:id/ficha` | Ficha completa en una llamada: cabecera con IMC clasificado, progreso contra el objetivo, situación clínica, requerimiento, adherencia de 30 días, alertas, evolución, consultas y planes |
 | nutricionista | `POST /pacientes/:id/medicamentos`, `PATCH/DELETE /medicamentos/:id` | Medicación declarada (el DELETE es baja lógica: conserva el historial) |
 | nutricionista | `GET/POST /pacientes/:id/mediciones`, `DELETE /mediciones/:id` | Peso, talla, % grasa, cintura (+ IMC) |

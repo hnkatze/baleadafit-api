@@ -116,6 +116,15 @@ describe('PacientesService', () => {
     });
   });
 
+  it('reactivar por PATCH devuelve el paciente al expediente activo', async () => {
+    prisma.paciente.update.mockResolvedValue({ id: 'p1', activo: true });
+
+    await svc.actualizar('p1', 'n1', { activo: true });
+
+    const { data } = prisma.paciente.update.mock.calls[0][0];
+    expect(data.activo).toBe(true);
+  });
+
   describe('condiciones', () => {
     const dto = {
       nombre: 'Ana',
