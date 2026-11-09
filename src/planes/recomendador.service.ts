@@ -271,7 +271,9 @@ export class RecomendadorService {
       (t) => (e.distribucion[t] ?? 0) > 0,
     );
 
-    const respuesta = await this.bedrock.generarJson<RespuestaIa>(
+    // Una semana son ~63 s de generación: va por stream para que el socket no
+    // quede inactivo y para medir el primer token.
+    const respuesta = await this.bedrock.generarJsonStream<RespuestaIa>(
       this.promptSistema(),
       this.promptUsuario(e, tiposActivos),
       MAX_TOKENS_SEMANA,

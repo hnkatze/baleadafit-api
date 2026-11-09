@@ -11458,6 +11458,16 @@
             "type": "number",
             "description": "Duración total de la llamada en milisegundos.",
             "example": 63000
+          },
+          "ttftMs": {
+            "type": "number",
+            "description": "Milisegundos hasta el primer token. Es lo que percibe quien espera.",
+            "example": 2400
+          },
+          "transporte": {
+            "type": "string",
+            "description": "`stream` si la respuesta se leyó por `ConverseStream` (el socket no queda\ninactivo, así que el `requestTimeout` no es el techo) y `json` si se esperó\nla respuesta entera.",
+            "example": "stream"
           }
         },
         "required": [

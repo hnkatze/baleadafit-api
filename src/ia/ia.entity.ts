@@ -30,6 +30,20 @@ export class LlamadaIaEntity {
    * @example 63000
    */
   ms?: number;
+
+  /**
+   * Milisegundos hasta el primer token. Es lo que percibe quien espera.
+   * @example 2400
+   */
+  ttftMs?: number;
+
+  /**
+   * `stream` si la respuesta se leyó por `ConverseStream` (el socket no queda
+   * inactivo, así que el `requestTimeout` no es el techo) y `json` si se esperó
+   * la respuesta entera.
+   * @example "stream"
+   */
+  transporte?: string;
 }
 
 export class EstadoIaEntity {

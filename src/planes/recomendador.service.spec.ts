@@ -69,7 +69,10 @@ const entrada = (usarIa = true): EntradaRecomendador => ({
 });
 
 const bedrockFalso = (impl: () => Promise<unknown>) =>
-  ({ generarJson: vi.fn(impl) }) as unknown as BedrockService;
+  ({
+    generarJson: vi.fn(impl),
+    generarJsonStream: vi.fn(impl),
+  }) as unknown as BedrockService;
 
 const dia = (r: ResultadoRecomendador, nombre: (typeof DIAS_SEMANA)[number]) =>
   r.dias.find((d) => d.dia === nombre)!;
@@ -288,7 +291,7 @@ describe('RecomendadorService', () => {
     const bedrock = bedrockFalso(async () => ({}));
     const r = await new RecomendadorService(bedrock).generar(entrada(false));
     expect(r.origen).toBe('REGLAS');
-    expect(bedrock.generarJson).not.toHaveBeenCalled();
+    expect(bedrock.generarJsonStream).not.toHaveBeenCalled();
     expect(r.dias).toHaveLength(7);
   });
 
@@ -359,7 +362,7 @@ describe('RecomendadorService', () => {
   it('pide a la IA la semana completa con el esquema de días', async () => {
     const generar = vi.fn(async () => ({ dias: [] }));
     const svc = new RecomendadorService({
-      generarJson: generar,
+      generarJsonStream: generar,
     } as unknown as BedrockService);
 
     await svc.generar(entrada());
@@ -376,7 +379,7 @@ describe('RecomendadorService', () => {
   it('manda los nutrientes clínicos de cada alimento en el catálogo', async () => {
     const generar = vi.fn(async () => ({ dias: [] }));
     const svc = new RecomendadorService({
-      generarJson: generar,
+      generarJsonStream: generar,
     } as unknown as BedrockService);
 
     await svc.generar({
@@ -412,7 +415,7 @@ describe('RecomendadorService', () => {
   it('manda el perfil clínico del paciente a la IA', async () => {
     const generar = vi.fn(async () => ({ dias: [] }));
     const svc = new RecomendadorService({
-      generarJson: generar,
+      generarJsonStream: generar,
     } as unknown as BedrockService);
 
     await svc.generar({
