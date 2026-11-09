@@ -415,6 +415,21 @@ describe('RecomendadorService', () => {
     );
   });
 
+  it('el esquema que se pide al modelo usa índices, igual que el parser', async () => {
+    const generar = vi.fn(async () => ({ dias: [] }));
+    const svc = new RecomendadorService({
+      generarJsonStream: generar,
+    } as unknown as BedrockService);
+
+    await svc.generar(entrada());
+
+    const sistema = generar.mock.calls[0][0] as string;
+    // Si el esquema vuelve a pedir `alimentoId`, el parser descarta todo y la
+    // semana entera se cae a reglas sin que ningún test lo note.
+    expect(sistema).toMatch(/"alimento": number/);
+    expect(sistema).not.toMatch(/alimentoId/);
+  });
+
   it('pide a la IA la semana completa con el esquema de días', async () => {
     const generar = vi.fn(async () => ({ dias: [] }));
     const svc = new RecomendadorService({

@@ -421,7 +421,7 @@ export class RecomendadorService {
       'Si recibes el perfil clínico, respétalo: las condiciones, el estado fisiológico, las alergias y los hábitos mandan sobre la preferencia cultural.',
       'No inventes alimentos ni valores nutricionales. Cada alimento del catálogo viene con un índice (#0, #1, …): devuelve ese número en `alimento`, nunca un nombre ni un id.',
       'Responde SOLO con JSON válido, sin texto adicional, con esta forma:',
-      '{"resumen": string, "dias": [{"dia": "LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO", "tiempos": [{"tipo": "DESAYUNO|MERIENDA_AM|ALMUERZO|MERIENDA_PM|CENA", "items": [{"alimentoId": string, "porciones": number}]}], "justificacion": string}]}',
+      '{"resumen": string, "dias": [{"dia": "LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO", "tiempos": [{"tipo": "DESAYUNO|MERIENDA_AM|ALMUERZO|MERIENDA_PM|CENA", "items": [{"alimento": number, "porciones": number}]}], "justificacion": string}]}',
       'Devuelve los siete días, en orden y cada uno una sola vez.',
     ].join('\n');
   }
