@@ -38,6 +38,20 @@ export class LlamadaIaEntity {
   ttftMs?: number;
 
   /**
+   * Tokens leídos de la caché de prompt. Si es alto, el bloque cacheable (el
+   * catálogo) se está reusando y esa entrada cuesta una décima parte.
+   * @example 13932
+   */
+  cacheLecturaTokens?: number;
+
+  /**
+   * Tokens escritos en la caché de prompt en esta llamada. La escritura cuesta
+   * un poco más que la entrada normal; la lectura, mucho menos.
+   * @example 13932
+   */
+  cacheEscrituraTokens?: number;
+
+  /**
    * `stream` si la respuesta se leyó por `ConverseStream` (el socket no queda
    * inactivo, así que el `requestTimeout` no es el techo) y `json` si se esperó
    * la respuesta entera.
