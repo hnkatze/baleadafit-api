@@ -236,6 +236,50 @@ describe('BedrockService', () => {
     expect(svc.estado().ultimaLlamada).toMatchObject({ ok: false });
   });
 
+  it('marca el bloque cacheable y devuelve los tokens de caché', async () => {
+    const send = vi.fn(async () => ({
+      stream: (async function* () {
+        yield { contentBlockDelta: { delta: { text: '{"dias":[]}' } } };
+        yield {
+          metadata: {
+            usage: {
+              inputTokens: 1800,
+              outputTokens: 7456,
+              totalTokens: 9256,
+              cacheReadInputTokens: 15000,
+              cacheWriteInputTokens: 0,
+            },
+          },
+        };
+        yield { messageStop: { stopReason: 'end_turn' } };
+      })(),
+    }));
+    const svc = new BedrockService(
+      config({ BEDROCK_MODEL_ID: 'us.anthropic.claude-sonnet-4-6' }),
+      { send } as unknown as ClienteBedrock,
+    );
+
+    await svc.generarJsonStream(
+      'sistema',
+      [{ texto: 'catálogo', cachear: true }, { texto: 'contexto' }],
+      16000,
+    );
+
+    // El bloques viajan en el mismo mensaje, con el punto de caché después del catálogo.
+    const mensaje = (send.mock.calls[0][0] as { input: { messages: { content: unknown[] }[] } })
+      .input.messages[0].content;
+    expect(mensaje).toEqual([
+      { text: 'catálogo' },
+      { cachePoint: { type: 'default' } },
+      { text: 'contexto' },
+    ]);
+    expect(svc.estado().ultimaLlamada).toMatchObject({
+      entradaTokens: 1800,
+      cacheLecturaTokens: 15000,
+      cacheEscrituraTokens: 0,
+    });
+  });
+
   it('no expone detalles internos de AWS en el estado ni en la prueba', async () => {
     const detalleAws =
       'AccessDeniedException: User: arn:aws:iam::123456789012:user/sofia is not authorized';
