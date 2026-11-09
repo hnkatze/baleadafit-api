@@ -86,3 +86,11 @@ El recomendador arma hoy planes de **un día**: schema, prompt, motor de reglas 
   1. **Corte por tokens disfrazado de JSON inválido.** `conIa` pedía 5.000 tokens de salida para un esquema con justificación por tiempo; Sonnet 4.6 cortó con `stopReason: max_tokens` y el texto llegó truncado. `BedrockService` ignoraba `stopReason`, así que el error que se propagaba era "La IA devolvió JSON inválido" — y encima el `catch` genérico lo reenvolvía en "No se pudo conectar con Bedrock". Ahora un corte por tokens se reporta como tal, un `IaNoDisponibleError` no se reenvuelve, el tope de salida es 16.000 y la justificación es solo por día.
   2. **Timeout de 60 s.** `requestTimeout` estaba en 60 s y la semana completa tarda ~63 s: la llamada moría por timeout *después* de generar (se pagó igual). Ahora es 180 s.
   - **Límite honesto**: 63 s de latencia en un POST síncrono es mucho para la app. El siguiente paso natural es streaming o generación asíncrona con estado del plan; no se hizo acá para no abrir un frente nuevo.
+
+- **L26** (cierre, 2026-11-09): la rama se mergeó y se desplegó.
+  - PR **#27** mergeada en `main` (`958a42d`), que cierra **#21** automáticamente. Issue **#19** (desplegar en Railway) cerrado a mano con la evidencia del despliegue.
+  - Deploy de `main` a producción: `4c4eb64a` **SUCCESS**. La migración ya estaba aplicada y el arranque reporta *No pending migrations to apply*, o sea el `migrate deploy` del `startCommand` es idempotente como se esperaba.
+  - Contrato verificado en el servidor por `/docs-json` (público): 36 rutas, `PUT /planes/{id}/tiempos/{dia}/{tipo}/items`, `dia` en `HoyEntity` y `entradaTokens`/`salidaTokens`/`ms` en `LlamadaIaEntity`.
+  - Commits de cierre posteriores al feature: `4bf5c49` (`railway.json` con migración al arrancar), `f92651d` (tokens y latencia en `/ia/estado`), `bb626dc` (la pantalla Hoy devuelve un día, no la semana).
+  - Documento para consumidores: `docs/cambios-plan-semanal-consumidores.md` (mobile y BO), con capas de `justificacion`, tabla de errores, aviso de los ~63 s y checklists.
+  - **Queda abierto y no se tocó en esta sesión**: latencia (async o streaming), plantillas explícitas de plan, revisión clínica de `LIMITES_DIARIOS`, migración de `railway.json` a `.railway/railway.ts` antes del 2026-12-01, y la prueba con un paciente real en producción.
