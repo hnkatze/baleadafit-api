@@ -92,17 +92,17 @@ describe('RecomendadorService', () => {
               {
                 tipo: 'DESAYUNO',
                 items: [
-                  { alimentoId: 'baleada', porciones: 1 },
-                  { alimentoId: 'inventado', porciones: 2 },
+                  { alimento: 0, porciones: 1 },
+                  { alimento: 999, porciones: 2 },
                 ],
                 justificacion: 'Desayuno típico.',
               },
               {
                 tipo: 'ALMUERZO',
                 items: [
-                  { alimentoId: 'pollo', porciones: 2 },
-                  { alimentoId: 'arroz', porciones: 2 },
-                  { alimentoId: 'chismol', porciones: 1 },
+                  { alimento: 1, porciones: 2 },
+                  { alimento: 2, porciones: 2 },
+                  { alimento: 3, porciones: 1 },
                 ],
               },
             ],
@@ -129,18 +129,18 @@ describe('RecomendadorService', () => {
               {
                 tipo: 'ALMUERZO',
                 items: [
-                  { alimentoId: 'pollo', porciones: 9 },
-                  { alimentoId: 'arroz', porciones: 2 },
+                  { alimento: 1, porciones: 9 },
+                  { alimento: 2, porciones: 2 },
                 ],
                 justificacion: 'Almuerzo del modelo.',
               },
               {
                 tipo: 'DESAYUNO',
-                items: [{ alimentoId: 'baleada', porciones: 1 }],
+                items: [{ alimento: 0, porciones: 1 }],
               },
               {
                 tipo: 'CENA',
-                items: [{ alimentoId: 'pollo', porciones: 2 }],
+                items: [{ alimento: 1, porciones: 2 }],
               },
             ],
           },
@@ -173,7 +173,7 @@ describe('RecomendadorService', () => {
             tiempos: [
               {
                 tipo: 'ALMUERZO',
-                items: [{ alimentoId: 'arroz', porciones: 2 }],
+                items: [{ alimento: 2, porciones: 2 }],
               },
             ],
           },
@@ -204,7 +204,7 @@ describe('RecomendadorService', () => {
             tiempos: [
               {
                 tipo: 'ALMUERZO',
-                items: [{ alimentoId: 'pollo', porciones: 2 }],
+                items: [{ alimento: 1, porciones: 2 }],
               },
             ],
           },
@@ -233,7 +233,7 @@ describe('RecomendadorService', () => {
             tiempos: [
               {
                 tipo: 'almuerzo',
-                items: [{ alimentoId: 'pollo', porciones: 2 }],
+                items: [{ alimento: 1, porciones: 2 }],
               },
             ],
           },
@@ -242,7 +242,7 @@ describe('RecomendadorService', () => {
             tiempos: [
               {
                 tipo: 'ALMUERZO',
-                items: [{ alimentoId: 'arroz', porciones: 2 }],
+                items: [{ alimento: 2, porciones: 2 }],
               },
             ],
           },
@@ -251,7 +251,7 @@ describe('RecomendadorService', () => {
             tiempos: [
               {
                 tipo: 'ALMUERZO',
-                items: [{ alimentoId: 'baleada', porciones: 1 }],
+                items: [{ alimento: 0, porciones: 1 }],
               },
             ],
           },
@@ -359,6 +359,62 @@ describe('RecomendadorService', () => {
     ).toBe(true);
   });
 
+  it('elige alimentos por índice del catálogo y descarta índices fuera de rango', async () => {
+    const svc = new RecomendadorService(
+      bedrockFalso(async () => ({
+        dias: [
+          {
+            dia: 'LUNES',
+            tiempos: [
+              { tipo: 'DESAYUNO', items: [{ alimento: 0, porciones: 1 }] },
+              {
+                tipo: 'ALMUERZO',
+                items: [
+                  { alimento: 1, porciones: 2 },
+                  { alimento: 99, porciones: 1 },
+                  { alimento: -3, porciones: 1 },
+                ],
+              },
+              { tipo: 'CENA', items: [{ alimento: 1, porciones: 1 }] },
+            ],
+          },
+        ],
+      })),
+    );
+
+    const r = await svc.generar(entrada());
+
+    // índice 0 = primer alimento del catálogo, índice 1 = segundo.
+    const lunes = dia(r, 'LUNES');
+    expect(
+      lunes.tiempos.find((t) => t.tipo === 'DESAYUNO')!.items[0].alimentoId,
+    ).toBe(catalogo[0].id);
+    const almuerzo = lunes.tiempos.find((t) => t.tipo === 'ALMUERZO')!;
+    expect(almuerzo.items.map((i) => i.alimentoId)).not.toContain(undefined);
+    expect(almuerzo.items.every((i) => catalogo.some((a) => a.id === i.alimentoId))).toBe(
+      true,
+    );
+    expect(lunes.justificacion).toMatch(/fuera de contrato/);
+  });
+
+  it('manda el catálogo numerado y antes del contexto del paciente', async () => {
+    const generar = vi.fn(async () => ({ dias: [] }));
+    const svc = new RecomendadorService({
+      generarJsonStream: generar,
+    } as unknown as BedrockService);
+
+    await svc.generar(entrada());
+
+    const bloques = generar.mock.calls[0][1] as { texto: string; cachear?: boolean }[];
+    expect(bloques[0].cachear).toBe(true);
+    expect(bloques[0].texto).toMatch(/#0 \|/);
+    expect(bloques[0].texto).toContain(catalogo[0].nombre);
+    // Lo que cambia por paciente va después, para que el prefijo cacheado sirva.
+    expect(bloques.slice(1).map((b) => b.texto).join(' ')).toMatch(
+      /Meta del paciente/,
+    );
+  });
+
   it('pide a la IA la semana completa con el esquema de días', async () => {
     const generar = vi.fn(async () => ({ dias: [] }));
     const svc = new RecomendadorService({
@@ -368,7 +424,10 @@ describe('RecomendadorService', () => {
     await svc.generar(entrada());
 
     const sistema = generar.mock.calls[0][0] as string;
-    const mensaje = generar.mock.calls[0][1] as string;
+    // El prompt del usuario viaja en bloques: el catálogo (cacheable) y el contexto.
+    const mensaje = (generar.mock.calls[0][1] as { texto: string }[])
+      .map((bloque) => bloque.texto)
+      .join(' ');
     expect(sistema).toMatch(/siete días/i);
     expect(sistema).toMatch(/"dias"/);
     expect(sistema).toMatch(/DOMINGO/);
@@ -406,7 +465,10 @@ describe('RecomendadorService', () => {
       ],
     });
 
-    const mensaje = generar.mock.calls[0][1] as string;
+    // El prompt del usuario viaja en bloques: el catálogo (cacheable) y el contexto.
+    const mensaje = (generar.mock.calls[0][1] as { texto: string }[])
+      .map((bloque) => bloque.texto)
+      .join(' ');
     expect(mensaje).toMatch(/Na 420mg/);
     expect(mensaje).toMatch(/K 610mg/);
     expect(mensaje).toMatch(/IG 30/);
@@ -452,7 +514,10 @@ describe('RecomendadorService', () => {
       },
     });
 
-    const mensaje = generar.mock.calls[0][1] as string;
+    // El prompt del usuario viaja en bloques: el catálogo (cacheable) y el contexto.
+    const mensaje = (generar.mock.calls[0][1] as { texto: string }[])
+      .map((bloque) => bloque.texto)
+      .join(' ');
     expect(mensaje).toMatch(/Hipertensión arterial/);
     expect(mensaje).toMatch(/Menos sodio/);
     expect(mensaje).toMatch(/lactancia/i);

@@ -52,7 +52,8 @@ export interface ResultadoRecomendador {
 
 interface RespuestaIaTiempo {
   tipo?: string;
-  items?: { alimentoId?: string; porciones?: number }[];
+  /** `alimento` es el índice del catálogo enviado (`#0`, `#1`, …). */
+  items?: { alimento?: number; porciones?: number }[];
 }
 
 interface RespuestaIaDia {
@@ -273,9 +274,10 @@ export class RecomendadorService {
 
     // Una semana son ~63 s de generación: va por stream para que el socket no
     // quede inactivo y para medir el primer token.
+    const { catalogo, contexto } = this.promptUsuario(e, tiposActivos);
     const respuesta = await this.bedrock.generarJsonStream<RespuestaIa>(
       this.promptSistema(),
-      this.promptUsuario(e, tiposActivos),
+      [{ texto: catalogo, cachear: true }, { texto: contexto }],
       MAX_TOKENS_SEMANA,
     );
 
@@ -307,9 +309,32 @@ export class RecomendadorService {
         };
       }
 
+      // El modelo elige por índice del catálogo: se traduce a id antes de
+      // validar, así un índice fuera de rango queda sin id y el validador lo
+      // rechaza, sin poder inventar un alimento.
+      const tiemposCrudos = Array.isArray(deIa.tiempos)
+        ? deIa.tiempos.map((tiempo) => ({
+            ...tiempo,
+            items: Array.isArray(tiempo?.items)
+              ? tiempo.items.map((item) => ({
+                  alimentoId:
+                    typeof item?.alimento === 'number' &&
+                    Number.isInteger(item.alimento)
+                      ? e.catalogo[item.alimento]?.id
+                      : undefined,
+                  porciones: item?.porciones,
+                }))
+              : tiempo?.items,
+          }))
+        : deIa.tiempos;
+
       // Validación estricta contra el catálogo permitido. Un tiempo con algún
       // ítem roto no se persiste a medias: ese tiempo se regenera por reglas.
-      const validado = validarPlan(deIa, idsValidos, tiposActivos);
+      const validado = validarPlan(
+        { tiempos: tiemposCrudos },
+        idsValidos,
+        tiposActivos,
+      );
       if (validado.tiempos.length === 0) {
         diasIlegibles++;
         return {
@@ -394,7 +419,7 @@ export class RecomendadorService {
       'Prioriza comida hondureña, variedad, saciedad y combinaciones culturalmente normales.',
       'La semana completa debe variar: no repitas el mismo plato principal en días consecutivos y no uses un alimento más de tres veces en la semana.',
       'Si recibes el perfil clínico, respétalo: las condiciones, el estado fisiológico, las alergias y los hábitos mandan sobre la preferencia cultural.',
-      'No inventes alimentos, ids ni valores nutricionales. Las porciones son múltiplos de 0.25 de la porción indicada.',
+      'No inventes alimentos ni valores nutricionales. Cada alimento del catálogo viene con un índice (#0, #1, …): devuelve ese número en `alimento`, nunca un nombre ni un id.',
       'Responde SOLO con JSON válido, sin texto adicional, con esta forma:',
       '{"resumen": string, "dias": [{"dia": "LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO", "tiempos": [{"tipo": "DESAYUNO|MERIENDA_AM|ALMUERZO|MERIENDA_PM|CENA", "items": [{"alimentoId": string, "porciones": number}]}], "justificacion": string}]}',
       'Devuelve los siete días, en orden y cada uno una sola vez.',
@@ -471,7 +496,15 @@ export class RecomendadorService {
       : '';
   }
 
-  private promptUsuario(e: EntradaRecomendador, tipos: TipoComida[]): string {
+  /**
+   * Dos bloques: primero el catálogo —que es lo caro y lo que se repite entre
+   * planes, así que se cachea— y después todo lo que cambia por paciente. El
+   * orden importa: la caché de prefijo solo sirve si lo invariante va delante.
+   */
+  private promptUsuario(
+    e: EntradaRecomendador,
+    tipos: TipoComida[],
+  ): { catalogo: string; contexto: string } {
     const metas = tipos
       .map(
         (t) =>
@@ -479,7 +512,7 @@ export class RecomendadorService {
       )
       .join('\n');
     const catalogo = e.catalogo
-      .map((a) => {
+      .map((a, indice) => {
         const clinicos = [
           a.sodioMg != null ? `Na ${a.sodioMg}mg` : '',
           a.potasioMg != null ? `K ${a.potasioMg}mg` : '',
@@ -490,7 +523,7 @@ export class RecomendadorService {
           a.indiceGlucemico != null ? `IG ${a.indiceGlucemico}` : '',
         ].filter(Boolean);
         return [
-          a.id,
+          `#${indice}`,
           a.nombre,
           a.porcionDescripcion,
           `${a.kcal}kcal`,
@@ -502,7 +535,7 @@ export class RecomendadorService {
         ].join(' | ');
       })
       .join('\n');
-    return [
+    const contexto = [
       `Meta del paciente: ${e.meta}.`,
       `Plan semanal: los siete días (${DIAS_SEMANA.join(', ')}), cada uno con los mismos tiempos y las mismas metas por tiempo.`,
       `Objetivo diario: ${e.kcalObjetivo} kcal · proteína ${e.proteinaG} g · carbohidratos ${e.carbohidratoG} g · grasa ${e.grasaG} g.`,
@@ -514,10 +547,15 @@ export class RecomendadorService {
         ? `Indicaciones de la nutricionista: ${e.indicaciones}`
         : '',
       `Kcal por tiempo de comida:\n${metas}`,
-      'Entre 2 y 4 alimentos por tiempo principal y 1 o 2 por merienda. Usa cada alimento en los tiempos que indica su columna final.',
-      `Catálogo (id | nombre | porción | kcal | proteína g | carbohidrato g | grasa g | tiempos | nutrientes clínicos por porción):\n${catalogo}`,
+      'Entre 2 y 4 alimentos por tiempo principal y 1 o 2 por merienda. Usa cada alimento en el tiempo de comida que indica su columna final del catálogo.',
+      'Devuelve el índice del catálogo (#N) en el campo `alimento`.',
     ]
       .filter(Boolean)
       .join('\n\n');
+
+    const cabecera =
+      'Catálogo (índice | nombre | porción | kcal | proteína g | carbohidrato g | grasa g | tiempos | nutrientes clínicos por porción):';
+
+    return { catalogo: `${cabecera}\n${catalogo}`, contexto };
   }
 }

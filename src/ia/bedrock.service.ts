@@ -10,6 +10,26 @@ import {
 
 export class IaNoDisponibleError extends Error {}
 
+/**
+ * Un bloque del mensaje del usuario. `cachear` inserta un punto de caché después
+ * del bloque, así Bedrock guarda ese prefijo (el catálogo) y las llamadas
+ * siguientes lo leen a una décima parte del precio.
+ */
+export interface BloquePrompt {
+  texto: string;
+  cachear?: boolean;
+}
+
+function contenidoDe(bloques: BloquePrompt[]) {
+  const contenido: ({ text: string } | { cachePoint: { type: 'default' } })[] =
+    [];
+  for (const bloque of bloques) {
+    contenido.push({ text: bloque.texto });
+    if (bloque.cachear) contenido.push({ cachePoint: { type: 'default' } });
+  }
+  return contenido;
+}
+
 /** Token para inyectar otro cliente Bedrock (pruebas o un endpoint equivalente). */
 export const CLIENTE_BEDROCK = 'CLIENTE_BEDROCK';
 
@@ -42,6 +62,13 @@ export interface LlamadaIa {
   ms?: number;
   /** Milisegundos hasta el primer token: lo que percibe quien espera. */
   ttftMs?: number;
+  /**
+   * Tokens leídos de la caché de prompt y tokens escritos en ella. Si la lectura
+   * es alta, el bloque cacheable (el catálogo) se está reusando y esa entrada
+   * cuesta una décima parte.
+   */
+  cacheLecturaTokens?: number;
+  cacheEscrituraTokens?: number;
   /**
    * `stream` cuando la respuesta se leyó por `ConverseStream` (sin riesgo de
    * timeout por socket inactivo) y `json` cuando se esperó la respuesta entera.
@@ -226,7 +253,7 @@ export class BedrockService {
    */
   private async conversarPorStream(
     sistema: string,
-    mensaje: string,
+    bloques: BloquePrompt[],
     maxTokens: number,
   ): Promise<string> {
     if (!this.habilitado) {
@@ -237,6 +264,8 @@ export class BedrockService {
     let primerToken: number | undefined;
     let entradaTokens: number | undefined;
     let salidaTokens: number | undefined;
+    let cacheLecturaTokens: number | undefined;
+    let cacheEscrituraTokens: number | undefined;
     let corte: string | undefined;
 
     try {
@@ -244,7 +273,7 @@ export class BedrockService {
         new ConverseStreamCommand({
           modelId: this.modelo,
           system: [{ text: sistema }],
-          messages: [{ role: 'user', content: [{ text: mensaje }] }],
+          messages: [{ role: 'user', content: contenidoDe(bloques) }],
           inferenceConfig: { maxTokens, temperature: 0.3 },
         }),
       )) as ConverseStreamCommandOutput;
@@ -258,8 +287,13 @@ export class BedrockService {
         }
         // El uso llega en el evento `metadata`, antes del cierre del mensaje.
         if (evento.metadata?.usage) {
-          entradaTokens = evento.metadata.usage.inputTokens ?? entradaTokens;
-          salidaTokens = evento.metadata.usage.outputTokens ?? salidaTokens;
+          const uso = evento.metadata.usage;
+          entradaTokens = uso.inputTokens ?? entradaTokens;
+          salidaTokens = uso.outputTokens ?? salidaTokens;
+          cacheLecturaTokens =
+            uso.cacheReadInputTokens ?? cacheLecturaTokens;
+          cacheEscrituraTokens =
+            uso.cacheWriteInputTokens ?? cacheEscrituraTokens;
         }
         if (evento.messageStop?.stopReason === 'max_tokens')
           corte = SIN_TOKENS;
@@ -276,6 +310,8 @@ export class BedrockService {
           en: new Date().toISOString(),
           entradaTokens,
           salidaTokens,
+          cacheLecturaTokens,
+          cacheEscrituraTokens,
           ms,
           ttftMs: primerToken,
           transporte: 'stream',
@@ -284,12 +320,14 @@ export class BedrockService {
       }
 
       this.logger.log(
-        `Bedrock stream ok en ${ms} ms · primer token ${primerToken ?? '?'} ms · entrada ${entradaTokens ?? '?'} · salida ${salidaTokens ?? '?'} tokens`,
+        `Bedrock stream ok en ${ms} ms · primer token ${primerToken ?? '?'} ms · entrada ${entradaTokens ?? '?'} · salida ${salidaTokens ?? '?'} · caché leída ${cacheLecturaTokens ?? 0} / escrita ${cacheEscrituraTokens ?? 0} tokens`,
       );
       this.registrar({
         ok: true,
         entradaTokens,
         salidaTokens,
+        cacheLecturaTokens,
+        cacheEscrituraTokens,
         ms,
         ttftMs: primerToken,
         transporte: 'stream',
@@ -309,10 +347,14 @@ export class BedrockService {
    */
   async generarJsonStream<T>(
     sistema: string,
-    mensaje: string,
+    bloques: BloquePrompt[] | string,
     maxTokens = 3000,
   ): Promise<T> {
-    const texto = await this.conversarPorStream(sistema, mensaje, maxTokens);
+    const texto = await this.conversarPorStream(
+      sistema,
+      typeof bloques === 'string' ? [{ texto: bloques }] : bloques,
+      maxTokens,
+    );
     return extraerJson<T>(texto);
   }
 
