@@ -278,6 +278,7 @@ model Medicamento {
   frecuencia String?
   activo     Boolean  @default(true)
   creadoEn   DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @default(now()) @updatedAt @map("actualizado_en")
 
   paciente Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
 

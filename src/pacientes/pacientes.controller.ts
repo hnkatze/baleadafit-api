@@ -31,11 +31,13 @@ import {
   CrearMedicamentoDto,
   CrearMedicionDto,
   CrearPacienteDto,
+  DetallePacienteQueryDto,
   RegistrarComidaPacienteDto,
   RegistrosDiarioQueryDto,
 } from './pacientes.dto.js';
 import {
   AdherenciaEntity,
+  MedicamentoCreadoEntity,
   MedicamentoEntity,
   FichaPacienteEntity,
   MedicionConImcEntity,
@@ -113,15 +115,16 @@ export class PacientesController {
   @ApiOperation({
     summary: 'Expediente del paciente',
     description:
-      'Datos clínicos y hábitos, restricciones, condiciones, medicación vigente, últimas 10 mediciones, próximas citas y planes.',
+      'Datos clínicos y hábitos, restricciones, condiciones, medicación, últimas 10 mediciones, próximas citas y planes. La medicación viaja vigente por defecto; con `incluirInactivos=true` se incluye también la dada de baja (baja lógica, con `activo`), así la UI puede reactivarla.',
   })
   @ApiSobreOk(PacienteDetalleEntity)
-  @ApiErrores(404)
+  @ApiErrores(400, 404)
   detalle(
     @UsuarioAct() u: UsuarioActual,
     @Param('id', ParseUUIDPipe) id: string,
+    @Query() q: DetallePacienteQueryDto,
   ) {
-    return this.service.detalle(id, u.nutricionistaId!);
+    return this.service.detalle(id, u.nutricionistaId!, q.incluirInactivos);
   }
 
   @Patch('pacientes/:id')
@@ -145,9 +148,10 @@ export class PacientesController {
   @ID_PACIENTE
   @ApiOperation({
     summary: 'Registrar medicamento',
-    description: 'Nombre obligatorio; dosis y frecuencia son opcionales.',
+    description:
+      'Nombre obligatorio; dosis y frecuencia son opcionales. Si el paciente ya tiene vigente un medicamento con el mismo nombre (sin distinguir mayúsculas ni espacios sobrantes), la respuesta 201 agrega `duplicadoDe` con el registro que ya existía: es un aviso, el alta se guarda igual.',
   })
-  @ApiSobreCreado(MedicamentoEntity)
+  @ApiSobreCreado(MedicamentoCreadoEntity)
   @ApiErrores(400, 404)
   crearMedicamento(
     @UsuarioAct() u: UsuarioActual,
@@ -162,7 +166,7 @@ export class PacientesController {
   @ApiOperation({
     summary: 'Editar medicamento',
     description:
-      'Permite corregir los datos o marcar `activo = false` para darlo de baja.',
+      'Permite corregir los datos o marcar `activo = false` para darlo de baja. Para limpiar `dosis` o `frecuencia` hay que mandar `null`; omitirlas conserva el valor guardado y el texto vacío responde 400.',
   })
   @ApiSobreOk(MedicamentoEntity)
   @ApiErrores(400, 404)

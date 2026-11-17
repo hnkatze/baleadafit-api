@@ -175,6 +175,12 @@ describe('PacientesService', () => {
       });
     });
 
+    it('el detalle incluye la medicación dada de baja cuando se pide', async () => {
+      await svc.detalle('p1', 'n1', true);
+      const { include } = prisma.paciente.findUnique.mock.calls[0][0];
+      expect(include.medicamentos).toEqual({ orderBy: { creadoEn: 'desc' } });
+    });
+
     it('el detalle devuelve las mediciones con imc y desempata por fecha de alta', async () => {
       prisma.paciente.findUnique.mockResolvedValue({
         id: 'p1',
@@ -413,6 +419,7 @@ describe('PacientesService', () => {
 
   describe('medicamentos', () => {
     it('registra un medicamento del paciente validando el acceso', async () => {
+      prisma.medicamento.findMany.mockResolvedValue([]);
       prisma.medicamento.create.mockResolvedValue({ id: 'med1' });
       await svc.crearMedicamento('p1', 'n1', {
         nombre: 'Metformina',
@@ -421,6 +428,42 @@ describe('PacientesService', () => {
       expect(prisma.medicamento.create).toHaveBeenCalledWith({
         data: { nombre: 'Metformina', dosis: '500 mg', pacienteId: 'p1' },
       });
+    });
+
+    it('avisa cuando el paciente ya tiene vigente un medicamento con el mismo nombre', async () => {
+      prisma.medicamento.findMany.mockResolvedValue([
+        { id: 'med1', nombre: 'Metformina' },
+      ]);
+      prisma.medicamento.create.mockResolvedValue({
+        id: 'med2',
+        nombre: '  metformina ',
+      });
+
+      const r = await svc.crearMedicamento('p1', 'n1', {
+        nombre: '  metformina ',
+      });
+
+      expect(r).toEqual({
+        id: 'med2',
+        nombre: '  metformina ',
+        duplicadoDe: { id: 'med1', nombre: 'Metformina' },
+      });
+      // Solo se compara contra la medicación vigente del paciente.
+      expect(prisma.medicamento.findMany).toHaveBeenCalledWith({
+        where: { pacienteId: 'p1', activo: true },
+        select: { id: true, nombre: true },
+      });
+    });
+
+    it('no agrega el aviso cuando el nombre no se repite', async () => {
+      prisma.medicamento.findMany.mockResolvedValue([
+        { id: 'med1', nombre: 'Enalapril 10 mg' },
+      ]);
+      prisma.medicamento.create.mockResolvedValue({ id: 'med2' });
+
+      await expect(
+        svc.crearMedicamento('p1', 'n1', { nombre: 'Metformina' }),
+      ).resolves.toEqual({ id: 'med2' });
     });
 
     it('no registra medicamentos para pacientes ajenos', async () => {
@@ -450,6 +493,23 @@ describe('PacientesService', () => {
         data: { activo: false },
       });
       expect(prisma.medicamento.delete).not.toHaveBeenCalled();
+    });
+
+    it('limpia dosis y frecuencia cuando se manda null', async () => {
+      prisma.medicamento.findUnique.mockResolvedValue({
+        id: 'med1',
+        pacienteId: 'p1',
+      });
+
+      await svc.actualizarMedicamento('med1', 'n1', {
+        dosis: null,
+        frecuencia: null,
+      });
+
+      expect(prisma.medicamento.update).toHaveBeenCalledWith({
+        where: { id: 'med1' },
+        data: { dosis: null, frecuencia: null },
+      });
     });
 
     it('no permite tocar medicamentos de pacientes de otra nutricionista', async () => {

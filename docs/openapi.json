@@ -780,7 +780,7 @@
     },
     "/pacientes/{id}": {
       "get": {
-        "description": "Datos clínicos y hábitos, restricciones, condiciones, medicación vigente, últimas 10 mediciones, próximas citas y planes.",
+        "description": "Datos clínicos y hábitos, restricciones, condiciones, medicación, últimas 10 mediciones, próximas citas y planes. La medicación viaja vigente por defecto; con `incluirInactivos=true` se incluye también la dada de baja (baja lógica, con `activo`), así la UI puede reactivarla.",
         "operationId": "PacientesController_detalle",
         "parameters": [
           {
@@ -791,6 +791,15 @@
             "schema": {
               "format": "uuid",
               "type": "string"
+            }
+          },
+          {
+            "name": "incluirInactivos",
+            "required": false,
+            "in": "query",
+            "description": "Trae también la medicación con `activo = false`.",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -812,6 +821,33 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/PacienteDetalleEntity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
                     }
                   }
                 }
@@ -1239,7 +1275,7 @@
     },
     "/pacientes/{id}/medicamentos": {
       "post": {
-        "description": "Nombre obligatorio; dosis y frecuencia son opcionales.",
+        "description": "Nombre obligatorio; dosis y frecuencia son opcionales. Si el paciente ya tiene vigente un medicamento con el mismo nombre (sin distinguir mayúsculas ni espacios sobrantes), la respuesta 201 agrega `duplicadoDe` con el registro que ya existía: es un aviso, el alta se guarda igual.",
         "operationId": "PacientesController_crearMedicamento",
         "parameters": [
           {
@@ -1280,7 +1316,7 @@
                       "example": true
                     },
                     "data": {
-                      "$ref": "#/components/schemas/MedicamentoEntity"
+                      "$ref": "#/components/schemas/MedicamentoCreadoEntity"
                     }
                   }
                 }
@@ -1409,7 +1445,7 @@
     },
     "/medicamentos/{id}": {
       "patch": {
-        "description": "Permite corregir los datos o marcar `activo = false` para darlo de baja.",
+        "description": "Permite corregir los datos o marcar `activo = false` para darlo de baja. Para limpiar `dosis` o `frecuencia` hay que mandar `null`; omitirlas conserva el valor guardado y el texto vacío responde 400.",
         "operationId": "PacientesController_actualizarMedicamento",
         "parameters": [
           {
@@ -8792,6 +8828,11 @@
           "creadoEn": {
             "format": "date-time",
             "type": "string"
+          },
+          "actualizadoEn": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Último cambio del registro (alta, edición o baja)."
           }
         },
         "required": [
@@ -8801,7 +8842,8 @@
           "dosis",
           "frecuencia",
           "activo",
-          "creadoEn"
+          "creadoEn",
+          "actualizadoEn"
         ]
       },
       "SituacionFichaEntity": {
@@ -9653,7 +9695,7 @@
             }
           },
           "medicamentos": {
-            "description": "Medicación vigente (`activo`), la más reciente primero.",
+            "description": "Medicación del paciente, la más reciente primero. Solo la vigente, salvo\nque se pida `GET /pacientes/{id}?incluirInactivos=true`.",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MedicamentoEntity"
@@ -9887,6 +9929,73 @@
           }
         }
       },
+      "MedicamentoDuplicadoEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Metformina"
+          }
+        },
+        "required": [
+          "id",
+          "nombre"
+        ]
+      },
+      "MedicamentoCreadoEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "pacienteId": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Metformina"
+          },
+          "dosis": {
+            "type": "string",
+            "nullable": true,
+            "example": "500 mg"
+          },
+          "frecuencia": {
+            "type": "string",
+            "nullable": true,
+            "example": "Cada 12 horas con comida"
+          },
+          "activo": {
+            "type": "boolean",
+            "description": "`false` cuando se dio de baja lógica; el historial se conserva."
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "actualizadoEn": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Último cambio del registro (alta, edición o baja)."
+          },
+          "duplicadoDe": {
+            "$ref": "#/components/schemas/MedicamentoDuplicadoEntity"
+          }
+        },
+        "required": [
+          "id",
+          "pacienteId",
+          "nombre",
+          "dosis",
+          "frecuencia",
+          "activo",
+          "creadoEn",
+          "actualizadoEn"
+        ]
+      },
       "CrearMedicamentoDto": {
         "type": "object",
         "properties": {
@@ -9922,12 +10031,18 @@
           },
           "dosis": {
             "type": "string",
+            "nullable": true,
+            "description": "`null` limpia el campo.",
             "example": "500 mg",
+            "minLength": 1,
             "maxLength": 80
           },
           "frecuencia": {
             "type": "string",
+            "nullable": true,
+            "description": "`null` limpia el campo.",
             "example": "Cada 12 horas con comida",
+            "minLength": 1,
             "maxLength": 120
           },
           "activo": {

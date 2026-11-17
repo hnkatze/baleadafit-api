@@ -1,8 +1,10 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { PaginacionDto } from '../common/paginacion.js';
 import {
+  ActualizarMedicamentoDto,
   ActualizarPacienteDto,
   CrearPacienteDto,
+  DetallePacienteQueryDto,
   RegistrosDiarioQueryDto,
 } from './pacientes.dto.js';
 
@@ -72,5 +74,44 @@ describe('alta y baja lógica del paciente', () => {
     expect(
       JSON.stringify((error as BadRequestException).getResponse()),
     ).toContain('property activo should not exist');
+  });
+});
+
+describe('limpieza y lectura de la medicación', () => {
+  const cuerpo = (valor: unknown) =>
+    pipe.transform(valor, { type: 'body', metatype: ActualizarMedicamentoDto });
+
+  it('acepta null para limpiar dosis y frecuencia', async () => {
+    const dto = await cuerpo({ dosis: null, frecuencia: null });
+    expect(dto).toMatchObject({ dosis: null, frecuencia: null });
+  });
+
+  it('rechaza el texto vacío: para limpiar hay que mandar null', async () => {
+    await expect(cuerpo({ dosis: '' })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    await expect(cuerpo({ frecuencia: '   ' })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+  });
+
+  it('sigue aceptando la edición parcial de nombre y activo', async () => {
+    const dto = await cuerpo({ nombre: 'Metformina', activo: false });
+    expect(dto).toMatchObject({ nombre: 'Metformina', activo: false });
+    expect(dto.dosis).toBeUndefined();
+  });
+
+  it('el expediente acepta incluirInactivos en el query y sigue siendo opcional', async () => {
+    const q = await pipe.transform(
+      { incluirInactivos: 'true' },
+      { type: 'query', metatype: DetallePacienteQueryDto },
+    );
+    expect(q.incluirInactivos).toBe(true);
+
+    const sinParametro = await pipe.transform(
+      {},
+      { type: 'query', metatype: DetallePacienteQueryDto },
+    );
+    expect(sinParametro.incluirInactivos).toBeUndefined();
   });
 });

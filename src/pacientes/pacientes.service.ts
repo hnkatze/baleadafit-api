@@ -47,6 +47,14 @@ function camposDuplicados(e: unknown): string[] | null {
     : [];
 }
 
+/**
+ * Nombre de fármaco comparable: el catálogo no existe, así que "Metformina",
+ * "metformina " y "METFORMINA" son el mismo registro para el aviso de duplicado.
+ */
+function normalizarNombre(nombre: string): string {
+  return nombre.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
 @Injectable()
 export class PacientesService {
   constructor(
@@ -95,16 +103,23 @@ export class PacientesService {
     );
   }
 
-  async detalle(id: string, nutricionistaId: string) {
+  async detalle(
+    id: string,
+    nutricionistaId: string,
+    incluirInactivos = false,
+  ) {
     await this.acceso.pacienteDeNutricionista(id, nutricionistaId);
     const paciente = await this.prisma.paciente.findUnique({
       where: { id },
       include: {
         restricciones: { include: { restriccion: true } },
         condiciones: { include: { condicion: true } },
-        /** Solo la medicación vigente: la baja lógica conserva el historial. */
+        /**
+         * La baja lógica conserva el historial: por defecto viaja solo la
+         * medicación vigente y `incluirInactivos` la trae toda.
+         */
         medicamentos: {
-          where: { activo: true },
+          ...(incluirInactivos ? {} : { where: { activo: true } }),
           orderBy: { creadoEn: 'desc' },
         },
         // Dos mediciones del mismo día se desempatan por alta, para que la
@@ -271,9 +286,24 @@ export class PacientesService {
     dto: CrearMedicamentoDto,
   ) {
     await this.acceso.pacienteDeNutricionista(pacienteId, nutricionistaId);
-    return this.prisma.medicamento.create({
+
+    // Aviso, no bloqueo: el nombre de un fármaco es texto libre, así que se
+    // compara normalizado (sin extremos, minúsculas, espacios colapsados)
+    // contra la medicación vigente y el registro se guarda igual.
+    const vigentes = await this.prisma.medicamento.findMany({
+      where: { pacienteId, activo: true },
+      select: { id: true, nombre: true },
+    });
+    const creado = await this.prisma.medicamento.create({
       data: { ...dto, pacienteId },
     });
+    const repetido = vigentes.find(
+      (m) => normalizarNombre(m.nombre) === normalizarNombre(dto.nombre),
+    );
+
+    return repetido
+      ? { ...creado, duplicadoDe: { id: repetido.id, nombre: repetido.nombre } }
+      : creado;
   }
 
   async actualizarMedicamento(

@@ -62,9 +62,28 @@ export class MedicamentoEntity {
   dosis: string | null;
   /** @example "Cada 12 horas con comida" */
   frecuencia: string | null;
-  /** `false` cuando se dio de baja lógica; el historial se conserva. */
+  /**
+   * `false` cuando se dio de baja lógica; el historial se conserva.
+   */
   activo: boolean;
   creadoEn: Date;
+  /** Último cambio del registro (alta, edición o baja). */
+  actualizadoEn: Date;
+}
+
+/** Medicamento vigente con el que choca el nombre que se acaba de cargar. */
+export class MedicamentoDuplicadoEntity {
+  id: string;
+  /** @example "Metformina" */
+  nombre: string;
+}
+
+/**
+ * Respuesta del alta: el medicamento guardado y, si ya había uno vigente con
+ * el mismo nombre, el aviso `duplicadoDe`. No bloquea el registro.
+ */
+export class MedicamentoCreadoEntity extends MedicamentoEntity {
+  duplicadoDe?: MedicamentoDuplicadoEntity;
 }
 
 export class MedicionEntity {
@@ -264,7 +283,10 @@ export class CitaBasicaEntity extends CitaAgendaEntity {
 export class PacienteDetalleEntity extends PacienteConCondicionesEntity {
   /** Últimas 10 mediciones, de la más reciente a la más antigua, con IMC. */
   mediciones: MedicionConImcEntity[];
-  /** Medicación vigente (`activo`), la más reciente primero. */
+  /**
+   * Medicación del paciente, la más reciente primero. Solo la vigente, salvo
+   * que se pida `GET /pacientes/{id}?incluirInactivos=true`.
+   */
   medicamentos: MedicamentoEntity[];
   /** Próximas 3 citas. */
   citas: CitaBasicaEntity[];

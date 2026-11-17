@@ -418,7 +418,57 @@ export class CrearMedicamentoDto {
   frecuencia?: string;
 }
 
-export class ActualizarMedicamentoDto extends PartialType(CrearMedicamentoDto) {
+const recortarTexto = ({ value }: { value: unknown }): unknown =>
+  typeof value === 'string' ? value.trim() : value;
+
+/**
+ * Query del expediente: incluye la medicación dada de baja cuando se pide.
+ * Mismo nombre y forma que el query de `GET /pacientes`.
+ */
+export class DetallePacienteQueryDto {
+  /** Trae también la medicación con `activo = false`. */
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  incluirInactivos?: boolean;
+}
+
+/**
+ * Edición parcial del medicamento.
+ *
+ * `dosis` y `frecuencia` aceptan `null` para limpiar el campo; omitirlas
+ * conserva el valor guardado y el texto vacío se rechaza para no dejar
+ * registros con `""` en lugar de `null`.
+ */
+export class ActualizarMedicamentoDto {
+  /** @example "Metformina" */
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  nombre?: string;
+
+  /**
+   * `null` limpia el campo.
+   * @example "500 mg"
+   */
+  @IsOptional()
+  @Transform(recortarTexto)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  dosis?: string | null;
+
+  /**
+   * `null` limpia el campo.
+   * @example "Cada 12 horas con comida"
+   */
+  @IsOptional()
+  @Transform(recortarTexto)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  frecuencia?: string | null;
+
   /**
    * `false` lo saca del expediente activo sin borrar el historial.
    * @example false
