@@ -3,6 +3,7 @@ import { PaginacionDto } from '../common/paginacion.js';
 import {
   ActualizarMedicamentoDto,
   ActualizarPacienteDto,
+  CrearMedicamentoDto,
   CrearPacienteDto,
   DetallePacienteQueryDto,
   RegistrosDiarioQueryDto,
@@ -101,6 +102,12 @@ describe('limpieza y lectura de la medicación', () => {
     expect(dto.dosis).toBeUndefined();
   });
 
+  it('`nombre: null` responde 400 en lugar de romper en la base', async () => {
+    await expect(cuerpo({ nombre: null })).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+  });
+
   it('el expediente acepta incluirInactivos en el query y sigue siendo opcional', async () => {
     const q = await pipe.transform(
       { incluirInactivos: 'true' },
@@ -113,5 +120,29 @@ describe('limpieza y lectura de la medicación', () => {
       { type: 'query', metatype: DetallePacienteQueryDto },
     );
     expect(sinParametro.incluirInactivos).toBeUndefined();
+  });
+});
+
+describe('alta de medicamento', () => {
+  const alta = (valor: unknown) =>
+    pipe.transform(valor, { type: 'body', metatype: CrearMedicamentoDto });
+
+  it('no guarda dosis ni frecuencia vacías', async () => {
+    await expect(
+      alta({ nombre: 'Metformina', dosis: '' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      alta({ nombre: 'Metformina', frecuencia: '   ' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('recorta los espacios sobrantes de dosis y frecuencia', async () => {
+    const dto = await alta({
+      nombre: 'Metformina',
+      dosis: '  850 mg  ',
+      frecuencia: ' cada 12 h ',
+    });
+    expect(dto.dosis).toBe('850 mg');
+    expect(dto.frecuencia).toBe('cada 12 h');
   });
 });

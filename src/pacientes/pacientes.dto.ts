@@ -16,6 +16,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 import {
   EstadoFisiologico,
@@ -398,6 +399,9 @@ export class CrearMedicionDto {
   notas?: string;
 }
 
+const recortarTexto = ({ value }: { value: unknown }): unknown =>
+  typeof value === 'string' ? value.trim() : value;
+
 export class CrearMedicamentoDto {
   /** @example "Metformina" */
   @IsString()
@@ -407,19 +411,20 @@ export class CrearMedicamentoDto {
 
   /** @example "500 mg" */
   @IsOptional()
+  @Transform(recortarTexto)
   @IsString()
+  @MinLength(1)
   @MaxLength(80)
   dosis?: string;
 
   /** @example "Cada 12 horas con comida" */
   @IsOptional()
+  @Transform(recortarTexto)
   @IsString()
+  @MinLength(1)
   @MaxLength(120)
   frecuencia?: string;
 }
-
-const recortarTexto = ({ value }: { value: unknown }): unknown =>
-  typeof value === 'string' ? value.trim() : value;
 
 /**
  * Query del expediente: incluye la medicación dada de baja cuando se pide.
@@ -441,7 +446,7 @@ export class DetallePacienteQueryDto {
  */
 export class ActualizarMedicamentoDto {
   /** @example "Metformina" */
-  @IsOptional()
+  @ValidateIf((_, valor: unknown) => valor !== undefined)
   @IsString()
   @MinLength(2)
   @MaxLength(120)

@@ -10008,11 +10008,13 @@
           "dosis": {
             "type": "string",
             "example": "500 mg",
+            "minLength": 1,
             "maxLength": 80
           },
           "frecuencia": {
             "type": "string",
             "example": "Cada 12 horas con comida",
+            "minLength": 1,
             "maxLength": 120
           }
         },
