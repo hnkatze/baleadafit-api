@@ -178,6 +178,16 @@ La nutricionista escribe y audita el diario del paciente en el expediente:
 - **Autoría:** `registro_comida.autor` guarda el **último** actor que escribió la fila; no hay historial. Si el paciente vuelve a marcar una comida que corrigió la nutricionista, el registro regresa a `autor = PACIENTE`. Esa es la razón por la que `GET /pacientes/{id}/adherencia` y `GET /pacientes/{id}/ficha` muestran el autor por registro.
 - Sin registros la adherencia es `null` con `total = 0`, no `0 %`: un plan `ACTIVO` no genera comidas cumplidas por sí solo.
 
+### Medicamentos
+El medicamento es un registro clínico dentro del expediente, no un módulo con pantalla propia: no hay catálogo de fármacos, interacciones ni prescriptor, así que la API **registra** lo que el paciente toma, no prescribe.
+
+- **Lectura embebida, sin `GET` propio.** La medicación sale en `GET /pacientes/{id}` (`medicamentos[]`) y en `GET /pacientes/{id}/ficha` (`situacion.medicacion[]`). Ambas filtran `activo = true` y ordenan por `creadoEn` descendente. Con `GET /pacientes/{id}?incluirInactivos=true` el expediente devuelve también la medicación dada de baja, que es la única forma de volver a activarla. La ficha siempre muestra solo lo vigente.
+- **Baja lógica.** `DELETE /medicamentos/{id}` responde 200 con el medicamento y deja `activo = false`: nunca borra, para conservar el historial. Reactivar es `PATCH /medicamentos/{id}` con `{"activo": true}`.
+- **Limpieza de campos.** `PATCH` con `{"dosis": null}` o `{"frecuencia": null}` limpia el campo; omitirlo conserva el valor guardado y el texto vacío responde 400. Una sola forma de limpiar evita registros con `""`.
+- **Fechas y autoría.** Cada medicamento guarda `creadoEn` y `actualizadoEn` (último cambio). No hay columna de autor: el registro pertenece al paciente y cada paciente tiene una sola nutricionista, que es quien escribe.
+- **Duplicados.** `POST /pacientes/{id}/medicamentos` que repite un medicamento vigente del mismo paciente compara el nombre normalizado (sin extremos, en minúsculas, espacios internos colapsados) y agrega `duplicadoDe: {id, nombre}` en la respuesta 201. Es aviso, no bloqueo: el nombre de un fármaco es texto libre.
+- **Aviso clínico.** El recomendador recibe la medicación vigente en el contexto clínico del paciente, como texto `nombre dosis frecuencia` (ver `### Recomendador híbrido`).
+
 ---
 
 ## 7. Correr en local
@@ -314,7 +324,7 @@ Referencia para no romper el contrato. El esquema completo está en `docs/openap
 | #6 Inicio de la nutricionista | `GET /dashboard` |
 | #7 Lista de pacientes | `GET /pacientes?q=` |
 | #8 Crear/editar paciente | `POST /pacientes`, `PATCH /pacientes/{id}`, `DELETE /pacientes/{id}`, `GET /restricciones`. El `DELETE` es baja lógica; `PATCH` con `{activo: true}` reactiva al paciente |
-| #9 Expediente y mediciones | `GET /pacientes/{id}`, `GET/POST /pacientes/{id}/mediciones`, `GET /pacientes/{id}/requerimiento`, `GET /pacientes/{id}/adherencia`, `PUT/GET /pacientes/{id}/registros` |
+| #9 Expediente y mediciones | `GET /pacientes/{id}` (`?incluirInactivos=true` trae la medicación dada de baja), `GET/POST /pacientes/{id}/mediciones`, `PATCH/DELETE /medicamentos/{id}`, `GET /pacientes/{id}/requerimiento`, `GET /pacientes/{id}/adherencia`, `PUT/GET /pacientes/{id}/registros` |
 | #10 Catálogo | `GET /alimentos`, `POST/PATCH /alimentos` |
 | #11 Generar plan | `POST /pacientes/{id}/planes/generar` |
 | #12 Editar y aprobar plan | `GET/PATCH /planes/{id}`, `PUT /planes/{id}/tiempos/{tipo}/items`, `POST /planes/{id}/activar`, `DELETE /planes/{id}` |
