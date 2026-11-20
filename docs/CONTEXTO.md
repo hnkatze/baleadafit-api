@@ -102,7 +102,8 @@ src/
   ia/                  cliente de Bedrock
   planes/              recomendador híbrido y gestión de planes
   citas/               agenda con validación de choques
-  mi-cuenta/           endpoints /me del paciente
+  mi-cuenta/           endpoints /me del paciente y el perfil propio de la nutricionista
+  admin/               aprobación de perfiles de nutricionista (solo ADMIN_CORREOS)
   dashboard/           GET / (salud) y /dashboard
   testing/             crearPrismaMock() para pruebas
   generated/           cliente de Prisma (ignorado por git)
@@ -139,13 +140,17 @@ Cada módulo sigue la misma forma: `*.dto.ts` (entrada, con validaciones), `*.en
 ### Autenticación y roles (`src/auth`)
 - El guard es **global**: toda ruta requiere `Authorization: Bearer <ID token>`, salvo las marcadas con `@Public()`.
 - El rol se resuelve así:
-  1. Si el `uid` es de una nutricionista, el rol es `nutricionista`.
-  2. Si es de un paciente activo, el rol es `paciente`.
-  3. Si el correo está verificado y coincide con un paciente sin `firebase_uid`, se **vincula** y el rol es `paciente`.
-  4. Si nada coincide, el rol es `sin_perfil`.
+  1. Si el `uid` es de una nutricionista **aprobada**, el rol es `nutricionista`.
+  2. Si es de una nutricionista con `estado` `PENDIENTE` o `RECHAZADO`, el rol es `nutricionista_pendiente`.
+  3. Si es de un paciente activo, el rol es `paciente`.
+  4. Si el correo está verificado y coincide con un paciente sin `firebase_uid`, se **vincula** y el rol es `paciente`.
+  5. Si nada coincide, el rol es `sin_perfil`.
 - `@Roles('nutricionista')` restringe el acceso. Sin ese decorador basta con estar autenticado.
-- `GET /auth/me` es la primera llamada de la app y decide la navegación según `rol`.
-- **Modo dev:** con `AUTH_DEV_BYPASS=true` (se ignora en producción) se acepta `Bearer dev:<uid>:<correo>`.
+- **`nutricionista_pendiente` es lo que hace que la aprobación bloquee de verdad.** Los `@Roles('nutricionista')` ya escritos lo rechazan con `403 SIN_PERMISO` sin tocar un controller. Si la aprobación se implementara como una columna sin cambiar el rol, no bloquearía nada.
+- **`@SoloAdmin()`** restringe una ruta a los correos de `ADMIN_CORREOS` (lista separada por comas, sin distinguir mayúsculas). Es **ortogonal** al rol: un `UsuarioActual` lleva `esAdmin` aparte, así una nutricionista puede administrar sin perder su `nutricionistaId`.
+- `POST /auth/registro-nutricionista` crea el perfil en estado **`PENDIENTE`** y exige **correo verificado** (el token trae `email_verified`; con Google siempre está, con correo y contraseña hay que confirmar el enlace de Firebase) y **18 años cumplidos** (`fechaNacimiento`). La verificación de correo es de Firebase: no hay envío propio ni SES.
+- `GET /auth/me` es la primera llamada de la app y decide la navegación según `rol`. Un `nutricionista_pendiente` recibe su `perfil` completo, con `estado` adentro, para que la app muestre el estado de revisión en vez de una pantalla vacía.
+- **Modo dev:** con `AUTH_DEV_BYPASS=true` (se ignora en producción) se acepta `Bearer dev:<uid>:<correo>`. Ese camino devuelve `emailVerificado: true` siempre, así que no sirve para probar el 403 por correo sin verificar.
 
 ### Aislamiento
 Una nutricionista **solo** ve a sus pacientes y planes. `AccesoService` responde 404, no 403, para no revelar que el recurso existe.
@@ -208,7 +213,7 @@ Para probar sin Firebase: `AUTH_DEV_BYPASS=true` en `.env`.
 
 | Comando | Para qué |
 |---|---|
-| `npm test` | 79 pruebas unitarias |
+| `npm test` | 334 pruebas unitarias |
 | `npm run test:e2e` | 8 pruebas e2e (sin BD) |
 | `npm run test:cov` | Cobertura de la lógica (~86 % de líneas) |
 | `npm run lint` | oxlint |
@@ -320,7 +325,7 @@ Referencia para no romper el contrato. El esquema completo está en `docs/openap
 |---|---|
 | #3 Cliente HTTP | Todos, con `Authorization: Bearer <ID token>` |
 | #4 Login y rol | `GET /auth/me` |
-| #5 Registro de nutricionista | `POST /auth/registro-nutricionista` |
+| #5 Registro de nutricionista | `POST /auth/registro-nutricionista` (exige correo verificado, `fechaNacimiento` y 18 años; el perfil queda en `PENDIENTE`). El perfil no se habilita solo: lo aprueba un admin |
 | #6 Inicio de la nutricionista | `GET /dashboard` |
 | #7 Lista de pacientes | `GET /pacientes?q=` |
 | #8 Crear/editar paciente | `POST /pacientes`, `PATCH /pacientes/{id}`, `DELETE /pacientes/{id}`, `GET /restricciones`. El `DELETE` es baja lógica; `PATCH` con `{activo: true}` reactiva al paciente |
@@ -332,7 +337,8 @@ Referencia para no romper el contrato. El esquema completo está en `docs/openap
 | #14 Hoy del paciente | `GET /me/hoy`, `PUT /me/registros` |
 | #15 Mi plan | `GET /me/plan` |
 | #16 Progreso | `GET /me/mediciones` |
-| #17 Citas y perfil | `GET /me/citas`, `GET /auth/me` |
+| #17 Citas y perfil | `GET /me/citas`, `GET /auth/me`, `PATCH /me/perfil` |
+| Aprobación de perfiles (portal web) | `GET /admin/nutricionistas?estado=`, `PATCH /admin/nutricionistas/{id}/estado`. Requiere `@SoloAdmin()`: el correo tiene que estar en `ADMIN_CORREOS` |
 
 Backlog completo de la app: 21 issues (S1: base, tema, cliente, login, onboarding · S2: inicio, pacientes, formulario, expediente, catálogo · S3: generar y editar plan, Hoy, Mi plan · S4: agenda, progreso, citas/perfil, pruebas, APK · futuro: push y foto).
 

@@ -3,7 +3,7 @@
   "paths": {
     "/auth/me": {
       "get": {
-        "description": "Primera llamada de la app después del login. Según `rol` muestra la navegación de nutricionista, la del paciente o el registro (`sin_perfil`).",
+        "description": "Primera llamada de la app después del login. Según `rol` muestra la navegación de nutricionista, la del paciente, el estado de revisión (`nutricionista_pendiente`) o el registro (`sin_perfil`).",
         "operationId": "AuthController_me",
         "parameters": [],
         "responses": {
@@ -71,7 +71,7 @@
     },
     "/auth/registro-nutricionista": {
       "post": {
-        "description": "Crea el perfil de nutricionista para una cuenta de Firebase sin perfil. Usa el uid y el correo del token. Exige el correo verificado: con Google siempre lo está, con correo y contraseña hay que confirmar el enlace que envía Firebase.",
+        "description": "Crea el perfil de nutricionista para una cuenta de Firebase sin perfil. Usa el uid y el correo del token. Exige el correo verificado: con Google siempre lo está, con correo y contraseña hay que confirmar el enlace que envía Firebase. El perfil queda en estado `PENDIENTE`: el acceso a datos se habilita cuando un administrador lo aprueba.",
         "operationId": "AuthController_registrarNutricionista",
         "parameters": [],
         "requestBody": {
@@ -225,6 +225,290 @@
         "summary": "Registrar nutricionista",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/admin/nutricionistas": {
+      "get": {
+        "description": "Sin `estado` devuelve los `PENDIENTE`, que son los que llevan más tiempo esperando. Van del más viejo al más nuevo por `creadoEn`.",
+        "operationId": "AdminController_listar",
+        "parameters": [
+          {
+            "name": "estado",
+            "required": false,
+            "in": "query",
+            "description": "Estado de aprobación a listar. Por defecto `PENDIENTE`: son los perfiles\nque llevan más tiempo esperando revisión.",
+            "schema": {
+              "example": "PENDIENTE",
+              "type": "string",
+              "enum": [
+                "PENDIENTE",
+                "APROBADO",
+                "RECHAZADO"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/NutricionistaAdminEntity"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Perfiles de nutricionista por estado",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/nutricionistas/{id}/estado": {
+      "patch": {
+        "description": "Con `RECHAZADO` el `motivo` es obligatorio y queda guardado en el perfil. Con `APROBADO` el motivo anterior se limpia y el `motivo` que venga en el body se ignora.",
+        "operationId": "AdminController_cambiarEstado",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID del perfil de nutricionista",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarEstadoNutricionistaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NutricionistaAdminEntity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no pertenece al usuario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_ENCONTRADO",
+                        "mensaje": "No existe o no pertenece al usuario."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aprobar o rechazar un perfil",
+        "tags": [
+          "admin"
         ]
       }
     },
@@ -6789,6 +7073,138 @@
         ]
       }
     },
+    "/me/perfil": {
+      "patch": {
+        "description": "Corrige `nombre`, `telefono` y `colegiado` del perfil propio. El perfil sale del token: no hay forma de editar el de otra persona. Para limpiar `telefono` o `colegiado` hay que mandar `null`; omitirlos conserva el valor guardado y el texto vacío responde 400. `nombre` no se puede limpiar. `correo`, `estado` y `firebaseUid` no son editables: mandarlos responde 400. Un perfil `PENDIENTE` o `RECHAZADO` también puede editar el suyo.",
+        "operationId": "MiPerfilController_actualizar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPerfilDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/NutricionistaEntity"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "VALIDACION",
+                        "mensaje": "Datos inválidos."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token o es inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "NO_AUTENTICADO",
+                        "mensaje": "Falta el token o es inválido."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok",
+                    "error"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "$ref": "#/components/schemas/DetalleFallaEntity",
+                      "example": {
+                        "codigo": "SIN_PERMISO",
+                        "mensaje": "Sin acceso: el rol del usuario no alcanza o el correo no está verificado."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Editar mi perfil",
+        "tags": [
+          "mi cuenta (nutricionista)"
+        ]
+      }
+    },
     "/me/dispositivos": {
       "post": {
         "description": "Guarda el token de FCM del dispositivo que hace la llamada. Es idempotente sobre el token: el primer registro responde `201` y los siguientes refrescan el mismo registro con `200`, sin duplicar. Si el token estaba en otra cuenta, pasa a esta. El dueño y el rol los pone el servidor.",
@@ -7239,6 +7655,14 @@
     {
       "name": "mi cuenta (paciente)",
       "description": "Lo que ve y registra el paciente en la app"
+    },
+    {
+      "name": "mi cuenta (nutricionista)",
+      "description": "Perfil propio: la nutricionista corrige sus datos de contacto"
+    },
+    {
+      "name": "admin",
+      "description": "Aprobación de perfiles de nutricionista"
     }
   ],
   "servers": [],
@@ -7305,17 +7729,18 @@
           "rol": {
             "enum": [
               "nutricionista",
+              "nutricionista_pendiente",
               "paciente",
               "sin_perfil"
             ],
             "type": "string",
-            "description": "Define qué navegación muestra la app."
+            "description": "Define qué navegación muestra la app. `nutricionista_pendiente` es un perfil registrado que todavía no fue aprobado: la app muestra el estado de revisión y las rutas de datos responden 403."
           },
           "perfil": {
             "type": "object",
             "additionalProperties": true,
             "nullable": true,
-            "description": "Nutricionista, o paciente con su nutricionista y restricciones. null si no tiene perfil."
+            "description": "Nutricionista (con `estado` y `fechaNacimiento`), o paciente con su nutricionista y restricciones. null si no tiene perfil."
           }
         },
         "required": [
@@ -7358,9 +7783,24 @@
           "hasMore"
         ]
       },
+      "EstadoNutricionista": {
+        "type": "string",
+        "enum": [
+          "PENDIENTE",
+          "APROBADO",
+          "RECHAZADO"
+        ]
+      },
       "NutricionistaEntity": {
         "type": "object",
         "properties": {
+          "estado": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoNutricionista"
+              }
+            ]
+          },
           "id": {
             "type": "string"
           },
@@ -7384,18 +7824,26 @@
             "type": "string",
             "nullable": true
           },
+          "fechaNacimiento": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "example": "1990-03-15"
+          },
           "creadoEn": {
             "format": "date-time",
             "type": "string"
           }
         },
         "required": [
+          "estado",
           "id",
           "firebaseUid",
           "nombre",
           "correo",
           "colegiado",
           "telefono",
+          "fechaNacimiento",
           "creadoEn"
         ]
       },
@@ -7418,10 +7866,101 @@
             "type": "string",
             "example": "+504 9999-0000",
             "maxLength": 30
+          },
+          "fechaNacimiento": {
+            "type": "string",
+            "description": "Formato YYYY-MM-DD. Se rechaza a quien no tenga al menos 18 años cumplidos.",
+            "example": "1990-03-15"
           }
         },
         "required": [
-          "nombre"
+          "nombre",
+          "fechaNacimiento"
+        ]
+      },
+      "NutricionistaAdminEntity": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EstadoNutricionista"
+              }
+            ]
+          },
+          "id": {
+            "type": "string",
+            "example": "7c1f6a2e-1b2c-4d5e-8f90-1234567890ab"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Lic. Sofía Herrera"
+          },
+          "correo": {
+            "type": "string",
+            "example": "sofia@clinica.hn"
+          },
+          "colegiado": {
+            "type": "string",
+            "nullable": true,
+            "example": "1402"
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true,
+            "example": "+504 9999-0000"
+          },
+          "motivoRechazo": {
+            "type": "string",
+            "nullable": true,
+            "description": "Por qué se rechazó. null mientras el perfil no esté rechazado."
+          },
+          "fechaNacimiento": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "example": "1990-03-15"
+          },
+          "creadoEn": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Cuándo se registró: los más viejos son los que más esperaron."
+          }
+        },
+        "required": [
+          "estado",
+          "id",
+          "nombre",
+          "correo",
+          "colegiado",
+          "telefono",
+          "motivoRechazo",
+          "fechaNacimiento",
+          "creadoEn"
+        ]
+      },
+      "CambiarEstadoNutricionistaDto": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "type": "string",
+            "description": "Estado nuevo del perfil.",
+            "example": "RECHAZADO",
+            "enum": [
+              "PENDIENTE",
+              "APROBADO",
+              "RECHAZADO"
+            ]
+          },
+          "motivo": {
+            "type": "string",
+            "description": "Obligatorio con `RECHAZADO`: la nutricionista necesita saber qué corregir.\nCon `APROBADO` se ignora y el motivo guardado se limpia.",
+            "example": "El número de colegiatura no coincide con el del Colegio.",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "estado"
         ]
       },
       "SaludEntity": {
@@ -12027,6 +12566,33 @@
           "tiempoComidaId",
           "cumplido"
         ]
+      },
+      "ActualizarPerfilDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Lic. Sofía Herrera",
+            "minLength": 3,
+            "maxLength": 120
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true,
+            "description": "`null` limpia el campo.",
+            "example": "+504 9999-0000",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "colegiado": {
+            "type": "string",
+            "nullable": true,
+            "description": "`null` limpia el campo.",
+            "example": "1402",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        }
       },
       "Plataforma": {
         "type": "string",

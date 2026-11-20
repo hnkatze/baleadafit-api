@@ -361,6 +361,7 @@ La API corre en un servicio de Railway construido desde el `Dockerfile` del repo
 
 1. Crear el proyecto en Railway con dos servicios: Postgres y la API.
 2. En el servicio de la API, cargar las variables: `DATABASE_URL` (referencia al Postgres), `NODE_ENV=production`, `CORS_ORIGINS` con el dominio del portal, Firebase (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) y AWS (`AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `BEDROCK_MODEL_ID`). `PORT` lo inyecta Railway.
+   - `ADMIN_CORREOS` (opcional pero necesario para aprobar perfiles): correos separados por coma con permiso sobre `/admin`, por ejemplo `jefa@clinica.hn,otra@clinica.hn`. Sin esta variable nadie puede aprobar una nutricionista nueva y los registros quedan en `PENDIENTE` para siempre.
 3. En **Project Settings → Tokens** crear un **Project Token** y guardarlo en GitHub: *Settings → Secrets and variables → Actions* como secreto `RAILWAY_TOKEN`.
 4. Si el servicio no se llama `baleadafit-api`, crear la variable de repositorio `RAILWAY_SERVICE` con su nombre (o su id).
 5. Correr el seed una sola vez (`npm run db:seed`) apuntando `DATABASE_URL` a la base de Railway. Desde la máquina local la referencia interna (`*.railway.internal`) no resuelve: hay que usar `DATABASE_PUBLIC_URL`.
