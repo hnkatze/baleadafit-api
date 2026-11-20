@@ -4,7 +4,7 @@ import { diaSemanaDe } from '../nutricion/nutricion.util.js';
 import { PaginacionDto, paginar } from '../common/paginacion.js';
 import { PlanesService } from '../planes/planes.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import type { RegistrarComidaDto } from './mi-cuenta.dto.js';
+import type { ActualizarPerfilDto, RegistrarComidaDto } from './mi-cuenta.dto.js';
 
 /**
  * Campos de una cita que el paciente puede ver. Nunca salen las notas internas
@@ -148,6 +148,23 @@ export class MiCuentaService {
         }),
       total: () => this.prisma.registroComida.count({ where }),
       id: (r) => r.id,
+    });
+  }
+
+  /**
+   * Perfil propio de la nutricionista autenticada. El `id` sale siempre del token:
+   * el cuerpo no puede elegir a quién editar. Los únicos campos que se escriben
+   * son los tres editables, así un `id`, un `estado` o un `correo` colado en el
+   * cuerpo nunca llega a la base.
+   */
+  actualizarPerfil(nutricionistaId: string, dto: ActualizarPerfilDto) {
+    return this.prisma.nutricionista.update({
+      where: { id: nutricionistaId },
+      data: {
+        nombre: dto.nombre,
+        telefono: dto.telefono,
+        colegiado: dto.colegiado,
+      },
     });
   }
 }

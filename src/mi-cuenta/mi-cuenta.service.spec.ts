@@ -1,6 +1,9 @@
 import { NotFoundException } from '@nestjs/common';
+import { ROLES_KEY } from '../auth/decorators.js';
 import type { PlanesService } from '../planes/planes.service.js';
 import { crearPrismaMock, type PrismaMock } from '../testing/prisma-mock.js';
+import type { ActualizarPerfilDto } from './mi-cuenta.dto.js';
+import { MiPerfilController } from './mi-perfil.controller.js';
 import {
   CITA_PACIENTE_SELECT,
   MiCuentaService,
@@ -223,6 +226,76 @@ describe('MiCuentaService', () => {
     });
   });
 
+  describe('editar mi perfil', () => {
+    /** El `where` del update sale del token, nunca del cuerpo. */
+    const whereDelUpdate = () =>
+      prisma.nutricionista.update.mock.calls[0][0].where;
+    const dataDelUpdate = () =>
+      prisma.nutricionista.update.mock.calls[0][0].data;
+
+    it('edita nombre, teléfono y colegiado del perfil propio', async () => {
+      prisma.nutricionista.update.mockResolvedValue({
+        id: 'n1',
+        nombre: 'Lic. Sofía Herrera',
+        telefono: '+504 9999-0000',
+        colegiado: '1402',
+      });
+
+      const perfil = await svc.actualizarPerfil('n1', {
+        nombre: 'Lic. Sofía Herrera',
+        telefono: '+504 9999-0000',
+        colegiado: '1402',
+      });
+
+      expect(prisma.nutricionista.update).toHaveBeenCalledWith({
+        where: { id: 'n1' },
+        data: {
+          nombre: 'Lic. Sofía Herrera',
+          telefono: '+504 9999-0000',
+          colegiado: '1402',
+        },
+      });
+      expect(perfil).toMatchObject({ id: 'n1', colegiado: '1402' });
+    });
+
+    it('null limpia teléfono y colegiado', async () => {
+      await svc.actualizarPerfil('n1', { telefono: null, colegiado: null });
+      expect(dataDelUpdate()).toMatchObject({ telefono: null, colegiado: null });
+    });
+
+    it('omitir conserva el valor guardado: no manda la propiedad como null', async () => {
+      await svc.actualizarPerfil('n1', { telefono: '+504 9999-0000' });
+      expect(dataDelUpdate().nombre).toBeUndefined();
+      expect(dataDelUpdate().colegiado).toBeUndefined();
+      expect(dataDelUpdate().telefono).toBe('+504 9999-0000');
+    });
+
+    it('el where usa el id del token aunque el cuerpo traiga otro id', async () => {
+      await svc.actualizarPerfil('n1', {
+        nombre: 'Lic. Sofía Herrera',
+        id: 'n-ajeno',
+      } as unknown as ActualizarPerfilDto);
+
+      expect(whereDelUpdate()).toEqual({ id: 'n1' });
+      expect(dataDelUpdate()).not.toHaveProperty('id');
+    });
+
+    it('correo, estado y firebaseUid nunca llegan a la base', async () => {
+      await svc.actualizarPerfil('n1', {
+        nombre: 'Lic. Sofía Herrera',
+        correo: 'otra@clinica.hn',
+        estado: 'APROBADO',
+        firebaseUid: 'uid-ajeno',
+      } as unknown as ActualizarPerfilDto);
+
+      expect(Object.keys(dataDelUpdate()).sort()).toEqual([
+        'colegiado',
+        'nombre',
+        'telefono',
+      ]);
+    });
+  });
+
   it('el diario por defecto cubre los últimos 7 días', async () => {
     prisma.registroComida.findMany.mockResolvedValue([]);
     await svc.registros('p1', undefined, '2026-10-28');
@@ -232,5 +305,37 @@ describe('MiCuentaService', () => {
         lte: new Date('2026-10-28T00:00:00.000Z'),
       },
     );
+  });
+});
+
+describe('perfil: contrato de la ruta', () => {
+  it('la editan tanto la nutricionista aprobada como la pendiente', () => {
+    // Es la única escritura que conserva un perfil PENDIENTE o RECHAZADO.
+    expect(Reflect.getMetadata(ROLES_KEY, MiPerfilController)).toEqual([
+      'nutricionista',
+      'nutricionista_pendiente',
+    ]);
+  });
+
+  it('el handler edita el perfil de quien manda el token', async () => {
+    const servicio = { actualizarPerfil: vi.fn() };
+    const controller = new MiPerfilController(
+      servicio as unknown as MiCuentaService,
+    );
+
+    await controller.actualizar(
+      {
+        uid: 'uid-1',
+        emailVerificado: true,
+        rol: 'nutricionista_pendiente',
+        esAdmin: false,
+        nutricionistaId: 'n1',
+      },
+      { nombre: 'Lic. Sofía Herrera' },
+    );
+
+    expect(servicio.actualizarPerfil).toHaveBeenCalledWith('n1', {
+      nombre: 'Lic. Sofía Herrera',
+    });
   });
 });
