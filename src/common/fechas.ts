@@ -8,6 +8,15 @@ export function hoyIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/** Años cumplidos a la fecha de referencia, comparando en UTC como `aFecha`. */
+export function edadEnAnios(nacimiento: Date, referencia: Date): number {
+  let edad = referencia.getUTCFullYear() - nacimiento.getUTCFullYear();
+  const mes = referencia.getUTCMonth() - nacimiento.getUTCMonth();
+  if (mes < 0 || (mes === 0 && referencia.getUTCDate() < nacimiento.getUTCDate()))
+    edad--;
+  return edad;
+}
+
 export function sumarDias(fecha: Date, dias: number): Date {
   const d = new Date(fecha);
   d.setUTCDate(d.getUTCDate() + dias);

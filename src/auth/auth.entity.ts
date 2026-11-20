@@ -1,5 +1,6 @@
 /* Modelos de respuesta para la documentación de Swagger (no se instancian). */
 import { ApiProperty } from '@nestjs/swagger';
+import { EstadoNutricionista } from '../generated/prisma/enums.js';
 
 export class NutricionistaEntity {
   id: string;
@@ -11,22 +12,36 @@ export class NutricionistaEntity {
   /** @example "1402" */
   colegiado: string | null;
   telefono: string | null;
+  @ApiProperty({ enum: EstadoNutricionista, enumName: 'EstadoNutricionista' })
+  estado: EstadoNutricionista;
+  /** @example "1990-03-15" */
+  fechaNacimiento: Date | null;
   creadoEn: Date;
 }
 
 export class MeEntity {
   @ApiProperty({
-    enum: ['nutricionista', 'paciente', 'sin_perfil'],
-    description: 'Define qué navegación muestra la app.',
+    enum: [
+      'nutricionista',
+      'nutricionista_pendiente',
+      'paciente',
+      'sin_perfil',
+    ],
+    description:
+      'Define qué navegación muestra la app. `nutricionista_pendiente` es un perfil registrado que todavía no fue aprobado: la app muestra el estado de revisión y las rutas de datos responden 403.',
   })
-  rol: 'nutricionista' | 'paciente' | 'sin_perfil';
+  rol:
+    | 'nutricionista'
+    | 'nutricionista_pendiente'
+    | 'paciente'
+    | 'sin_perfil';
 
   @ApiProperty({
     type: 'object',
     nullable: true,
     additionalProperties: true,
     description:
-      'Nutricionista, o paciente con su nutricionista y restricciones. null si no tiene perfil.',
+      'Nutricionista (con `estado` y `fechaNacimiento`), o paciente con su nutricionista y restricciones. null si no tiene perfil.',
   })
   perfil: Record<string, unknown> | null;
 }

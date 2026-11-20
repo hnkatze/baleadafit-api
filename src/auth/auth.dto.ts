@@ -1,4 +1,10 @@
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsDateString,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class RegistroNutricionistaDto {
   /** @example "Lic. Sofía Herrera" */
@@ -21,4 +27,11 @@ export class RegistroNutricionistaDto {
   @IsString()
   @MaxLength(30)
   telefono?: string;
+
+  /**
+   * Formato YYYY-MM-DD. Se rechaza a quien no tenga al menos 18 años cumplidos.
+   * @example "1990-03-15"
+   */
+  @IsDateString()
+  fechaNacimiento: string;
 }

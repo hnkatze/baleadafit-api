@@ -5,11 +5,13 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
+import { EstadoNutricionista } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { Rol, TokenVerificado, UsuarioActual } from './auth.types.js';
-import { PUBLIC_KEY, ROLES_KEY } from './decorators.js';
+import { ADMIN_KEY, PUBLIC_KEY, ROLES_KEY } from './decorators.js';
 import { FirebaseService } from './firebase.service.js';
 
 /**
@@ -22,6 +24,7 @@ export class AuthGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly firebase: FirebaseService,
     private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
@@ -51,7 +54,27 @@ export class AuthGuard implements CanActivate {
     if (roles?.length && !roles.includes(usuario.rol)) {
       throw new ForbiddenException('No tienes permiso para este recurso.');
     }
+
+    if (
+      this.reflector.getAllAndOverride<boolean>(ADMIN_KEY, destino) &&
+      !usuario.esAdmin
+    ) {
+      throw new ForbiddenException('No tienes permiso para este recurso.');
+    }
     return true;
+  }
+
+  /**
+   * Lista de correos con permiso de administración, separada por comas. Vive en
+   * configuración, no en la base: un admin no es un perfil del dominio.
+   */
+  private esAdmin(email?: string): boolean {
+    if (!email) return false;
+    const lista = (this.config.get<string>('ADMIN_CORREOS') ?? '')
+      .split(',')
+      .map((correo) => correo.trim().toLowerCase())
+      .filter(Boolean);
+    return lista.includes(email.toLowerCase());
   }
 
   private async resolverUsuario(t: TokenVerificado): Promise<UsuarioActual> {
@@ -59,14 +82,25 @@ export class AuthGuard implements CanActivate {
       uid: t.uid,
       email: t.email,
       emailVerificado: t.emailVerificado,
+      esAdmin: this.esAdmin(t.email),
     };
 
     const nutri = await this.prisma.nutricionista.findUnique({
       where: { firebaseUid: t.uid },
-      select: { id: true },
+      select: { id: true, estado: true },
     });
     if (nutri)
-      return { ...base, rol: 'nutricionista', nutricionistaId: nutri.id };
+      return {
+        ...base,
+        // Solo un perfil aprobado entra como `nutricionista`. El resto queda en un
+        // rol que los `@Roles('nutricionista')` rechazan sin tocar un controller.
+        rol:
+          nutri.estado === EstadoNutricionista.APROBADO
+            ? 'nutricionista'
+            : 'nutricionista_pendiente',
+        nutricionistaId: nutri.id,
+        estado: nutri.estado,
+      };
 
     const paciente = await this.prisma.paciente.findUnique({
       where: { firebaseUid: t.uid },

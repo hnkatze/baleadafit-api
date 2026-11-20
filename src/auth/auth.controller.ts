@@ -14,6 +14,8 @@ import {
 } from '@nestjs/swagger';
 import { ApiSobreCreado, ApiSobreOk } from '../common/respuesta.js';
 import { ApiErrores } from '../common/swagger.js';
+import { aFecha, edadEnAnios, hoyIso } from '../common/fechas.js';
+import { EstadoNutricionista } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RegistroNutricionistaDto } from './auth.dto.js';
 import { MeEntity, NutricionistaEntity } from './auth.entity.js';
@@ -30,12 +32,14 @@ export class AuthController {
   @ApiOperation({
     summary: 'Rol y perfil del usuario',
     description:
-      'Primera llamada de la app después del login. Según `rol` muestra la navegación de nutricionista, la del paciente o el registro (`sin_perfil`).',
+      'Primera llamada de la app después del login. Según `rol` muestra la navegación de nutricionista, la del paciente, el estado de revisión (`nutricionista_pendiente`) o el registro (`sin_perfil`).',
   })
   @ApiSobreOk(MeEntity)
   @ApiErrores(401)
   async me(@UsuarioAct() u: UsuarioActual) {
-    if (u.rol === 'nutricionista') {
+    // Un perfil pendiente también tiene perfil: devolver null lo dejaría sin
+    // datos para mostrar la pantalla de revisión.
+    if (u.rol === 'nutricionista' || u.rol === 'nutricionista_pendiente') {
       const perfil = await this.prisma.nutricionista.findUnique({
         where: { id: u.nutricionistaId },
       });
@@ -58,7 +62,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Registrar nutricionista',
     description:
-      'Crea el perfil de nutricionista para una cuenta de Firebase sin perfil. Usa el uid y el correo del token. Exige el correo verificado: con Google siempre lo está, con correo y contraseña hay que confirmar el enlace que envía Firebase.',
+      'Crea el perfil de nutricionista para una cuenta de Firebase sin perfil. Usa el uid y el correo del token. Exige el correo verificado: con Google siempre lo está, con correo y contraseña hay que confirmar el enlace que envía Firebase. El perfil queda en estado `PENDIENTE`: el acceso a datos se habilita cuando un administrador lo aprueba.',
   })
   @ApiSobreCreado(NutricionistaEntity)
   @ApiErrores(400, 401, 403, 409)
@@ -75,6 +79,11 @@ export class AuthController {
       throw new ForbiddenException(
         'Verifica tu correo antes de registrar el perfil.',
       );
+    const nacimiento = aFecha(dto.fechaNacimiento);
+    if (edadEnAnios(nacimiento, aFecha(hoyIso())) < 18)
+      throw new BadRequestException(
+        'Debes ser mayor de edad para registrar el perfil.',
+      );
     const existe = await this.prisma.nutricionista.findUnique({
       where: { correo: u.email },
     });
@@ -83,7 +92,13 @@ export class AuthController {
         'Ya existe una nutricionista con ese correo.',
       );
     return this.prisma.nutricionista.create({
-      data: { firebaseUid: u.uid, correo: u.email, ...dto },
+      data: {
+        firebaseUid: u.uid,
+        correo: u.email,
+        ...dto,
+        fechaNacimiento: nacimiento,
+        estado: EstadoNutricionista.PENDIENTE,
+      },
     });
   }
 }

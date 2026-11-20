@@ -1,4 +1,4 @@
-import { aFecha, hoyIso, sumarDias } from './fechas.js';
+import { aFecha, edadEnAnios, hoyIso, sumarDias } from './fechas.js';
 
 /**
  * Convención del proyecto: las fechas de calendario se guardan como medianoche
@@ -38,6 +38,44 @@ describe('fechas', () => {
       const hoy = hoyIso();
       expect(hoy).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(hoy).toBe(new Date().toISOString().slice(0, 10));
+    });
+  });
+
+  describe('edadEnAnios', () => {
+    it('cuenta los años cumplidos', () => {
+      expect(
+        edadEnAnios(
+          new Date('1990-03-15T00:00:00.000Z'),
+          new Date('2026-03-16T00:00:00.000Z'),
+        ),
+      ).toBe(36);
+    });
+
+    it('no cuenta el año el día antes del cumpleaños', () => {
+      expect(
+        edadEnAnios(
+          new Date('1990-03-15T00:00:00.000Z'),
+          new Date('2026-03-14T00:00:00.000Z'),
+        ),
+      ).toBe(35);
+    });
+
+    it('cuenta el año el mismo día del cumpleaños', () => {
+      expect(
+        edadEnAnios(
+          new Date('2008-03-15T00:00:00.000Z'),
+          new Date('2026-03-15T00:00:00.000Z'),
+        ),
+      ).toBe(18);
+    });
+
+    it('devuelve negativo para una fecha de nacimiento futura', () => {
+      expect(
+        edadEnAnios(
+          new Date('2030-01-01T00:00:00.000Z'),
+          new Date('2026-03-15T00:00:00.000Z'),
+        ),
+      ).toBeLessThan(0);
     });
   });
 
