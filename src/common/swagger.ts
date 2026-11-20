@@ -63,11 +63,15 @@ cliente manda en \`Authorization: Bearer <token>\`. La cuenta la crea el cliente
 de Firebase, con **Google** o con **correo y contraseña**; para el API los dos flujos son
 el mismo token.
 
-\`GET /auth/me\` devuelve el rol (\`nutricionista\`, \`paciente\` o \`sin_perfil\`).
+\`GET /auth/me\` devuelve el rol (\`nutricionista\`, \`nutricionista_pendiente\`, \`paciente\` o \`sin_perfil\`).
 Una cuenta sin perfil usa \`POST /auth/registro-nutricionista\`, que **exige el correo
 verificado**: con Google siempre lo está, con correo y contraseña hay que abrir el enlace
 que envía Firebase. Un paciente queda vinculado automáticamente al iniciar sesión con el
 correo verificado que registró su nutricionista.
+
+El perfil nace en estado \`PENDIENTE\` y **no habilita el acceso a datos** hasta que un
+administrador lo aprueba con \`PATCH /admin/nutricionistas/{id}/estado\`. Ver
+\`ADMIN_CORREOS\` en la puesta en marcha: sin esa variable nadie puede aprobar.
 
 Vincular Google a una cuenta de correo y contraseña es del lado del cliente
 (\`linkWithPopup\`): el \`uid\` no cambia y el API no se entera.

@@ -14,6 +14,8 @@ export class NutricionistaEntity {
   telefono: string | null;
   @ApiProperty({ enum: EstadoNutricionista, enumName: 'EstadoNutricionista' })
   estado: EstadoNutricionista;
+  /** Por qué se rechazó el perfil. null si no está rechazado. */
+  motivoRechazo: string | null;
   /** @example "1990-03-15" */
   fechaNacimiento: Date | null;
   creadoEn: Date;

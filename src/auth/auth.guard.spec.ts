@@ -128,6 +128,26 @@ describe('AuthGuard', () => {
     expect(req.usuario?.esAdmin).toBe(true);
   });
 
+  it('no da admin a un correo sin verificar, aunque esté en ADMIN_CORREOS', async () => {
+    adminCorreos = 'ana@correo.hn';
+    token.emailVerificado = false;
+    const { ctx, req } = contexto({ authorization: 'Bearer t' });
+    await guard.canActivate(ctx);
+    expect(req.usuario?.esAdmin).toBe(false);
+  });
+
+  it('aplica @SoloAdmin: 403 a un admin con el correo sin verificar', async () => {
+    adminCorreos = 'ana@correo.hn';
+    token.emailVerificado = false;
+    const { ctx } = contexto(
+      { authorization: 'Bearer t' },
+      { [ADMIN_KEY]: true },
+    );
+    await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+
   it('no marca esAdmin a quien no está en la lista', async () => {
     adminCorreos = 'jefa@correo.hn';
     const { ctx, req } = contexto({ authorization: 'Bearer t' });

@@ -121,16 +121,21 @@ Vincular Google a una cuenta de correo y contraseña es **del lado del cliente**
 
 Un guard global resuelve el rol en cada petición:
 
-- Si el `uid` pertenece a una nutricionista, el rol es `nutricionista`.
+- Si el `uid` pertenece a una nutricionista **aprobada**, el rol es `nutricionista`.
+- Si pertenece a una nutricionista con estado `PENDIENTE` o `RECHAZADO`, el rol es `nutricionista_pendiente`: solo llega a `GET /auth/me` y `PATCH /me/perfil`, y todo lo demás responde `403`.
 - Si pertenece a un paciente activo, el rol es `paciente`.
 - En el primer inicio de sesión de un paciente, se vincula por **correo verificado** con el expediente que creó su nutricionista (guarda su `firebase_uid`).
 - Si no coincide con nada, el rol es `sin_perfil`, que solo puede llamar a `GET /auth/me` y `POST /auth/registro-nutricionista`.
 
-`GET /auth/me` devuelve `{ rol, perfil }`, y la app decide qué navegación mostrar según el rol.
+Un usuario puede además ser **administrador**: `esAdmin` sale de la variable `ADMIN_CORREOS` (correos separados por coma) y es independiente del rol. Sus rutas son `/admin` y llevan `@SoloAdmin()`.
+
+`GET /auth/me` devuelve `{ rol, perfil }`, y la app decide qué navegación mostrar según el rol. Un `nutricionista_pendiente` recibe su perfil completo, con `estado`, para mostrar la pantalla de revisión.
 
 ### Registro de nutricionista
 
-`POST /auth/registro-nutricionista` no crea usuarios de Firebase: crea el **perfil** de una cuenta que ya está logueada. El `uid` y el `correo` salen del token, nunca del body; el body solo lleva `nombre` (obligatorio), `colegiado` y `telefono`. El perfil es obligatorio para salir de `sin_perfil`.
+`POST /auth/registro-nutricionista` no crea usuarios de Firebase: crea el **perfil** de una cuenta que ya está logueada. El `uid` y el `correo` salen del token, nunca del body; el body lleva `nombre` (obligatorio, 3-120 caracteres), `fechaNacimiento` (obligatorio, `YYYY-MM-DD`, mínimo 18 años cumplidos), `colegiado` y `telefono`. El perfil es obligatorio para salir de `sin_perfil`.
+
+El perfil se crea en estado **`PENDIENTE`** y no da acceso a datos de pacientes: lo habilita un administrador. El alta **no** exige evidencia de colegiatura — `colegiado` es opcional y el admin lo verifica a mano al aprobar.
 
 El endpoint **exige el correo verificado** y responde `403 Verifica tu correo antes de registrar el perfil.` si no lo está. La razón: `correo` es `@unique`, y sin esa validación cualquiera podría reclamar el correo de otra persona y dejar a la dueña real sin poder registrarse.
 

@@ -82,7 +82,9 @@ export class AuthGuard implements CanActivate {
       uid: t.uid,
       email: t.email,
       emailVerificado: t.emailVerificado,
-      esAdmin: this.esAdmin(t.email),
+      // El correo verificado es parte del permiso: sin él, cualquiera que cree
+      // una cuenta con el correo del admin reclama la lista y se aprueba solo.
+      esAdmin: t.emailVerificado === true && this.esAdmin(t.email),
     };
 
     const nutri = await this.prisma.nutricionista.findUnique({

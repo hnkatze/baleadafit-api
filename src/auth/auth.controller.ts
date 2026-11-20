@@ -80,7 +80,10 @@ export class AuthController {
         'Verifica tu correo antes de registrar el perfil.',
       );
     const nacimiento = aFecha(dto.fechaNacimiento);
-    if (edadEnAnios(nacimiento, aFecha(hoyIso())) < 18)
+    const edad = edadEnAnios(nacimiento, aFecha(hoyIso()));
+    // Una fecha que `aFecha` no pudo interpretar deja la edad en NaN, y
+    // `NaN < 18` es false: sin este chequeo la regla no rechaza a nadie.
+    if (!Number.isFinite(edad) || edad < 18)
       throw new BadRequestException(
         'Debes ser mayor de edad para registrar el perfil.',
       );

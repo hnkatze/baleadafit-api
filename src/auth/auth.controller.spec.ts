@@ -96,6 +96,22 @@ describe('AuthController.registrarNutricionista', () => {
     expect(prisma.nutricionista.create).toHaveBeenCalled();
   });
 
+  it('rechaza un nacimiento que la regla no puede interpretar', async () => {
+    // `aFecha('20150601')` da Invalid Date, la edad da NaN y `NaN < 18` es false:
+    // sin el chequeo explícito la regla dejaría pasar a cualquiera.
+    await expect(
+      controller.registrarNutricionista(cuenta(), {
+        ...dto,
+        fechaNacimiento: '20150601',
+      }),
+    ).rejects.toThrow(
+      new BadRequestException(
+        'Debes ser mayor de edad para registrar el perfil.',
+      ),
+    );
+    expect(prisma.nutricionista.create).not.toHaveBeenCalled();
+  });
+
   it('rechaza una cuenta que ya tiene perfil', async () => {
     await expect(
       controller.registrarNutricionista(

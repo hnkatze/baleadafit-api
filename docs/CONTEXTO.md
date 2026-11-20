@@ -151,6 +151,8 @@ Cada módulo sigue la misma forma: `*.dto.ts` (entrada, con validaciones), `*.en
 - `POST /auth/registro-nutricionista` crea el perfil en estado **`PENDIENTE`** y exige **correo verificado** (el token trae `email_verified`; con Google siempre está, con correo y contraseña hay que confirmar el enlace de Firebase) y **18 años cumplidos** (`fechaNacimiento`). La verificación de correo es de Firebase: no hay envío propio ni SES.
 - `GET /auth/me` es la primera llamada de la app y decide la navegación según `rol`. Un `nutricionista_pendiente` recibe su `perfil` completo, con `estado` adentro, para que la app muestre el estado de revisión en vez de una pantalla vacía.
 - **Modo dev:** con `AUTH_DEV_BYPASS=true` (se ignora en producción) se acepta `Bearer dev:<uid>:<correo>`. Ese camino devuelve `emailVerificado: true` siempre, así que no sirve para probar el 403 por correo sin verificar.
+- **Restablecer contraseña no pasa por el API.** La app llama a `sendPasswordResetEmail` del SDK de Firebase; la contraseña vive en Firebase y un endpoint propio tendría que generar el enlace y mandar el correo por su cuenta para terminar en la misma pantalla.
+- **Las preferencias de notificación todavía no existen.** El corte 1 de push solo registra los tokens del dispositivo (`POST /me/dispositivos`); falta definir como producto qué se manda, cuándo y a quién antes de escribir la tabla de preferencias.
 
 ### Aislamiento
 Una nutricionista **solo** ve a sus pacientes y planes. `AccesoService` responde 404, no 403, para no revelar que el recurso existe.

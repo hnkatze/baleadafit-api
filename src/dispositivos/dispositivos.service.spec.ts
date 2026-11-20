@@ -14,6 +14,7 @@ const PACIENTE: UsuarioActual = {
   uid: 'uid-paciente',
   emailVerificado: true,
   rol: 'paciente',
+  esAdmin: false,
   pacienteId: 'paciente-1',
   nutricionistaId: 'nutri-1',
 };
@@ -22,6 +23,7 @@ const NUTRICIONISTA: UsuarioActual = {
   uid: 'uid-nutri',
   emailVerificado: true,
   rol: 'nutricionista',
+  esAdmin: false,
   nutricionistaId: 'nutri-1',
 };
 

@@ -129,9 +129,9 @@ model Nutricionista {
   correo      String   @unique
   colegiado   String?
   telefono    String?
-  /// Default `APROBADO` para no dejar sin acceso a las filas que ya existían;
-  /// el alta nueva escribe `PENDIENTE` explícito.
-  estado          EstadoNutricionista @default(APROBADO)
+  /// Default `PENDIENTE`: un `create` que olvide el estado no debe aprobar solo.
+  /// Las filas anteriores a la columna quedaron en `APROBADO` por la migración.
+  estado          EstadoNutricionista @default(PENDIENTE)
   /// Nullable: las nutricionistas anteriores al alta con edad no tienen el dato.
   fechaNacimiento DateTime?           @map("fecha_nacimiento") @db.Date
   /// Por qué se rechazó el perfil. Se limpia al aprobar, para que no quede un
