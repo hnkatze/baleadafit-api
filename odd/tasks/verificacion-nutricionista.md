@@ -22,7 +22,8 @@ Hoy el rol se deriva de la existencia de la fila en `nutricionista` (`auth.guard
 | T3 | Alta con `PENDIENTE`, `fechaNacimiento` y regla de 18 años | S6, S7 | inline | `ace3b2e` |
 | T4 | Módulo `admin`: listar y aprobar/rechazar | S5 | writer | `dabc878` |
 | T5 | `/auth/me` con el perfil del pendiente | S3 | inline | `ace3b2e` |
-| T6 | Docs, Swagger y `docs/openapi.json` | S8 | inline | `docs` |
+| T6 | Docs, Swagger y `docs/openapi.json` | S8 | inline | `31641e6` |
+| T7 | Cerrar las dos fallas de la verificación (S4 y S6) y el default de la columna | S1, S4, S6 | inline | `58a4ebf` |
 
 ## Log
 

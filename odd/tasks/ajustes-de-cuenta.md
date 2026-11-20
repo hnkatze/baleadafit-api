@@ -19,7 +19,7 @@ La nutricionista puede registrarse con `nombre`, `telefono` y `colegiado`, pero 
 |---|---|---|---|---|
 | T1 | `PATCH /me/perfil` con semántica de limpieza y roles | S1-S5 | writer | `2e6b953` |
 | T2 | DTO, entity y spec del perfil | S1-S5 | writer | `2e6b953` |
-| T3 | Docs: CONTEXTO, Swagger, `docs/openapi.json` | S6, S7, S8 | inline | `docs` |
+| T3 | Docs: CONTEXTO, Swagger, `docs/openapi.json` | S6, S7, S8 | inline | `31641e6` |
 
 ## Log
 
