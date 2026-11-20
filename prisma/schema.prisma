@@ -112,6 +112,14 @@ enum Plataforma {
   WEB
 }
 
+/// Aprobación del perfil de nutricionista. Solo `APROBADO` habilita el acceso a
+/// datos; el resto de los valores dejan al usuario en rol `nutricionista_pendiente`.
+enum EstadoNutricionista {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+}
+
 // ─── Expediente ───────────────────────────────────────────────────────────
 
 model Nutricionista {
@@ -121,6 +129,14 @@ model Nutricionista {
   correo      String   @unique
   colegiado   String?
   telefono    String?
+  /// Default `APROBADO` para no dejar sin acceso a las filas que ya existían;
+  /// el alta nueva escribe `PENDIENTE` explícito.
+  estado          EstadoNutricionista @default(APROBADO)
+  /// Nullable: las nutricionistas anteriores al alta con edad no tienen el dato.
+  fechaNacimiento DateTime?           @map("fecha_nacimiento") @db.Date
+  /// Por qué se rechazó el perfil. Se limpia al aprobar, para que no quede un
+  /// motivo viejo contradiciendo un estado nuevo.
+  motivoRechazo   String?             @map("motivo_rechazo")
   creadoEn    DateTime @default(now()) @map("creado_en")
 
   pacientes Paciente[]
