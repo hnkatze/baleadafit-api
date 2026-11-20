@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AdminModule } from './admin/admin.module.js';
 import { AlimentosModule } from './alimentos/alimentos.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CitasModule } from './citas/citas.module.js';
@@ -18,6 +19,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     PrismaModule,
     AccesoModule,
     AuthModule,
+    AdminModule,
     DashboardModule,
     PacientesModule,
     AlimentosModule,

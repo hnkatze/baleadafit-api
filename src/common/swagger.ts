@@ -166,6 +166,11 @@ export function crearDocumentoOpenApi(app: INestApplication): OpenAPIObject {
       'mi cuenta (paciente)',
       'Lo que ve y registra el paciente en la app',
     )
+    .addTag(
+      'mi cuenta (nutricionista)',
+      'Perfil propio: la nutricionista corrige sus datos de contacto',
+    )
+    .addTag('admin', 'Aprobación de perfiles de nutricionista')
     .build();
   return SwaggerModule.createDocument(app, config, {
     extraModels: [ErrorRespuesta, DetalleFallaEntity, MetaPaginacionEntity],
