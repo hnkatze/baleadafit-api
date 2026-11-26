@@ -169,13 +169,28 @@ describe('AuthController.me', () => {
     expect(prisma.nutricionista.findUnique).toHaveBeenCalledWith({
       where: { id: 'nutri-1' },
     });
-    expect(respuesta).toEqual({ rol: 'nutricionista_pendiente', perfil });
+    expect(respuesta).toEqual({
+      rol: 'nutricionista_pendiente',
+      perfil,
+      esAdmin: false,
+    });
   });
 
   it('devuelve rol sin_perfil con perfil null y no consulta la base', async () => {
     const respuesta = await controller.me(cuenta());
 
-    expect(respuesta).toEqual({ rol: 'sin_perfil', perfil: null });
+    expect(respuesta).toEqual({ rol: 'sin_perfil', perfil: null, esAdmin: false });
     expect(prisma.nutricionista.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('dice si la cuenta puede aprobar perfiles, para que el cliente no lo adivine', async () => {
+    const perfil = { id: 'nutri-1', estado: EstadoNutricionista.APROBADO };
+    prisma.nutricionista.findUnique.mockResolvedValue(perfil);
+
+    const respuesta = await controller.me(
+      cuenta({ rol: 'nutricionista', nutricionistaId: 'nutri-1', esAdmin: true }),
+    );
+
+    expect(respuesta).toEqual({ rol: 'nutricionista', perfil, esAdmin: true });
   });
 });

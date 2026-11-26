@@ -37,13 +37,17 @@ export class AuthController {
   @ApiSobreOk(MeEntity)
   @ApiErrores(401)
   async me(@UsuarioAct() u: UsuarioActual) {
+    // `esAdmin` viaja en la respuesta a propósito: el cliente necesita saber si la cuenta puede
+    // aprobar perfiles para decidir si muestra el board. Deducirlo de un 403 obligaría a tantear
+    // una ruta de escritura para pintar una entrada de navegación.
+    //
     // Un perfil pendiente también tiene perfil: devolver null lo dejaría sin
     // datos para mostrar la pantalla de revisión.
     if (u.rol === 'nutricionista' || u.rol === 'nutricionista_pendiente') {
       const perfil = await this.prisma.nutricionista.findUnique({
         where: { id: u.nutricionistaId },
       });
-      return { rol: u.rol, perfil };
+      return { rol: u.rol, perfil, esAdmin: u.esAdmin };
     }
     if (u.rol === 'paciente') {
       const perfil = await this.prisma.paciente.findUnique({
@@ -53,9 +57,9 @@ export class AuthController {
           restricciones: { include: { restriccion: true } },
         },
       });
-      return { rol: u.rol, perfil };
+      return { rol: u.rol, perfil, esAdmin: u.esAdmin };
     }
-    return { rol: u.rol, perfil: null };
+    return { rol: u.rol, perfil: null, esAdmin: u.esAdmin };
   }
 
   @Post('registro-nutricionista')

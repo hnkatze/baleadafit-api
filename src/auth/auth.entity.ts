@@ -46,4 +46,10 @@ export class MeEntity {
       'Nutricionista (con `estado` y `fechaNacimiento`), o paciente con su nutricionista y restricciones. null si no tiene perfil.',
   })
   perfil: Record<string, unknown> | null;
+
+  @ApiProperty({
+    description:
+      'La cuenta puede aprobar o rechazar perfiles de nutricionista. No es un rol: se deriva de la lista de correos administradores y exige el correo verificado. Es ortogonal al rol, así que una nutricionista aprobada puede ser admin.',
+  })
+  esAdmin: boolean;
 }
