@@ -50,6 +50,29 @@ describe('SobreInterceptor', () => {
     await expect(envolver(yaEnvuelto)).resolves.toBe(yaEnvuelto);
     await expect(envolver(undefined)).resolves.toBeUndefined();
   });
+
+  it('envuelve un objeto que solo tiene un ok, porque no es un sobre', async () => {
+    // `POST /ia/estado/probar` devuelve `{ ok: true }` y su `ok` no tiene nada que ver con el
+    // sobre: sin `data` no hay sobre, y salía sin envolver.
+    await expect(envolver({ ok: true })).resolves.toEqual({
+      ok: true,
+      data: { ok: true },
+    });
+  });
+
+  it('envuelve un resultado con ok false y un motivo de texto', async () => {
+    // El fallo del servicio de IA viaja como dato, no como sobre de error: `error` es un string,
+    // no el objeto `{ codigo, mensaje }` de una falla.
+    await expect(envolver({ ok: false, error: 'boom' })).resolves.toEqual({
+      ok: true,
+      data: { ok: false, error: 'boom' },
+    });
+  });
+
+  it('deja pasar un sobre de error armado a mano', async () => {
+    const falla = { ok: false, error: { codigo: 'X', mensaje: 'y' } };
+    await expect(envolver(falla)).resolves.toBe(falla);
+  });
 });
 
 describe('aFalla', () => {

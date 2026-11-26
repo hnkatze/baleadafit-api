@@ -46,9 +46,23 @@ export interface SobreFalla {
 /**
  * Si el valor ya es un sobre no se vuelve a envolver. El interceptor lo consulta
  * para ser idempotente y para dejar pasar respuestas armadas a mano.
+ *
+ * Un `ok` booleano **no alcanza**: `POST /ia/estado/probar` responde con el
+ * resultado de su propia verificación (`{ ok: true }` o `{ ok: false, error }`),
+ * y confundirlo con el sobre lo dejaba salir sin `data`. Un sobre lleva `data`
+ * cuando salió bien y un `error` con forma de falla (`codigo`) cuando no.
  */
 export const esSobre = (valor: unknown): valor is SobreOk<unknown> | SobreFalla =>
   typeof valor === 'object' &&
   valor !== null &&
   'ok' in valor &&
-  typeof (valor as { ok: unknown }).ok === 'boolean';
+  typeof (valor as { ok: unknown }).ok === 'boolean' &&
+  esCuerpoDeSobre(valor as Record<string, unknown>);
+
+const esCuerpoDeSobre = (valor: Record<string, unknown>): boolean => {
+  if (valor.ok === true) return 'data' in valor;
+
+  const error = valor.error;
+
+  return typeof error === 'object' && error !== null && 'codigo' in error;
+};
